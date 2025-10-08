@@ -1,0 +1,100 @@
+# Environnements virtuels Python
+env_mindscribe/
+venv/
+ENV/
+env/
+.venv/
+
+# Fichiers d'environnement
+.env
+.env.local
+.env.production
+.env.development
+
+# Django
+*.pyc
+__pycache__/
+*.sqlite3
+*.sqlite
+db.sqlite3
+media/
+staticfiles/
+uploads/
+
+# Migrations (sauf __init__.py)
+*/migrations/*.py
+!*/migrations/__init__.py
+
+# Cache Python
+.python-version
+.pytest_cache/
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+.hypothesis/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Logs
+*.log
+logs/
+
+# Documentation
+docs/_build/
+
+# Packages
+*.egg
+*.egg-info/
+dist/
+build/
+eggs/
+parts/
+var/
+sdist/
+develop-eggs/
+.installed.cfg
+lib/
+lib64/
+
+# Installer logs
+pip-log.txt
+pip-delete-this-directory.txt
+
+# Unit test / coverage reports
+htmlcov/
+.tox/
+.coverage
+.coverage.*
+.coverage
+*,cover
+
+# Jupyter Notebook
+.ipynb_checkpoints
+
+# PyCharm
+.idea/
+
+# macOS
+.AppleDouble
+.LSOverride
+
+# Windows
+$RECYCLE.BIN/
+
+# Linux
+*~
