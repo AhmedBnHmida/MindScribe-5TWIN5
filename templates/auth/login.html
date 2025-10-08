@@ -12,7 +12,7 @@
                 <form method="post">
                     {% csrf_token %}
                     <div class="mb-3">
-                        <label class="form-label">Nom d'utilisateur</label>
+                        <label class="form-label">Nom d'utilisateur ou Email</label>  <!-- ← CHANGÉ -->
                         <input type="text" name="username" class="form-control" required autofocus>
                     </div>
                     <div class="mb-3">
