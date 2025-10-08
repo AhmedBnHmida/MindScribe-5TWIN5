@@ -1,0 +1,43 @@
+{% extends 'base.html' %}
+{% block title %}Accueil - Votre Journal Intelligent{% endblock %}
+
+{% block content %}
+<div class="row align-items-center min-vh-80">
+    <div class="col-md-6">
+        <h1 class="display-4 fw-bold">Bienvenue sur MindScribe</h1>
+        <p class="lead">Votre journal personnel intelligent avec analyse émotionnelle et recommandations personnalisées.</p>
+        
+        <div class="mt-4">
+            <h5><i class="fas fa-feather text-primary"></i> Saisie Multimodale</h5>
+            <p>Texte, audio et images pour exprimer vos pensées librement.</p>
+            
+            <h5><i class="fas fa-brain text-success"></i> Analyse Emotionnelle IA</h5>
+            <p>Comprenez vos tendances émotionnelles grâce à l'intelligence artificielle.</p>
+            
+            <h5><i class="fas fa-chart-line text-info"></i> Tableau de Bord Personnalisé</h5>
+            <p>Suivez votre évolution et recevez des recommandations adaptées.</p>
+        </div>
+        
+        {% if not user.is_authenticated %}
+        <div class="mt-5">
+            <a href="{% url 'users:register' %}" class="btn btn-primary btn-lg me-3">
+                <i class="fas fa-rocket"></i> Commencer Maintenant
+            </a>
+            <a href="{% url 'users:login' %}" class="btn btn-outline-primary btn-lg">
+                <i class="fas fa-sign-in-alt"></i> Se Connecter
+            </a>
+        </div>
+        {% else %}
+        <div class="mt-5">
+            <a href="{% url 'users:home' %}" class="btn btn-success btn-lg">
+                <i class="fas fa-tachometer-alt"></i> Accéder au Tableau de Bord
+            </a>
+        </div>
+        {% endif %}
+    </div>
+    
+    <div class="col-md-6 text-center">
+        <img src="https://via.placeholder.com/500x400" alt="MindScribe Illustration" class="img-fluid rounded shadow">
+    </div>
+</div>
+{% endblock %}

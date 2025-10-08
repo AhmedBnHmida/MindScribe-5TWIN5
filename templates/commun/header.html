@@ -1,0 +1,36 @@
+<nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+    <div class="container">
+        <a class="navbar-brand" href="{% url 'users:landing' %}">
+            <i class="fas fa-book"></i> MindScribe
+        </a>
+        
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        
+        <div class="collapse navbar-collapse" id="navbarNav">
+            <div class="navbar-nav ms-auto">
+                {% if user.is_authenticated %}
+                    <a class="nav-link" href="{% url 'users:home' %}">
+                        <i class="fas fa-home"></i> Dashboard
+                    </a>
+                    {% if user.is_superuser %}
+                        <a class="nav-link" href="/admin/">
+                            <i class="fas fa-cog"></i> Admin
+                        </a>
+                    {% endif %}
+                    <a class="nav-link" href="{% url 'users:logout' %}">
+                        <i class="fas fa-sign-out-alt"></i> Logout ({{ user.username }})
+                    </a>
+                {% else %}
+                    <a class="nav-link" href="{% url 'users:login' %}">
+                        <i class="fas fa-sign-in-alt"></i> Login
+                    </a>
+                    <a class="nav-link" href="{% url 'users:register' %}">
+                        <i class="fas fa-user-plus"></i> Register
+                    </a>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</nav>
