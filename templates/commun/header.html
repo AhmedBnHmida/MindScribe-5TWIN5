@@ -1,36 +1,59 @@
-<nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+<nav class="navbar navbar-expand-lg navbar-light fixed-top">
     <div class="container">
         <a class="navbar-brand" href="{% url 'users:landing' %}">
-            <i class="fas fa-book"></i> MindScribe
+            <i class="fas fa-book me-2"></i>MindScribe
         </a>
-        
         <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
             <span class="navbar-toggler-icon"></span>
         </button>
-        
         <div class="collapse navbar-collapse" id="navbarNav">
-            <div class="navbar-nav ms-auto">
+            <ul class="navbar-nav ms-auto">
+                <li class="nav-item">
+                    <a class="nav-link" href="#features">Fonctionnalités</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="#how-it-works">Comment ça marche</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="#testimonials">Témoignages</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="#pricing">Tarifs</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="#faq">FAQ</a>
+                </li>
                 {% if user.is_authenticated %}
-                    <a class="nav-link" href="{% url 'users:home' %}">
-                        <i class="fas fa-home"></i> Dashboard
-                    </a>
-                    {% if user.is_superuser %}
-                        <a class="nav-link" href="/admin/">
-                            <i class="fas fa-cog"></i> Admin
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'users:home' %}">
+                            <i class="fas fa-home"></i> Dashboard
                         </a>
+                    </li>
+                    {% if user.is_superuser %}
+                        <li class="nav-item">
+                            <a class="nav-link" href="/admin/">
+                                <i class="fas fa-cog"></i> Admin
+                            </a>
+                        </li>
                     {% endif %}
-                    <a class="nav-link" href="{% url 'users:logout' %}">
-                        <i class="fas fa-sign-out-alt"></i> Logout ({{ user.username }})
-                    </a>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'users:logout' %}">
+                            <i class="fas fa-sign-out-alt"></i> Logout ({{ user.username }})
+                        </a>
+                    </li>
                 {% else %}
-                    <a class="nav-link" href="{% url 'users:login' %}">
-                        <i class="fas fa-sign-in-alt"></i> Login
-                    </a>
-                    <a class="nav-link" href="{% url 'users:register' %}">
-                        <i class="fas fa-user-plus"></i> Register
-                    </a>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'users:login' %}">
+                            <i class="fas fa-sign-in-alt"></i> Login
+                        </a>
+                    </li>
+                    <li class="nav-item ms-2">
+                        <a class="btn btn-primary" href="{% url 'users:register' %}">
+                            <i class="fas fa-user-plus"></i> Register
+                        </a>
+                    </li>
                 {% endif %}
-            </div>
+            </ul>
         </div>
     </div>
 </nav>

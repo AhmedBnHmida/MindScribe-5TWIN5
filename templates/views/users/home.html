@@ -2,56 +2,19 @@
 {% block title %}Tableau de Bord{% endblock %}
 
 {% block content %}
-<div class="row">
-    <div class="col-12">
-        <h1><i class="fas fa-tachometer-alt text-primary"></i> Tableau de Bord</h1>
-        <p class="lead">Bienvenue, <strong>{{ user.username }}</strong> !</p>
-    </div>
-</div>
+<div class="content-wrapper">
+    <div class="container">
 
-<div class="row mt-4">
-    <div class="col-md-4 mb-4">
-        <div class="card text-white bg-primary h-100">
-            <div class="card-body">
-                <h5 class="card-title"><i class="fas fa-feather"></i> Nouvelle Entrée</h5>
-                <p class="card-text">Exprimez vos pensées et émotions du jour.</p>
-                <a href="#" class="btn btn-light">Écrire</a>
+        <!-- Simple Centered Welcome -->
+        <div class="row justify-content-center text-center">
+            <div class="col-md-8">
+                <div class="welcome-message py-5">
+                    <h1 class="display-5 mb-3">Bon retour, <strong>{{ user.username }}</strong> !</h1>
+                    <p class="lead text-muted">Votre bien-être mental est notre priorité. Comment vous sentez-vous aujourd'hui ?</p>
+                </div>
             </div>
         </div>
-    </div>
-    
-    <div class="col-md-4 mb-4">
-        <div class="card text-white bg-success h-100">
-            <div class="card-body">
-                <h5 class="card-title"><i class="fas fa-chart-line"></i> Analyse Emotionnelle</h5>
-                <p class="card-text">Découvrez vos tendances émotionnelles.</p>
-                <a href="#" class="btn btn-light">Voir l'Analyse</a>
-            </div>
-        </div>
-    </div>
-    
-    <div class="col-md-4 mb-4">
-        <div class="card text-white bg-info h-100">
-            <div class="card-body">
-                <h5 class="card-title"><i class="fas fa-history"></i> Historique</h5>
-                <p class="card-text">Retrouvez vos anciennes entrées de journal.</p>
-                <a href="#" class="btn btn-light">Parcourir</a>
-            </div>
-        </div>
-    </div>
-</div>
-
-<div class="row mt-4">
-    <div class="col-12">
-        <div class="card">
-            <div class="card-header">
-                <h5 class="mb-0"><i class="fas fa-bell"></i> Recommandations Récentes</h5>
-            </div>
-            <div class="card-body">
-                <p class="text-muted">Vos recommandations personnalisées apparaîtront ici.</p>
-                <!-- Les recommandations basées sur l'analyse IA viendront ici -->
-            </div>
-        </div>
+        
     </div>
 </div>
 {% endblock %}

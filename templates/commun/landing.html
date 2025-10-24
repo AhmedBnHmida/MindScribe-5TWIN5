@@ -1,43 +1,392 @@
 {% extends 'base.html' %}
+{% load static %}
+
 {% block title %}Accueil - Votre Journal Intelligent{% endblock %}
 
 {% block content %}
-<div class="row align-items-center min-vh-80">
-    <div class="col-md-6">
-        <h1 class="display-4 fw-bold">Bienvenue sur MindScribe</h1>
-        <p class="lead">Votre journal personnel intelligent avec analyse émotionnelle et recommandations personnalisées.</p>
-        
-        <div class="mt-4">
-            <h5><i class="fas fa-feather text-primary"></i> Saisie Multimodale</h5>
-            <p>Texte, audio et images pour exprimer vos pensées librement.</p>
+
+<!-- Hero Section -->
+<section class="hero-section">
+    <div class="hero-bg-pattern"></div>
+    <canvas id="brainCanvas" class="brain-background"></canvas>
+    <div class="container">
+        <div class="row align-items-center min-vh-100">
+            <!-- Left Content Column -->
+            <div class="col-lg-6 hero-content">
+                <h1 class="hero-title fade-in-up">
+                    Libérez votre esprit avec <span class="text-primary">MindScribe</span>
+                </h1>
+                <p class="hero-subtitle fade-in-up delay-1">
+                    Le journal personnel intelligent qui utilise l'IA pour analyser vos émotions et vous guider vers le bien-être mental. Capturez vos pensées, comprenez vos émotions et développez votre conscience de soi.
+                </p>
+                
+                <div class="d-flex flex-column flex-sm-row mt-4 fade-in-up delay-2">
+                    {% if not user.is_authenticated %}
+                    <a href="{% url 'users:register' %}" class="btn btn-primary btn-lg me-sm-3 mb-3 mb-sm-0 shadow-lg pulse-on-hover hero-cta-btn" aria-label="Commencer l'inscription">
+                        <i class="fas fa-rocket me-2"></i> Commencer Gratuitement
+                    </a>
+                    <a href="{% url 'users:login' %}" class="btn btn-outline-primary btn-lg hero-cta-btn" aria-label="Accéder à la connexion">
+                        <i class="fas fa-sign-in-alt me-2"></i> Se Connecter
+                    </a>
+                    {% else %}
+                    <a href="{% url 'users:home' %}" class="btn btn-success btn-lg shadow-lg hero-cta-btn" aria-label="Accéder au tableau de bord">
+                        <i class="fas fa-tachometer-alt me-2"></i> Accéder au Tableau de Bord
+                    </a>
+                    {% endif %}
+                </div>
+                
+                <div class="mt-4 fade-in-up delay-3 security-badge">
+                    <p class="security-text">
+                        <i class="fas fa-shield-alt me-2"></i> Sécurité et confidentialité garanties
+                    </p>
+                </div>
+            </div>
             
-            <h5><i class="fas fa-brain text-success"></i> Analyse Emotionnelle IA</h5>
-            <p>Comprenez vos tendances émotionnelles grâce à l'intelligence artificielle.</p>
-            
-            <h5><i class="fas fa-chart-line text-info"></i> Tableau de Bord Personnalisé</h5>
-            <p>Suivez votre évolution et recevez des recommandations adaptées.</p>
+            <!-- Right Image Column - 3 Picture Carousel -->
+            <div class="col-lg-6">
+                <div class="hero-carousel-container">
+                    <div class="hero-carousel">
+                        <!-- Slide 1 -->
+                        <div class="carousel-slide active">
+                            <img src="{% static 'img/brain-1.png' %}" 
+                                 alt="Cerveau avec connexions neurales" 
+                                 class="carousel-image">
+                            <div class="carousel-caption">
+                                <p>Analyse intelligente de vos émotions</p>
+                            </div>
+                        </div>
+                        
+                        <!-- Slide 2 -->
+                        <div class="carousel-slide">
+                            <img src="{% static 'img/brain-2.png' %}" 
+                                 alt="Visualisation des données émotionnelles" 
+                                 class="carousel-image">
+                            <div class="carousel-caption">
+                                <p>Visualisation claire de votre bien-être</p>
+                            </div>
+                        </div>
+                        
+                        <!-- Slide 3 -->
+                        <div class="carousel-slide">
+                            <img src="{% static 'img/brain-3.png' %}" 
+                                 alt="Interface MindScribe moderne" 
+                                 class="carousel-image">
+                            <div class="carousel-caption">
+                                <p>Interface intuitive et moderne</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Carousel Controls -->
+                    <button class="carousel-control prev" aria-label="Image précédente">
+                        <i class="fas fa-chevron-left"></i>
+                    </button>
+                    <button class="carousel-control next" aria-label="Image suivante">
+                        <i class="fas fa-chevron-right"></i>
+                    </button>
+                    
+                    <!-- Carousel Indicators -->
+                    <div class="carousel-indicators">
+                        <button class="indicator active" data-slide="0"></button>
+                        <button class="indicator" data-slide="1"></button>
+                        <button class="indicator" data-slide="2"></button>
+                    </div>
+                </div>
+            </div>
         </div>
+    </div>
+</section>
+
+<!-- Features Section -->
+<section class="features-section" id="features">
+    <div class="container">
+        <div class="row justify-content-center text-center mb-5">
+            <div class="col-lg-8">
+                <h2 class="section-title">Fonctionnalités Clés et Avantages</h2>
+                <p class="section-subtitle">Découvrez comment MindScribe révolutionne votre pratique du journal personnel</p>
+            </div>
+        </div>
+        <div class="row g-4">
+            <div class="col-lg-3 col-md-6">
+                <div class="feature-card feature-card-1">
+                    <div class="feature-icon feature-icon-1">
+                        <i class="fas fa-microphone-alt"></i>
+                    </div>
+                    <h5 class="fw-bold">Saisie Multimodale Avancée</h5>
+                    <p class="text-muted">Écrivez, dictez votre audio, ou téléchargez des images. Notre système gère le **Texte, l'Audio et l'Image** pour une capture complète de vos pensées.</p>
+                </div>
+            </div>
+            <div class="col-lg-3 col-md-6">
+                <div class="feature-card feature-card-2">
+                    <div class="feature-icon feature-icon-2">
+                        <i class="fas fa-brain"></i>
+                    </div>
+                    <h5 class="fw-bold">Analyse Émotionnelle par IA</h5>
+                    <p class="text-muted">Découvrez les émotions cachées dans vos mots et votre ton. L'IA de MindScribe fournit des **graphiques de tendances** précis sur votre santé mentale.</p>
+                </div>
+            </div>
+            <div class="col-lg-3 col-md-6">
+                <div class="feature-card feature-card-3">
+                    <div class="feature-icon feature-icon-3">
+                        <i class="fas fa-lightbulb"></i>
+                    </div>
+                    <h5 class="fw-bold">Recommandations Personnalisées</h5>
+                    <p class="text-muted">Recevez des suggestions proactives (méditation, exercices, articles) basées sur vos tendances émotionnelles pour améliorer votre quotidien.</p>
+                </div>
+            </div>
+            <div class="col-lg-3 col-md-6">
+                <div class="feature-card feature-card-4">
+                    <div class="feature-icon feature-icon-4">
+                        <i class="fas fa-chart-line"></i>
+                    </div>
+                    <h5 class="fw-bold">Suivi et Visualisation</h5>
+                    <p class="text-muted">Visualisez l'évolution de votre bien-être mental grâce à des tableaux de bord interactifs et des rapports détaillés.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- How It Works Section -->
+<section class="how-it-works-section" id="how-it-works">
+    <div class="container">
+        <div class="row justify-content-center text-center mb-5">
+            <div class="col-lg-8">
+                <h2 class="section-title">Comment ça marche</h2>
+                <p class="section-subtitle">Trois étapes simples pour transformer votre pratique du journal personnel</p>
+            </div>
+        </div>
+        <div class="row position-relative">
+            <div class="col-lg-4">
+                <div class="process-step">
+                    <div class="step-number">1</div>
+                    <h5>Capturez vos pensées</h5>
+                    <p>Utilisez texte, audio ou image pour enregistrer vos réflexions quotidiennes de manière naturelle.</p>
+                </div>
+            </div>
+            <div class="col-lg-4">
+                <div class="process-step">
+                    <div class="step-number">2</div>
+                    <h5>Analyse IA automatique</h5>
+                    <p>Notre intelligence artificielle analyse le contenu pour identifier vos émotions et tendances.</p>
+                </div>
+            </div>
+            <div class="col-lg-4">
+                <div class="process-step">
+                    <div class="step-number">3</div>
+                    <h5>Recevez des insights</h5>
+                    <p>Obtenez des visualisations claires et des recommandations personnalisées pour votre bien-être.</p>
+                </div>
+            </div>
+            <div class="process-connector d-none d-lg-block"></div>
+        </div>
+    </div>
+</section>
+
+<!-- Testimonials Section -->
+<section class="testimonials-section" id="testimonials">
+    <div class="container">
+        <div class="row justify-content-center text-center mb-5">
+            <div class="col-lg-8">
+                <h2 class="section-title text-white">Ce que disent nos utilisateurs</h2>
+                <p class="section-subtitle text-white-50">Découvrez les expériences de ceux qui ont transformé leur pratique du journal personnel</p>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-lg-4 mb-4">
+                <div class="testimonial-card">
+                    <div class="quote-icon">
+                        <i class="fas fa-quote-left"></i>
+                    </div>
+                    <p class="fst-italic">"MindScribe a transformé ma façon de gérer mon stress. L'analyse émotionnelle est étonnamment précise. Un outil essentiel pour le développement personnel."</p>
+                    <div class="d-flex align-items-center mt-4">
+                        <img src="https://via.placeholder.com/60/4a5c9f/ffffff?text=L" class="testimonial-avatar me-3" alt="Avatar Utilisateur">
+                        <div>
+                            <h6 class="mb-0 fw-bold">Leila B.</h6>
+                            <small class="text-muted">Étudiante & Utilisatrice Premium</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-4 mb-4">
+                <div class="testimonial-card">
+                    <div class="quote-icon">
+                        <i class="fas fa-quote-left"></i>
+                    </div>
+                    <p class="fst-italic">"L'interface est super intuitive et j'adore la possibilité d'utiliser l'audio. Pour la première fois, j'ai une vision claire de mon humeur générale sur un mois."</p>
+                    <div class="d-flex align-items-center mt-4">
+                        <img src="https://via.placeholder.com/60/ff6f61/ffffff?text=A" class="testimonial-avatar me-3" alt="Avatar Utilisateur">
+                        <div>
+                            <h6 class="mb-0 fw-bold">Ahmed Z.</h6>
+                            <small class="text-muted">Entrepreneur</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-4 mb-4">
+                <div class="testimonial-card">
+                    <div class="quote-icon">
+                        <i class="fas fa-quote-left"></i>
+                    </div>
+                    <p class="fst-italic">"Les recommandations sont hyper pertinentes ! J'apprécie l'approche proactive plutôt que de me contenter de faire un journal. Recommandé à 100%."</p>
+                    <div class="d-flex align-items-center mt-4">
+                        <img src="https://via.placeholder.com/60/28a745/ffffff?text=M" class="testimonial-avatar me-3" alt="Avatar Utilisateur">
+                        <div>
+                            <h6 class="mb-0 fw-bold">Marie P.</h6>
+                            <small class="text-muted">Coach de Vie</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Pricing Section -->
+<section class="pricing-section" id="pricing">
+    <div class="container">
+        <div class="row justify-content-center text-center mb-5">
+            <div class="col-lg-8">
+                <h2 class="section-title">Choisissez votre forfait</h2>
+                <p class="section-subtitle">Des options adaptées à tous les besoins, de l'utilisateur occasionnel au professionnel</p>
+            </div>
+        </div>
+        <div class="row justify-content-center">
+            <div class="col-lg-4 col-md-6 mb-4">
+                <div class="pricing-card">
+                    <div class="pricing-header">
+                        <h4>Gratuit</h4>
+                        <h2>0€<small class="fs-6">/mois</small></h2>
+                    </div>
+                    <div class="pricing-body">
+                        <ul class="list-unstyled">
+                            <li class="pricing-feature"><i class="fas fa-check"></i> 5 entrées par mois</li>
+                            <li class="pricing-feature"><i class="fas fa-check"></i> Analyse émotionnelle basique</li>
+                            <li class="pricing-feature"><i class="fas fa-check"></i> Support par email</li>
+                            <li class="pricing-feature text-muted"><i class="fas fa-times"></i> Recommandations personnalisées</li>
+                            <li class="pricing-feature text-muted"><i class="fas fa-times"></i> Historique complet</li>
+                        </ul>
+                        <a href="{% url 'users:register' %}" class="btn btn-outline-primary w-100 mt-3">Commencer</a>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-4 col-md-6 mb-4">
+                <div class="pricing-card">
+                    <div class="pricing-header bg-success">
+                        <h4>Premium</h4>
+                        <h2>9,99€<small class="fs-6">/mois</small></h2>
+                    </div>
+                    <div class="pricing-body">
+                        <ul class="list-unstyled">
+                            <li class="pricing-feature"><i class="fas fa-check"></i> Entrées illimitées</li>
+                            <li class="pricing-feature"><i class="fas fa-check"></i> Analyse émotionnelle avancée</li>
+                            <li class="pricing-feature"><i class="fas fa-check"></i> Recommandations personnalisées</li>
+                            <li class="pricing-feature"><i class="fas fa-check"></i> Historique complet</li>
+                            <li class="pricing-feature"><i class="fas fa-check"></i> Support prioritaire</li>
+                        </ul>
+                        <a href="{% url 'users:register' %}" class="btn btn-primary w-100 mt-3">Essayer gratuitement</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- FAQ Section -->
+<section class="faq-section" id="faq">
+    <div class="container">
+        <div class="row justify-content-center text-center mb-5">
+            <div class="col-lg-8">
+                <h2 class="section-title">Questions Fréquentes</h2>
+                <p class="section-subtitle">Trouvez rapidement des réponses à vos questions</p>
+            </div>
+        </div>
+        <div class="row justify-content-center">
+            <div class="col-lg-8">
+                <div class="accordion" id="faqAccordion">
+                    <div class="accordion-item">
+                        <h2 class="accordion-header" id="headingOne">
+                            <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#collapseOne">
+                                Comment MindScribe protège-t-il ma vie privée ?
+                            </button>
+                        </h2>
+                        <div id="collapseOne" class="accordion-collapse collapse show" data-bs-parent="#faqAccordion">
+                            <div class="accordion-body">
+                                Nous prenons votre vie privée très au sérieux. Toutes vos données sont cryptées de bout en bout et nous ne partageons jamais vos informations personnelles avec des tiers. Vous avez un contrôle complet sur vos données.
+                            </div>
+                        </div>
+                    </div>
+                    <div class="accordion-item">
+                        <h2 class="accordion-header" id="headingTwo">
+                            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseTwo">
+                                Puis-je utiliser MindScribe sur plusieurs appareils ?
+                            </button>
+                        </h2>
+                        <div id="collapseTwo" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
+                            <div class="accordion-body">
+                                Absolument ! MindScribe est accessible sur tous vos appareils - ordinateur, tablette et smartphone. Votre journal se synchronise automatiquement entre tous vos appareils.
+                            </div>
+                        </div>
+                    </div>
+                    <div class="accordion-item">
+                        <h2 class="accordion-header" id="headingThree">
+                            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseThree">
+                                Comment l'IA analyse-t-elle mes émotions ?
+                            </button>
+                        </h2>
+                        <div id="collapseThree" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
+                            <div class="accordion-body">
+                                Notre IA utilise le traitement du langage naturel pour identifier les modèles émotionnels dans votre texte. Elle analyse le vocabulaire, le ton et le contexte pour fournir des insights précis sur votre état émotionnel.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- CTA Section -->
+<section class="cta-section" id="cta">
+    <div class="container text-center">
+        <h2 class="fw-bold mb-3 text-white">Prêt à transformer votre pratique du journal personnel ?</h2>
+        <p class="lead mb-5 text-white-50">Rejoignez des milliers d'utilisateurs qui ont découvert une nouvelle façon de comprendre leurs émotions.</p>
         
-        {% if not user.is_authenticated %}
+        <div class="row justify-content-center g-4">
+            <div class="col-md-6">
+                <div class="cta-box p-4 bg-white text-dark rounded-3 shadow-lg card-hover-lift">
+                    <i class="fas fa-hands-helping fa-3x text-info mb-3"></i>
+                    <h5 class="fw-bold">Collaboration Pro</h5>
+                    <p>Pour intégrer l'IA de MindScribe dans votre pratique professionnelle (thérapie, coaching, etc.).</p>
+                    <a href="mailto:pro@mindscribe.tn" class="btn btn-outline-info w-100 btn-secondary-hover-glow">Contacter le Partenariat</a>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="cta-box p-4 bg-white text-dark rounded-3 shadow-lg card-hover-lift">
+                    <i class="fas fa-handshake fa-3x text-secondary mb-3"></i>
+                    <h5 class="fw-bold">Sponsorship & Investissement</h5>
+                    <p>Devenez un sponsor officiel de MindScribe et participez à notre croissance en santé numérique.</p>
+                    <a href="mailto:sponsor@mindscribe.tn" class="btn btn-outline-secondary w-100 btn-secondary-hover-glow">Devenir Sponsor</a>
+                </div>
+            </div>
+        </div>
+
         <div class="mt-5">
-            <a href="{% url 'users:register' %}" class="btn btn-primary btn-lg me-3">
-                <i class="fas fa-rocket"></i> Commencer Maintenant
+            {% if not user.is_authenticated %}
+            <a href="{% url 'users:register' %}" class="btn btn-light btn-lg me-3">
+                <i class="fas fa-user-plus me-2"></i> Créer un compte gratuit
             </a>
-            <a href="{% url 'users:login' %}" class="btn btn-outline-primary btn-lg">
-                <i class="fas fa-sign-in-alt"></i> Se Connecter
+            {% endif %}
+            <a href="#features" class="btn btn-outline-light btn-lg">
+                <i class="fas fa-info-circle me-2"></i> En savoir plus
             </a>
         </div>
-        {% else %}
-        <div class="mt-5">
-            <a href="{% url 'users:home' %}" class="btn btn-success btn-lg">
-                <i class="fas fa-tachometer-alt"></i> Accéder au Tableau de Bord
-            </a>
-        </div>
-        {% endif %}
+
+        <p class="mt-5 mb-0 text-white-50">
+            <i class="fas fa-envelope me-2"></i> Pour toute question générale : 
+            <a href="mailto:contact@mindscribe.tn" class="text-white fw-bold text-decoration-underline link-hover-glow">contact@mindscribe.tn</a>
+        </p>
     </div>
-    
-    <div class="col-md-6 text-center">
-        <img src="https://via.placeholder.com/500x400" alt="MindScribe Illustration" class="img-fluid rounded shadow">
-    </div>
-</div>
+</section>
+
 {% endblock %}
