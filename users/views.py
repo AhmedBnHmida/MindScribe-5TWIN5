@@ -3,6 +3,7 @@ from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from .models import CustomUser  
+from .forms import CustomUserChangeForm
 
 # Create your views here.
 
@@ -78,3 +79,20 @@ def register(request):
             messages.error(request, 'Les mots de passe ne correspondent pas')
     
     return render(request, 'auth/register.html')
+
+
+
+@login_required
+def edit_profile(request):
+    if request.method == 'POST':
+        form = CustomUserChangeForm(request.POST, instance=request.user)
+        if form.is_valid():
+            form.save()
+            messages.success(request, 'Votre profil a été mis à jour avec succès!')
+            return redirect('users:home')
+        else:
+            messages.error(request, 'Veuillez corriger les erreurs ci-dessous.')
+    else:
+        form = CustomUserChangeForm(instance=request.user)
+    
+    return render(request, 'views/users/edit_profile.html', {'form': form})

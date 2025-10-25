@@ -2246,3 +2246,138 @@ main {
     background-color: rgba(95, 116, 169, 0.3);
     color: inherit;
 }
+
+
+
+/* ========================================================================
+   Sidebar & Layout Fixes
+   ======================================================================== */
+
+/* Fix sidebar positioning and styling */
+.sidebar {
+    min-height: 100vh;
+    background: #f8f9fa !important;
+    border-right: 1px solid #dee2e6;
+    box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
+}
+
+.sidebar .nav-link {
+    color: #495057;
+    padding: 12px 15px;
+    margin: 2px 0;
+    border-radius: 8px;
+    transition: all 0.3s ease;
+    font-weight: 500;
+}
+
+.sidebar .nav-link:hover {
+    background-color: #e9ecef;
+    color: #495057;
+    transform: translateX(5px);
+}
+
+.sidebar .nav-link.active {
+    background-color: #5f74a9 !important;
+    color: white !important;
+    box-shadow: 0 2px 8px rgba(95, 116, 169, 0.3);
+}
+
+.sidebar .nav-link i {
+    width: 20px;
+    text-align: center;
+}
+
+/* Main content area */
+.main-content-container {
+    min-height: 100vh;
+    background: linear-gradient(135deg, 
+        #fdfdff 0%, 
+        #f0f2f5 25%, 
+        #e8ebf0 50%, 
+        #f0f2f5 75%, 
+        #fdfdff 100%);
+    padding: 2rem;
+    margin-left: 0;
+}
+
+/* When sidebar is present, adjust main content */
+.container-fluid .row g-0 main {
+    margin-left: 250px;
+    width: calc(100% - 250px);
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .sidebar {
+        width: 100% !important;
+        position: relative !important;
+        height: auto !important;
+    }
+    
+    .container-fluid .row g-0 main {
+        margin-left: 0 !important;
+        width: 100% !important;
+    }
+    
+    .main-content-container {
+        padding: 1rem;
+    }
+}
+
+/* Fix the home page content alignment */
+.welcome-message {
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(10px);
+    border-radius: 15px;
+    padding: 3rem 2rem;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+/* Card enhancements */
+.card {
+    border: none;
+    border-radius: 15px;
+    box-shadow: 0 5px 20px rgba(0, 0, 0, 0.08);
+    transition: all 0.3s ease;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+.card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 15px 35px rgba(0, 0, 0, 0.15);
+}
+
+/* Button enhancements */
+.btn {
+    border-radius: 10px;
+    font-weight: 600;
+    transition: all 0.3s ease;
+}
+
+.btn-primary {
+    background: linear-gradient(135deg, #5f74a9 0%, #4b5d8f 100%);
+    border: none;
+}
+
+.btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(95, 116, 169, 0.4);
+}
+
+/* Alert enhancements */
+.alert {
+    border-radius: 10px;
+    border: none;
+    border-left: 4px solid;
+}
+
+.alert-success {
+    border-left-color: #3ab795;
+    background: rgba(58, 183, 149, 0.1);
+}
+
+.alert-danger {
+    border-left-color: #ff7d7d;
+    background: rgba(255, 125, 125, 0.1);
+}
