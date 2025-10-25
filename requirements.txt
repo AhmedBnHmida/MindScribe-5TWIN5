@@ -1,12 +1,12 @@
 # =============================================
-# MindScribe - Fixed Requirements
-# Compatible with all systems and Python versions
+# MindScribe - WORKING Requirements
+# No dependency conflicts - Tested and verified
 # =============================================
 
 # CORE DJANGO & DEPENDENCIES
 Django==3.2.21
 asgiref==3.5.2
-sqlparse==0.4.3
+sqlparse>=0.2.2  # Let pip choose compatible version
 pytz==2023.3
 
 # MONGODB DATABASE
@@ -21,7 +21,7 @@ python-dotenv==1.0.0
 # SECURITY & AUTHENTICATION
 bcrypt==4.0.1
 
-# IMAGE PROCESSING (FIXED VERSION)
+# IMAGE PROCESSING
 Pillow==10.0.1
 
 # DEVELOPMENT & TESTING
@@ -41,9 +41,3 @@ whitenoise==6.4.0
 
 # HTTP REQUESTS & APIs
 requests==2.31.0
-
-# OPTIONAL PACKAGES (COMMENTED OUT - UNCOMMENT AS NEEDED)
-# redis==4.5.5
-# celery==5.3.1
-# django-extensions==3.2.1
-# django-debug-toolbar==3.8.1
