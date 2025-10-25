@@ -8,13 +8,13 @@
     
     <div class="container">
         <div class="row justify-content-center align-items-center min-vh-100 py-5">
-            <div class="col-md-8 col-lg-7">
-                <div class="auth-card">
+            <div >
+                <div class="auth-card" style="width: 100%; max-width: 100%; margin: 0;">
                     <div class="auth-header bg-success">
                         <h4 class="mb-0"><i class="fas fa-user-plus me-2"></i>Créer un Compte</h4>
                     </div>
                     <div class="auth-body">
-                        <form method="post" class="auth-form form-row-spacing">
+                        <form method="post" class="auth-form form-row-spacing" enctype="multipart/form-data">
                             {% csrf_token %}
                             
                             {% if messages %}
@@ -25,6 +25,11 @@
                                     </div>
                                 {% endfor %}
                             {% endif %}
+                            
+                            <!-- Section: Informations de base -->
+                            <div class="section-header mb-4">
+                                <h5 class="text-primary"><i class="fas fa-user me-2"></i>Informations de base</h5>
+                            </div>
                             
                             <div class="row">
                                 <div class="col-md-6">
@@ -60,10 +65,20 @@
                                 </div>
                             </div>
 
-                            <div class="mb-3">
-                                <label class="form-label">Numéro de téléphone</label>
-                                <input type="tel" name="phone_number" class="form-control" 
-                                       placeholder="+216 XX XXX XXX">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label class="form-label">Numéro de téléphone</label>
+                                        <input type="tel" name="phone_number" class="form-control" 
+                                               placeholder="+216 XX XXX XXX">
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label class="form-label">Photo de profil</label>
+                                        <input type="file" name="photo" class="form-control" accept="image/*">
+                                    </div>
+                                </div>
                             </div>
 
                             <div class="row">
@@ -83,7 +98,217 @@
                                 </div>
                             </div>
 
-                            <button type="submit" class="btn auth-btn auth-btn-success w-100 mb-3">
+                            <!-- Section: Informations personnelles -->
+                            <div class="section-header mb-4 mt-4">
+                                <h5 class="text-primary"><i class="fas fa-id-card me-2"></i>Informations personnelles</h5>
+                            </div>
+                            
+                            <div class="row">
+                                <div class="col-md-4">
+                                    <div class="mb-3">
+                                        <label class="form-label">Âge</label>
+                                        <input type="number" name="age" class="form-control" min="1" max="120"
+                                               placeholder="Votre âge">
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="mb-3">
+                                        <label class="form-label">Sexe</label>
+                                        <select name="sexe" class="form-select">
+                                            <option value="">Sélectionnez...</option>
+                                            <option value="M">Masculin</option>
+                                            <option value="F">Féminin</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="mb-3">
+                                        <label class="form-label">État civil</label>
+                                        <input type="text" name="etat_civil" class="form-control"
+                                               placeholder="Votre état civil">
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label class="form-label">Profession</label>
+                                        <input type="text" name="profession" class="form-control"
+                                               placeholder="Votre profession">
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label class="form-label">Statut professionnel</label>
+                                        <select name="status_professionnel" class="form-select">
+                                            <option value="">Sélectionnez...</option>
+                                            <option value="etudiant">Étudiant</option>
+                                            <option value="travailleur">Travailleur</option>
+                                            <option value="freelance">Freelance</option>
+                                            <option value="chomeur">Chômeur</option>
+                                            <option value="retraite">Retraité</option>
+                                            <option value="autre">Autre</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label">Langue</label>
+                                <select name="langue" class="form-select">
+                                    <option value="fr" selected>Français</option>
+                                    <option value="en">English</option>
+                                    <!-- Add more language options as needed -->
+                                </select>
+                            </div>
+
+                            <!-- Section: Traits de personnalité -->
+                            <div class="section-header mb-4 mt-4">
+                                <h5 class="text-primary"><i class="fas fa-brain me-2"></i>Traits de personnalité</h5>
+                            </div>
+                            
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <div class="form-check form-switch">
+                                            <input class="form-check-input" type="checkbox" name="casanier" id="casanier">
+                                            <label class="form-check-label" for="casanier">Casanier</label>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <div class="form-check form-switch">
+                                            <input class="form-check-input" type="checkbox" name="sociable" id="sociable">
+                                            <label class="form-check-label" for="sociable">Sociable</label>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Section: Bien-être et habitudes -->
+                            <div class="section-header mb-4 mt-4">
+                                <h5 class="text-primary"><i class="fas fa-heartbeat me-2"></i>Bien-être et habitudes</h5>
+                            </div>
+                            
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label class="form-label">Humeur générale</label>
+                                        <select name="humeur_generale" class="form-select">
+                                            <option value="neutre" selected>Neutre</option>
+                                            <option value="heureux">Heureux</option>
+                                            <option value="triste">Triste</option>
+                                            <option value="anxieux">Anxieux</option>
+                                            <option value="stresse">Stressé</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label class="form-label">Niveau de stress (0-10)</label>
+                                        <input type="range" name="niveau_stress" class="form-range" min="0" max="10" value="5">
+                                        <div class="d-flex justify-content-between">
+                                            <small>0</small>
+                                            <small id="stressValue">5</small>
+                                            <small>10</small>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label class="form-label">Qualité de sommeil</label>
+                                        <select name="qualite_sommeil" class="form-select">
+                                            <option value="moyen" selected>Moyen</option>
+                                            <option value="excellent">Excellent</option>
+                                            <option value="bon">Bon</option>
+                                            <option value="mauvais">Mauvais</option>
+                                            <option value="tres_mauvais">Très Mauvais</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label class="form-label">Heures de sommeil par nuit</label>
+                                        <input type="number" name="heures_sommeil_par_nuit" class="form-control" 
+                                               min="0" max="24" step="0.5" value="7.0">
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label class="form-label">Niveau d'activité physique</label>
+                                        <select name="niveau_activite_physique" class="form-select">
+                                            <option value="sedentaire" selected>Sédentaire</option>
+                                            <option value="leger">Léger</option>
+                                            <option value="modere">Modéré</option>
+                                            <option value="intense">Intense</option>
+                                            <option value="tres_intense">Très Intense</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label class="form-label">Habitudes alimentaires</label>
+                                        <select name="habitudes_alimentaires" class="form-select">
+                                            <option value="equilibree" selected>Équilibrée</option>
+                                            <option value="vegetarien">Végétarien</option>
+                                            <option value="vegan">Vegan</option>
+                                            <option value="sans_gluten">Sans Gluten</option>
+                                            <option value="variable">Variable</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Section: Préférences d'écriture -->
+                            <div class="section-header mb-4 mt-4">
+                                <h5 class="text-primary"><i class="fas fa-pen me-2"></i>Préférences d'écriture</h5>
+                            </div>
+                            
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label class="form-label">Fréquence d'écriture souhaitée</label>
+                                        <select name="frequence_ecriture_souhaitee" class="form-select">
+                                            <option value="variable" selected>Variable</option>
+                                            <option value="matin">Matin</option>
+                                            <option value="midi">Midi</option>
+                                            <option value="soir">Soir</option>
+                                            <option value="nuit">Nuit</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label class="form-label">Moment préféré d'écriture</label>
+                                        <select name="moment_prefere_ecriture" class="form-select">
+                                            <option value="variable" selected>Variable</option>
+                                            <option value="matin">Matin</option>
+                                            <option value="midi">Midi</option>
+                                            <option value="soir">Soir</option>
+                                            <option value="nuit">Nuit</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Note about optional fields -->
+                            <div class="alert alert-info mt-4">
+                                <small>
+                                    <i class="fas fa-info-circle me-1"></i>
+                                    Tous les champs marqués d'un astérisque (*) sont obligatoires. 
+                                    Les autres champs sont facultatifs et peuvent être complétés ultérieurement.
+                                </small>
+                            </div>
+
+                            <button type="submit" class="btn auth-btn auth-btn-success w-100 mb-3 mt-4">
                                 <i class="fas fa-user-plus me-2"></i>S'inscrire
                             </button>
                         </form>
@@ -100,4 +325,11 @@
         </div>
     </div>
 </section>
+
+<script>
+    // Update stress value display when slider changes
+    document.querySelector('input[name="niveau_stress"]').addEventListener('input', function() {
+        document.getElementById('stressValue').textContent = this.value;
+    });
+</script>
 {% endblock %}
