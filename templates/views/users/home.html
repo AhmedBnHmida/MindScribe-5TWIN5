@@ -11,6 +11,19 @@
                 <div class="welcome-message py-5">
                     <h1 class="display-5 mb-3">Bon retour, <strong>{{ user.username }}</strong> !</h1>
                     <p class="lead text-muted">Votre bien-être mental est notre priorité. Comment vous sentez-vous aujourd'hui ?</p>
+                    
+                    <!-- Add profile management section -->
+                    <div class="mt-4">
+                        <div class="card">
+                            <div class="card-body">
+                                <h5 class="card-title">Gestion du profil</h5>
+                                <p class="card-text">Mettez à jour vos informations personnelles</p>
+                                <a href="{% url 'users:edit_profile' %}" class="btn btn-outline-primary">
+                                    Modifier le profil
+                                </a>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
