@@ -1,6 +1,11 @@
 <!-- templates/users/navbar.html -->
 <div class="sidebar bg-light vh-100 position-fixed start-0 top-0" style="width: 250px; z-index: 1000;">
     <div class="sidebar-content h-100 d-flex flex-column">
+
+        <a class="navbar-brand" href="{% url 'users:landing' %}">
+            <i class="fas fa-book me-2"></i>MindScribe
+        </a>
+
         <!-- User Info -->
         <div class="text-center p-4 border-bottom">
             <h6 class="mb-1 fw-bold">Bonjour, {{ user.username }}</h6>

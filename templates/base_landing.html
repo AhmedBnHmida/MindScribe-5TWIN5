@@ -12,9 +12,9 @@
     {% block extra_css %}{% endblock %}
 </head>
 <body class="landing-page">
-    {% if not user.is_authenticated %}
-        {% include 'commun/header.html' %}
-    {% endif %}
+    
+    {% include 'commun/header.html' %}
+    
     
     <!-- Full screen content for landing page -->
     <main class="landing-main">
