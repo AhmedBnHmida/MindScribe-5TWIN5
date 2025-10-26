@@ -176,3 +176,45 @@ LOGOUT_REDIRECT_URL = '/'
 
 # Email backend (for development)
 EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+
+
+
+# OpenRouter Configuration
+OPENROUTER_API_KEY = os.environ.get('OPENROUTER_API_KEY', '')
+OPENROUTER_BASE_URL = "https://openrouter.ai/api/v1"
+
+# 🆓 MODÈLES 100% GRATUITS - TESTÉS ET FONCTIONNELS
+OPENROUTER_MODEL = "google/gemini-pro"  # 🎯 This one usually works well
+
+OPENROUTER_MODELS = {
+    'gemini': "google/gemini-pro",                    # 🥇 Usually reliable
+    'claude': "anthropic/claude-3-haiku",            # 🥈 Good free tier
+    'llama': "meta-llama/llama-3.1-8b-instruct",     # 🥉 Remove :free suffix
+}
+
+# Configuration IA optimisée
+AI_CONFIG = {
+    'max_tokens': 800,      # Réduit pour les modèles gratuits
+    'temperature': 0.7,
+    'timeout': 60,          # Augmenté pour les modèles lents
+}
+
+# Build paths inside the project like this: BASE_DIR / 'subdir'.
+BASE_DIR = Path(__file__).resolve().parent.parent
+
+print("🔍 DEBUG SETTINGS:")
+print(f"📁 BASE_DIR: {BASE_DIR}")
+print(f"📄 Current file: {__file__}")
+
+# Check if .env file exists
+env_path = BASE_DIR / '.env'
+print(f"📄 .env file exists: {env_path.exists()}")
+
+# Load environment variables manually for debugging
+from dotenv import load_dotenv
+load_dotenv()
+
+# Debug OpenRouter config
+OPENROUTER_API_KEY = os.environ.get('OPENROUTER_API_KEY')
+print(f"🔑 OPENROUTER_API_KEY from env: {OPENROUTER_API_KEY}")
+print(f"🔑 OPENROUTER_API_KEY length: {len(OPENROUTER_API_KEY) if OPENROUTER_API_KEY else 0}")

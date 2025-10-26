@@ -1,0 +1,56 @@
+{% extends 'base.html' %}
+
+{% block title %}Historique - Assistant IA{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1>
+            <i class="fas fa-history me-2"></i>Historique des Conversations
+        </h1>
+        <a href="{% url 'communication:assistant_ia' %}" class="btn btn-primary">
+            <i class="fas fa-robot me-1"></i>Nouvelle Conversation
+        </a>
+    </div>
+
+    {% if sessions %}
+        {% for session_id, conversations in sessions.items %}
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    Session du {{ conversations.0.date_creation|date:"d/m/Y à H:i" }}
+                    <small class="text-muted">({{ conversations|length }} messages)</small>
+                </h5>
+            </div>
+            <div class="card-body">
+                {% for conv in conversations %}
+                <div class="mb-3">
+                    <div class="d-flex justify-content-between align-items-start mb-1">
+                        <strong>Vous:</strong>
+                        <small class="text-muted">{{ conv.date_creation|date:"H:i" }}</small>
+                    </div>
+                    <p class="mb-2">{{ conv.message_utilisateur }}</p>
+                    
+                    <div class="d-flex justify-content-between align-items-start mb-1">
+                        <strong>Assistant:</strong>
+                        <span class="badge bg-secondary">{{ conv.get_type_interaction_display }}</span>
+                    </div>
+                    <p class="mb-0 text-muted">{{ conv.reponse_ia }}</p>
+                </div>
+                {% if not forloop.last %}<hr>{% endif %}
+                {% endfor %}
+            </div>
+        </div>
+        {% endfor %}
+    {% else %}
+        <div class="text-center py-5">
+            <i class="fas fa-robot fa-3x text-muted mb-3"></i>
+            <h3 class="text-muted">Aucune conversation</h3>
+            <p class="text-muted">Commencez une conversation avec votre assistant IA !</p>
+            <a href="{% url 'communication:assistant_ia' %}" class="btn btn-primary">
+                Commencer
+            </a>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}

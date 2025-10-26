@@ -91,14 +91,14 @@ class HistoriqueGenerationAdmin(admin.ModelAdmin):
 
 @admin.register(AssistantIA)
 class AssistantIAAdmin(admin.ModelAdmin):
-    list_display = ['utilisateur', 'journal', 'date_interaction']
-    list_filter = ['date_interaction']
+    list_display = ['utilisateur', 'journal', 'date_creation']
+    list_filter = ['date_creation']
     search_fields = ['utilisateur__username', 'message_utilisateur', 'reponse_ia']
-    readonly_fields = ['id', 'date_interaction']
-    
+    readonly_fields = ['id', 'date_creation']
+
     fieldsets = (
         ('Informations générales', {
-            'fields': ('id', 'utilisateur', 'journal', 'date_interaction')
+            'fields': ('id', 'utilisateur', 'journal', 'date_creation')
         }),
         ('Conversation', {
             'fields': ('message_utilisateur', 'reponse_ia')

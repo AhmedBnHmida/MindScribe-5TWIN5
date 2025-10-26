@@ -1,0 +1,408 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Assistant IA - MindScribe{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="row">
+        <!-- Sidebar avec les journaux -->
+        <div class="col-md-4 col-lg-3">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-book me-2"></i>Vos Journaux
+                    </h5>
+                </div>
+                <div class="card-body p-0">
+                    <div class="list-group list-group-flush">
+                        {% for journal in journals %}
+                        <button class="list-group-item list-group-item-action journal-item" 
+                                data-journal-id="{{ journal.id }}">
+                            <div class="d-flex w-100 justify-content-between">
+                                <h6 class="mb-1">{{ journal.titre|default:"Sans titre" }}</h6>
+                                <small>{{ journal.date_creation|date:"d/m" }}</small>
+                            </div>
+                            <p class="mb-1 text-muted small">{{ journal.contenu|truncatewords:10 }}</p>
+                        </button>
+                        {% empty %}
+                        <div class="list-group-item text-muted text-center">
+                            Aucun journal récent
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Conversations récentes -->
+            <div class="card mt-3">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-history me-2"></i>Conversations Récentes
+                    </h5>
+                </div>
+                <div class="card-body p-0">
+                    <div class="list-group list-group-flush">
+                        {% for conv in conversations_recentes %}
+                        <div class="list-group-item">
+                            <div class="d-flex w-100 justify-content-between">
+                                <small class="text-primary">{{ conv.get_type_interaction_display }}</small>
+                                <small>{{ conv.date_interaction|date:"H:i" }}</small>
+                            </div>
+                            <p class="mb-1 small">{{ conv.message_utilisateur|truncatewords:8 }}</p>
+                        </div>
+                        {% empty %}
+                        <div class="list-group-item text-muted text-center">
+                            Aucune conversation
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Zone de chat principale -->
+        <div class="col-md-8 col-lg-9">
+            <div class="card h-100">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h4 class="mb-0">
+                        <i class="fas fa-robot me-2"></i>Assistant IA
+                    </h4>
+                    <a href="{% url 'communication:historique_conversations' %}" class="btn btn-outline-primary btn-sm">
+                        <i class="fas fa-history me-1"></i>Historique
+                    </a>
+                </div>
+                
+                <div class="card-body d-flex flex-column">
+                    <!-- Messages -->
+                    <div id="chat-messages" class="flex-grow-1 overflow-auto mb-3" style="max-height: 60vh;">
+                        <div class="text-center text-muted my-4">
+                            <i class="fas fa-robot fa-2x mb-2"></i>
+                            <p>Bonjour {{ user.prenom|default:user.username }} ! Comment puis-je vous aider aujourd'hui ?</p>
+                        </div>
+                    </div>
+
+                    <!-- Input message -->
+                    <div class="mt-auto">
+                        <form id="message-form">
+                            {% csrf_token %}
+                            <input type="hidden" id="session-id" value="{{ session_id }}">
+                            <input type="hidden" id="selected-journal" value="">
+                            
+                            <div class="input-group">
+                                <input type="text" id="message-input" 
+                                       class="form-control" 
+                                       placeholder="Posez votre question ou demandez une analyse..."
+                                       autocomplete="off">
+                                <button type="submit" class="btn btn-primary" id="send-btn">
+                                    <i class="fas fa-paper-plane"></i>
+                                </button>
+                            </div>
+                            
+                            <div class="form-text">
+                                <small class="text-muted">
+                                    Sélectionnez un journal pour demander une analyse spécifique
+                                </small>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+class AssistantIAChat {
+    constructor() {
+        this.sessionId = document.getElementById('session-id').value;
+        this.selectedJournalId = document.getElementById('selected-journal').value;
+        this.isProcessing = false;
+        
+        this.initializeEventListeners();
+        this.loadSessionHistory();
+    }
+    
+    initializeEventListeners() {
+        // Envoi de message
+        document.getElementById('message-form').addEventListener('submit', (e) => {
+            e.preventDefault();
+            this.sendMessage();
+        });
+        
+        // Sélection de journal
+        document.querySelectorAll('.journal-item').forEach(item => {
+            item.addEventListener('click', () => {
+                this.selectJournal(item);
+            });
+        });
+        
+        // Touche Entrée pour envoyer
+        document.getElementById('message-input').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                this.sendMessage();
+            }
+        });
+    }
+    
+    async loadSessionHistory() {
+        try {
+            const response = await fetch(`/communication/assistant-ia/session/${this.sessionId}/`);
+            if (response.ok) {
+                const data = await response.json();
+                this.displaySessionHistory(data.conversations);
+            }
+        } catch (error) {
+            console.error('Erreur chargement historique:', error);
+        }
+    }
+    
+    displaySessionHistory(conversations) {
+        const chatMessages = document.getElementById('chat-messages');
+        
+        if (conversations.length > 0) {
+            chatMessages.innerHTML = '';
+            conversations.forEach(conv => {
+                this.addMessageToChat(conv.message_utilisateur, 'user', conv.date_interaction);
+                this.addMessageToChat(conv.reponse_ia, 'assistant', conv.date_interaction, conv.type_interaction);
+            });
+        }
+    }
+    
+    async sendMessage() {
+        if (this.isProcessing) return;
+        
+        const messageInput = document.getElementById('message-input');
+        const message = messageInput.value.trim();
+        
+        if (!message) return;
+        
+        this.isProcessing = true;
+        this.setUIState('loading');
+        
+        try {
+            // Ajouter message utilisateur
+            this.addMessageToChat(message, 'user');
+            messageInput.value = '';
+            
+            const response = await fetch('{% url "communication:envoyer_message" %}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': this.getCSRFToken(),
+                },
+                body: JSON.stringify({
+                    message: message,
+                    journal_id: this.selectedJournalId,
+                    session_id: this.sessionId
+                })
+            });
+            
+            const data = await response.json();
+            
+            if (data.success) {
+                this.addMessageToChat(
+                    data.reponse, 
+                    'assistant', 
+                    data.date_interaction, 
+                    data.type_interaction,
+                    data.statistiques
+                );
+                
+                // Mettre à jour l'historique récent
+                this.updateRecentConversations();
+            } else {
+                this.showError(data.error || 'Erreur inconnue');
+            }
+            
+        } catch (error) {
+            console.error('Erreur envoi message:', error);
+            this.showError('Erreur de connexion');
+        } finally {
+            this.isProcessing = false;
+            this.setUIState('ready');
+            messageInput.focus();
+        }
+    }
+    
+    addMessageToChat(text, sender, time = null, type = null, stats = null) {
+        const chatMessages = document.getElementById('chat-messages');
+        const timeDisplay = time || new Date().toLocaleTimeString('fr-FR', { 
+            hour: '2-digit', minute: '2-digit' 
+        });
+        
+        const messageDiv = document.createElement('div');
+        messageDiv.className = `message-container ${sender}-message`;
+        
+        let statsHTML = '';
+        if (stats && sender === 'assistant') {
+            statsHTML = `
+                <div class="message-stats">
+                    <small class="text-muted">
+                        ${stats.duree_generation} • ${stats.tokens_utilises} tokens • Confiance: ${(stats.score_confiance * 100).toFixed(0)}%
+                    </small>
+                </div>
+            `;
+        }
+        
+        let typeBadge = '';
+        if (type && sender === 'assistant') {
+            const typeLabels = {
+                'analyse_journal': '📊 Analyse',
+                'suggestion_ecriture': '✍️ Suggestion',
+                'support_emotionnel': '💖 Support',
+                'reflexion_guidee': '🧠 Réflexion'
+            };
+            typeBadge = `<span class="badge bg-primary badge-type">${typeLabels[type] || type}</span>`;
+        }
+        
+        messageDiv.innerHTML = `
+            <div class="message ${sender}-message">
+                <div class="message-header">
+                    <strong>${sender === 'user' ? 'Vous' : 'MindScribe'}</strong>
+                    ${typeBadge}
+                    <small class="message-time">${timeDisplay}</small>
+                </div>
+                <div class="message-content">${this.escapeHtml(text)}</div>
+                ${statsHTML}
+            </div>
+        `;
+        
+        chatMessages.appendChild(messageDiv);
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+    }
+    
+    selectJournal(journalElement) {
+        // Désélectionner tous les journaux
+        document.querySelectorAll('.journal-item').forEach(item => {
+            item.classList.remove('active');
+        });
+        
+        // Sélectionner le nouveau
+        journalElement.classList.add('active');
+        this.selectedJournalId = journalElement.dataset.journalId;
+        
+        // Mettre à jour le placeholder
+        document.getElementById('message-input').placeholder = 
+            "Demandez une analyse de ce journal ou posez une question...";
+    }
+    
+    setUIState(state) {
+        const sendBtn = document.getElementById('send-btn');
+        const messageInput = document.getElementById('message-input');
+        
+        if (state === 'loading') {
+            sendBtn.disabled = true;
+            sendBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+            messageInput.disabled = true;
+            messageInput.placeholder = "Envoi en cours...";
+        } else {
+            sendBtn.disabled = false;
+            sendBtn.innerHTML = '<i class="fas fa-paper-plane"></i>';
+            messageInput.disabled = false;
+            messageInput.placeholder = "Posez votre question ou demandez une analyse...";
+        }
+    }
+    
+    showError(message) {
+        this.addMessageToChat(
+            `Désolé, une erreur s'est produite: ${message}. Veuillez réessayer.`,
+            'assistant'
+        );
+    }
+    
+    escapeHtml(text) {
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
+    
+    getCSRFToken() {
+        return document.querySelector('[name=csrfmiddlewaretoken]').value;
+    }
+    
+    updateRecentConversations() {
+        // Implémentation pour mettre à jour la sidebar
+        console.log('Mise à jour des conversations récentes...');
+    }
+}
+
+// Initialisation
+document.addEventListener('DOMContentLoaded', function() {
+    new AssistantIAChat();
+});
+</script>
+
+<style>
+.message-container {
+    margin-bottom: 1.5rem;
+}
+
+.message {
+    max-width: 80%;
+    padding: 1rem;
+    border-radius: 1rem;
+    position: relative;
+}
+
+.user-message {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    margin-left: auto;
+    border-bottom-right-radius: 0.25rem;
+}
+
+.assistant-message {
+    background: #f8f9fa;
+    color: #333;
+    border: 1px solid #e9ecef;
+    border-bottom-left-radius: 0.25rem;
+}
+
+.message-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.5rem;
+}
+
+.message-time {
+    font-size: 0.75rem;
+    opacity: 0.7;
+}
+
+.badge-type {
+    font-size: 0.65rem;
+    margin-left: 0.5rem;
+}
+
+.message-stats {
+    margin-top: 0.5rem;
+    padding-top: 0.5rem;
+    border-top: 1px solid #dee2e6;
+}
+
+.journal-item.active {
+    background-color: #e3f2fd;
+    border-left: 3px solid #2196F3;
+}
+
+#chat-messages {
+    scroll-behavior: smooth;
+}
+
+/* Animation de chargement */
+@keyframes pulse {
+    0% { opacity: 1; }
+    50% { opacity: 0.5; }
+    100% { opacity: 1; }
+}
+
+.loading {
+    animation: pulse 1.5s ease-in-out infinite;
+}
+</style>
+{% endblock %}

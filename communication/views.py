@@ -1,14 +1,19 @@
 # communication/views.py
 import json
+import uuid
 from django.views import View
-from django.shortcuts import render, get_object_or_404
+from django.shortcuts import render, get_object_or_404, redirect
 from django.http import JsonResponse, HttpResponse
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.core.files.base import ContentFile
+from django.views.decorators.csrf import csrf_exempt
+from django.utils.decorators import method_decorator
 from django.contrib import messages
 from django.utils import timezone
 from io import BytesIO
 import logging
+from .models import AssistantIA
+from .services.ai_service import ai_service
 
 from .models import RapportPDF, ModeleRapport, HistoriqueGeneration, AssistantIA, SuggestionConnexion
 from .services.pdf_generator import PDFGenerationService
@@ -18,6 +23,24 @@ from recommendations.models import Recommandation, Objectif
 from django.shortcuts import redirect
 
 logger = logging.getLogger(__name__)
+
+
+# ✅ AJOUTER : Vue dashboard pour communication
+class DashboardCommunicationView(LoginRequiredMixin, View):
+    """Vue principale du tableau de bord communication"""
+    
+    def get(self, request):
+        context = {
+            'active_tab': 'communication',
+            'rapports_count': RapportPDF.objects.filter(utilisateur=request.user).count(),
+            'assistant_messages_count': AssistantIA.objects.filter(utilisateur=request.user).count(),
+            'suggestions_count': SuggestionConnexion.objects.filter(utilisateur_source=request.user).count(),
+        }
+        return render(request, 'communication/dashboard.html', context)
+
+#############################################################################################################################
+#############################################################################################################################
+# ... PDF views ...
 
 # ✅ UNE SEULE DÉFINITION de ListeRapportsView
 class ListeRapportsView(LoginRequiredMixin, View):
@@ -241,18 +264,6 @@ class DupliquerRapportView(LoginRequiredMixin, View):
         messages.success(request, "Rapport dupliqué avec succès")
         return redirect('communication:liste_rapports')
 
-# ✅ AJOUTER : Vue dashboard pour communication
-class DashboardCommunicationView(LoginRequiredMixin, View):
-    """Vue principale du tableau de bord communication"""
-    
-    def get(self, request):
-        context = {
-            'active_tab': 'communication',
-            'rapports_count': RapportPDF.objects.filter(utilisateur=request.user).count(),
-            'assistant_messages_count': AssistantIA.objects.filter(utilisateur=request.user).count(),
-            'suggestions_count': SuggestionConnexion.objects.filter(utilisateur_source=request.user).count(),
-        }
-        return render(request, 'communication/dashboard.html', context)
     
 class SupprimerRapportView(LoginRequiredMixin, View):
     """View to delete PDF reports"""
@@ -275,3 +286,130 @@ class SupprimerRapportView(LoginRequiredMixin, View):
             messages.error(request, f"❌ Erreur lors de la suppression du rapport: {str(e)}")
         
         return redirect('communication:liste_rapports')
+
+
+#############################################################################################################################
+#############################################################################################################################
+# ... Assistant IA Views ...
+
+
+class AssistantIAView(LoginRequiredMixin, View):
+    """Vue principale optimisée pour l'assistant IA"""
+    
+    def get(self, request):
+        try:
+            journals = Journal.objects.filter(utilisateur=request.user).order_by('-date_creation')[:10]
+            conversations_recentes = AssistantIA.objects.filter(
+                utilisateur=request.user
+            ).select_related('journal').order_by('-date_creation')[:5]
+            
+            stats = ai_service.get_statistiques_utilisateur(request.user)
+            
+            context = {
+                'journals': journals,
+                'conversations_recentes': conversations_recentes,
+                'session_id': str(uuid.uuid4()),
+                'stats': stats,
+                'active_tab': 'assistant_ia',
+            }
+            return render(request, 'communication/assistant_ia/assistant.html', context)
+            
+        except Exception as e:
+            logger.error(f"Erreur chargement assistant IA: {str(e)}")
+            messages.error(request, "Erreur lors du chargement de l'assistant IA")
+            return redirect('users:home')
+
+@method_decorator(csrf_exempt, name='dispatch')
+class EnvoyerMessageView(LoginRequiredMixin, View):
+    """Endpoint async pour envoyer des messages"""
+    
+    def post(self, request):
+        try:
+            data = json.loads(request.body)
+            message = data.get('message', '').strip()
+            journal_id = data.get('journal_id')
+            session_id = data.get('session_id')
+            
+            if not message:
+                return JsonResponse({'error': 'Message vide'}, status=400)
+            
+            if len(message) > 1000:
+                return JsonResponse({'error': 'Message trop long (max 1000 caractères)'}, status=400)
+            
+            journal = None
+            if journal_id:
+                journal = get_object_or_404(Journal, id=journal_id, utilisateur=request.user)
+            
+            contexte = {
+                'user_agent': request.META.get('HTTP_USER_AGENT', ''),
+                'ip_address': self._get_client_ip(request)
+            }
+            
+            resultat = ai_service.traiter_interaction(
+                utilisateur=request.user,
+                message=message,
+                journal=journal,
+                session_id=session_id,
+                contexte=contexte
+            )
+            
+            if resultat['success']:
+                return JsonResponse(resultat)
+            else:
+                return JsonResponse({
+                    'success': False,
+                    'error': resultat.get('error', 'Erreur inconnue')
+                }, status=500)
+                
+        except json.JSONDecodeError:
+            return JsonResponse({'error': 'Données JSON invalides'}, status=400)
+        except Exception as e:
+            logger.error(f"Erreur envoi message: {str(e)}")
+            return JsonResponse({'error': 'Erreur interne du serveur'}, status=500)
+    
+    def _get_client_ip(self, request):
+        x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
+        if x_forwarded_for:
+            ip = x_forwarded_for.split(',')[0]
+        else:
+            ip = request.META.get('REMOTE_ADDR')
+        return ip
+
+class HistoriqueConversationsView(LoginRequiredMixin, View):
+    """Page d'historique des conversations"""
+    
+    def get(self, request):
+        conversations = AssistantIA.objects.filter(
+            utilisateur=request.user
+        ).order_by('-date_creation')
+        
+        sessions = {}
+        for conv in conversations:
+            if conv.session_id not in sessions:
+                sessions[conv.session_id] = []
+            sessions[conv.session_id].append(conv)
+        
+        context = {
+            'sessions': sessions,
+            'active_tab': 'assistant_ia',
+        }
+        return render(request, 'communication/assistant_ia/historique.html', context)
+
+class GetSessionView(LoginRequiredMixin, View):
+    """Récupère l'historique d'une session spécifique"""
+    
+    def get(self, request, session_id):
+        conversations = AssistantIA.objects.filter(
+            utilisateur=request.user,
+            session_id=session_id
+        ).order_by('date_creation')
+        
+        data = [{
+            'id': str(conv.id),
+            'message_utilisateur': conv.message_utilisateur,
+            'reponse_ia': conv.reponse_ia,
+            'date_interaction': conv.date_creation.strftime('%H:%M'),
+            'type_interaction': conv.type_interaction
+        } for conv in conversations]
+        
+        return JsonResponse({'conversations': data})
