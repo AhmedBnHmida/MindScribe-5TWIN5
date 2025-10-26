@@ -8,7 +8,7 @@
     
     <div class="container">
         <div class="row justify-content-center align-items-center min-vh-100 py-5">
-            <div >
+            <div>
                 <div class="auth-card" style="width: 100%; max-width: 100%; margin: 0;">
                     <div class="auth-header bg-success">
                         <h4 class="mb-0"><i class="fas fa-user-plus me-2"></i>Créer un Compte</h4>
@@ -153,13 +153,74 @@
                                     </div>
                                 </div>
                             </div>
+<!-- NOUVELLE SECTION : Adresse -->
+                            <div class="section-header mb-4 mt-4">
+                                <h5 class="text-primary"><i class="fas fa-home me-2"></i>Adresse</h5>
+                            </div>
+                            
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label class="form-label">Rue et numéro</label>
+                                        <input type="text" name="adresse_rue" class="form-control"
+                                               placeholder="Ex: 123 Rue de la République">
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label class="form-label">Ville</label>
+                                        <input type="text" name="adresse_ville" class="form-control"
+                                               placeholder="Ex: Tunis">
+                                    </div>
+                                </div>
+                            </div><div class="row">
+                                <div class="col-md-4">
+                                    <div class="mb-3">
+                                        <label class="form-label">Code postal</label>
+                                        <input type="text" name="adresse_code_postal" class="form-control"
+                                               placeholder="Ex: 1000">
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="mb-3">
+                                        <label class="form-label">Province/Région</label>
+                                        <input type="text" name="adresse_province" class="form-control"
+                                               placeholder="Ex: Tunis">
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="mb-3">
+                                        <label class="form-label">Pays</label> 
+                                                <input type="text" name="adresse_pays" class="form-control"
+                                               placeholder="Ex: Tunisie" value="Tunisie">
+                                    </div>
+                                </div>
+                            </div>
+                            <!-- Nouveaux champs pour centres d'intérêt et passions -->
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label class="form-label">Centres d'intérêt</label>
+                                        <input type="text" name="centres_interet" class="form-control"
+                                               placeholder="Séparez par des virgules">
+                                        <small class="text-muted">Ex: Lecture, Sport, Musique</small>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label class="form-label">Passions</label>
+                                        <input type="text" name="passions" class="form-control"
+                                               placeholder="Séparez par des virgules">
+                                        <small class="text-muted">Ex: Voyage, Photographie, Cuisine</small>
+                                    </div>
+                                </div>
+                            </div>
 
                             <div class="mb-3">
                                 <label class="form-label">Langue</label>
                                 <select name="langue" class="form-select">
                                     <option value="fr" selected>Français</option>
                                     <option value="en">English</option>
-                                    <!-- Add more language options as needed -->
                                 </select>
                             </div>
 

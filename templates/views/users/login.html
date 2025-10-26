@@ -1,0 +1,184 @@
+{% extends 'base_landing.html' %}
+{% block title %}Connexion{% endblock %}
+
+
+{% block content %}
+<section class="auth-container">
+    <!-- Interactive Brain Background -->
+    <canvas id="authBrainCanvas" class="auth-brain-canvas"></canvas>
+    
+    <div class="container">
+        
+        <div class="row justify-content-center align-items-center min-vh-100 py-5">
+            <div class="col-md-6 col-lg-5">
+                <div class="auth-card">
+                    <div class="auth-header">
+                        <h4 class="mb-0"><i class="fas fa-sign-in-alt me-2"></i>Connexion</h4>
+                    </div>
+                    <div class="auth-body">
+                        <form method="post" class="auth-form">
+                            {% csrf_token %}
+                            
+                            {% if messages %}
+                                {% for message in messages %}
+                                    <div class="alert alert-{{ message.tags }} alert-dismissible fade show mb-4" role="alert">
+                                        {{ message }}
+                                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                                    </div>
+                                {% endfor %}
+                            {% endif %}
+                            
+                            <div class="mb-4">
+                                <label class="form-label">Nom d'utilisateur ou Email</label>
+                                <input type="text" name="username" class="form-control" required autofocus
+                                       placeholder="Entrez votre nom d'utilisateur ou email">
+                            </div>
+                            
+                            <div class="mb-4">
+                                <label class="form-label">Mot de passe</label>
+                                <input type="password" name="password" class="form-control" required
+                                       placeholder="Entrez votre mot de passe">
+                            </div>
+                            
+                            <button type="submit" class="btn auth-btn auth-btn-primary w-100 mb-3">
+                                <i class="fas fa-sign-in-alt me-2"></i>Se Connecter
+                            </button>
+                        </form>
+                        
+                        <div class="text-center mt-4">
+                            <p class="mb-0 text-muted">
+                                Nouveau sur MindScribe ? 
+                                <a href="{% url 'users:register' %}" class="auth-link">Créer un compte</a>
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Initialize brain background for authentication pages
+    document.addEventListener('DOMContentLoaded', function() {
+        initAuthBrainBackground();
+    });
+
+    function initAuthBrainBackground() {
+        const canvas = document.getElementById('authBrainCanvas');
+        if (!canvas) return;
+        
+        const ctx = canvas.getContext('2d');
+        let particles = [];
+        
+        // Set canvas size
+        function setCanvasSize() {
+            canvas.width = canvas.offsetWidth;
+            canvas.height = canvas.offsetHeight;
+        }
+        
+        setCanvasSize();
+        window.addEventListener('resize', setCanvasSize);
+        
+        // Particle class
+        class Particle {
+            constructor() {
+                this.x = Math.random() * canvas.width;
+                this.y = Math.random() * canvas.height;
+                this.size = Math.random() * 2 + 1;
+                this.speedX = Math.random() * 0.5 - 0.25;
+                this.speedY = Math.random() * 0.5 - 0.25;
+                this.color = this.getRandomColor();
+                this.alpha = Math.random() * 0.4 + 0.1;
+            }
+            
+            getRandomColor() {
+                const colors = [
+                    '95, 116, 169', // Primary blue
+                    '255, 125, 125', // Secondary coral
+                    '58, 183, 149', // Success green
+                    '100, 181, 246'  // Info blue
+                ];
+                return colors[Math.floor(Math.random() * colors.length)];
+            }
+            
+            update() {
+                this.x += this.speedX;
+                this.y += this.speedY;
+                
+                // Bounce off walls
+                if (this.x > canvas.width || this.x < 0) this.speedX = -this.speedX;
+                if (this.y > canvas.height || this.y < 0) this.speedY = -this.speedY;
+            }
+            
+            draw() {
+                ctx.save();
+                ctx.globalAlpha = this.alpha;
+                ctx.fillStyle = `rgb(${this.color})`;
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.restore();
+            }
+        }
+        
+        // Create particles
+        function initParticles() {
+            particles = [];
+            const particleCount = Math.min(80, Math.floor((canvas.width * canvas.height) / 4000));
+            
+            for (let i = 0; i < particleCount; i++) {
+                particles.push(new Particle());
+            }
+        }
+        
+        // Draw connections
+        function drawConnections() {
+            for (let i = 0; i < particles.length; i++) {
+                for (let j = i; j < particles.length; j++) {
+                    const dx = particles[i].x - particles[j].x;
+                    const dy = particles[i].y - particles[j].y;
+                    const distance = Math.sqrt(dx * dx + dy * dy);
+                    
+                    if (distance < 100) {
+                        const opacity = 1 - distance / 100;
+                        ctx.save();
+                        ctx.globalAlpha = opacity * 0.15;
+                        ctx.strokeStyle = `rgb(95, 116, 169)`;
+                        ctx.lineWidth = 0.3;
+                        ctx.beginPath();
+                        ctx.moveTo(particles[i].x, particles[i].y);
+                        ctx.lineTo(particles[j].x, particles[j].y);
+                        ctx.stroke();
+                        ctx.restore();
+                    }
+                }
+            }
+        }
+        
+        // Animation loop
+        function animate() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            particles.forEach(particle => {
+                particle.update();
+                particle.draw();
+            });
+            
+            drawConnections();
+            requestAnimationFrame(animate);
+        }
+        
+        // Initialize and start
+        initParticles();
+        animate();
+        
+        window.addEventListener('resize', () => {
+            setCanvasSize();
+            initParticles();
+        });
+    }
+</script>
+{% endblock %}
