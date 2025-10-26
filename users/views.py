@@ -12,9 +12,11 @@ def landing_page(request):
     """Page d'accueil/landing"""
     return render(request, 'commun/landing.html')
 
+
+
 def login_view(request):
     if request.method == 'POST':
-        username_or_email = request.POST['username']  # Peut être username ou email
+        username_or_email = request.POST['username']
         password = request.POST['password']
         
         # Essayer d'authentifier avec username
@@ -30,15 +32,30 @@ def login_view(request):
         
         if user is not None:
             login(request, user)
-            # Redirection basée sur le rôle
+            
+            # ⚠️ CORRECTION ICI - Utilise le paramètre 'next'
+            next_url = request.POST.get('next') or request.GET.get('next')
+            
+            # Redirection basée sur le rôle ET le paramètre next
             if user.is_superuser or user.role == 'admin' or user.is_admin_user:
-                return redirect('/admin/')
+                return redirect(next_url or '/admin/')
             else:
-                return redirect('users:home')
+                # 🔥 CHANGEMENT ICI : Redirige vers dashboard au lieu de home
+                return redirect(next_url or 'dashboard:tableau_bord')  # 👈 MODIFIÉ
         else:
             messages.error(request, 'Identifiants invalides')
     
-    return render(request, 'auth/login.html')
+    # Passe le paramètre 'next' au template
+    context = {}
+    if 'next' in request.GET:
+        context['next'] = request.GET['next']
+    
+    return render(request, 'auth/login.html', context)
+
+
+
+
+
 
 @login_required
 def logout_view(request):
