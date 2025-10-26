@@ -23,6 +23,7 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('communication/', include('communication.urls', namespace='communication')),
     path('', include('users.urls')),  # URLs des users
+    path('dashboard/', include('dashboard.urls')),  # Tes URLs dashboard
 ]
 
 # Serve media files in development

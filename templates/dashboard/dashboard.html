@@ -1,0 +1,873 @@
+{% extends 'base.html' %}
+{% block title %}Tableau de Bord - MindScribe{% endblock %}
+
+{% block extra_css %}
+<style>
+:root {
+    --primary: #6366f1;
+    --primary-dark: #4f46e5;
+    --secondary: #10b981;
+    --danger: #ef4444;
+    --warning: #f59e0b;
+    --info: #06b6d4;
+    --dark: #1f2937;
+    --light: #f8fafc;
+    --gray: #6b7280;
+    --border: #e5e7eb;
+}
+
+.dashboard-body {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    min-height: 100vh;
+    font-family: 'Inter', 'Segoe UI', system-ui, sans-serif;
+}
+
+.dashboard-container {
+    max-width: 1800px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+/* Header Styles */
+.dashboard-header {
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(10px);
+    border-radius: 20px;
+    padding: 30px;
+    margin-bottom: 30px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.dashboard-header h1 {
+    color: var(--dark);
+    font-size: 2.5rem;
+    font-weight: 700;
+    margin-bottom: 10px;
+    background: linear-gradient(135deg, var(--primary), var(--secondary));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+.dashboard-header p {
+    color: var(--gray);
+    font-size: 1.1rem;
+    margin-bottom: 20px;
+}
+
+/* Stats Grid */
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 25px;
+    margin-bottom: 40px;
+}
+
+.stat-card {
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(10px);
+    padding: 25px;
+    border-radius: 16px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+.stat-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(90deg, var(--primary), var(--secondary));
+}
+
+.stat-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 15px 40px rgba(0, 0, 0, 0.15);
+}
+
+.stat-icon {
+    font-size: 2.5rem;
+    margin-bottom: 15px;
+    opacity: 0.8;
+}
+
+.stat-number {
+    font-size: 2.5rem;
+    font-weight: 800;
+    color: var(--dark);
+    margin-bottom: 5px;
+    line-height: 1;
+}
+
+.stat-label {
+    color: var(--gray);
+    font-size: 0.9rem;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+/* Charts Grid */
+.charts-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 30px;
+    margin-bottom: 40px;
+}
+
+@media (max-width: 1200px) {
+    .charts-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+.chart-container {
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(10px);
+    padding: 30px;
+    border-radius: 20px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    transition: all 0.3s ease;
+}
+
+.chart-container:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15);
+}
+
+.chart-header {
+    display: flex;
+    justify-content: between;
+    align-items: center;
+    margin-bottom: 25px;
+    padding-bottom: 15px;
+    border-bottom: 2px solid var(--border);
+}
+
+.chart-title {
+    font-size: 1.4rem;
+    font-weight: 700;
+    color: var(--dark);
+    margin: 0;
+}
+
+.chart-actions {
+    display: flex;
+    gap: 10px;
+}
+
+.btn-chart {
+    padding: 8px 16px;
+    border: none;
+    border-radius: 8px;
+    background: var(--light);
+    color: var(--gray);
+    font-size: 0.8rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.btn-chart:hover {
+    background: var(--primary);
+    color: white;
+}
+
+/* Word Cloud */
+#wordcloud {
+    width: 100%;
+    height: 400px;
+    background: white;
+    border-radius: 12px;
+    padding: 20px;
+    box-shadow: inset 0 2px 10px rgba(0, 0, 0, 0.1);
+}
+
+/* Timeline */
+.timeline {
+    max-height: 400px;
+    overflow-y: auto;
+    padding-right: 10px;
+}
+
+.timeline::-webkit-scrollbar {
+    width: 6px;
+}
+
+.timeline::-webkit-scrollbar-track {
+    background: var(--light);
+    border-radius: 3px;
+}
+
+.timeline::-webkit-scrollbar-thumb {
+    background: var(--primary);
+    border-radius: 3px;
+}
+
+.timeline-event {
+    background: white;
+    padding: 20px;
+    margin: 15px 0;
+    border-radius: 12px;
+    border-left: 4px solid var(--primary);
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+    transition: all 0.2s ease;
+    position: relative;
+}
+
+.timeline-event:hover {
+    transform: translateX(5px);
+    box-shadow: 0 5px 20px rgba(0, 0, 0, 0.1);
+}
+
+.timeline-event.positive { border-left-color: var(--secondary); }
+.timeline-event.neutral { border-left-color: var(--warning); }
+.timeline-event.negative { border-left-color: var(--danger); }
+
+.timeline-date {
+    font-weight: 700;
+    color: var(--dark);
+    font-size: 0.9rem;
+    margin-bottom: 8px;
+}
+
+.timeline-title {
+    font-weight: 600;
+    color: var(--dark);
+    margin-bottom: 5px;
+    font-size: 1.1rem;
+}
+
+.timeline-desc {
+    color: var(--gray);
+    font-size: 0.9rem;
+    margin-bottom: 10px;
+}
+
+.timeline-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px;
+}
+
+.timeline-tag {
+    background: var(--light);
+    color: var(--gray);
+    padding: 4px 8px;
+    border-radius: 6px;
+    font-size: 0.8rem;
+    font-weight: 500;
+}
+
+/* Additional Charts Grid */
+.additional-charts {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 25px;
+    margin-bottom: 40px;
+}
+
+@media (max-width: 1400px) {
+    .additional-charts {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (max-width: 768px) {
+    .additional-charts {
+        grid-template-columns: 1fr;
+    }
+}
+
+.small-chart {
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(10px);
+    padding: 25px;
+    border-radius: 16px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.small-chart-title {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: var(--dark);
+    margin-bottom: 20px;
+    text-align: center;
+}
+
+/* Loading States */
+.loading {
+    text-align: center;
+    padding: 40px;
+    color: var(--gray);
+}
+
+.loading-spinner {
+    border: 3px solid var(--light);
+    border-top: 3px solid var(--primary);
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    animation: spin 1s linear infinite;
+    margin: 0 auto 20px;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* Mood Indicator */
+.mood-indicator {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.mood-emoji {
+    font-size: 2rem;
+}
+
+.mood-text {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: var(--dark);
+}
+
+/* Filters */
+.filters {
+    display: flex;
+    gap: 15px;
+    margin-bottom: 25px;
+    flex-wrap: wrap;
+}
+
+.filter-btn {
+    padding: 10px 20px;
+    border: 2px solid var(--border);
+    background: white;
+    color: var(--gray);
+    border-radius: 10px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.filter-btn.active {
+    background: var(--primary);
+    color: white;
+    border-color: var(--primary);
+}
+
+.filter-btn:hover {
+    border-color: var(--primary);
+    color: var(--primary);
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="dashboard-body">
+    <div class="dashboard-container">
+        <!-- Header -->
+        <div class="dashboard-header">
+            <h1>🧠 Tableau de Bord Personnel</h1>
+            <p>Explorez vos patterns émotionnels et votre évolution personnelle</p>
+            
+            <!-- Filters -->
+            <div class="filters">
+                <button class="filter-btn active" data-period="all">Tout</button>
+                <button class="filter-btn" data-period="week">Cette semaine</button>
+                <button class="filter-btn" data-period="month">Ce mois</button>
+                <button class="filter-btn" data-period="year">Cette année</button>
+            </div>
+        </div>
+
+        <!-- Statistics Cards -->
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-icon">📊</div>
+                <div class="stat-number" id="total-analyses">-</div>
+                <div class="stat-label">Entrées analysées</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">😊</div>
+                <div class="mood-indicator">
+                    <span class="mood-emoji" id="mood-emoji">-</span>
+                    <span class="mood-text" id="mood-text">Humeur moyenne</span>
+                </div>
+                <div class="stat-label">État émotionnel</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">🎯</div>
+                <div class="stat-number" id="themes-uniques">-</div>
+                <div class="stat-label">Thèmes uniques</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">🔑</div>
+                <div class="stat-number" id="mots-cles">-</div>
+                <div class="stat-label">Mots-clés détectés</div>
+            </div>
+        </div>
+
+        <!-- Main Charts Grid -->
+        <div class="charts-grid">
+            <!-- Evolution Humeur -->
+            <div class="chart-container">
+                <div class="chart-header">
+                    <h3 class="chart-title">📈 Évolution de l'Humeur</h3>
+                    <div class="chart-actions">
+                        <button class="btn-chart" data-chart="line">Ligne</button>
+                        <button class="btn-chart" data-chart="bar">Barres</button>
+                    </div>
+                </div>
+                <canvas id="humeurChart"></canvas>
+            </div>
+
+            <!-- Word Cloud -->
+            <div class="chart-container">
+                <div class="chart-header">
+                    <h3 class="chart-title">☁️ Nuage de Mots</h3>
+                    <div class="chart-actions">
+                        <button class="btn-chart" onclick="refreshWordCloud()">Actualiser</button>
+                    </div>
+                </div>
+                <div id="wordcloud"></div>
+            </div>
+
+            <!-- Thèmes Dominants -->
+            <div class="chart-container">
+                <div class="chart-header">
+                    <h3 class="chart-title">🎯 Thèmes Dominants</h3>
+                    <div class="chart-actions">
+                        <button class="btn-chart" data-chart="horizontal">Horizontal</button>
+                        <button class="btn-chart" data-chart="vertical">Vertical</button>
+                    </div>
+                </div>
+                <canvas id="themesChart"></canvas>
+            </div>
+
+            <!-- Chronologie -->
+            <div class="chart-container">
+                <div class="chart-header">
+                    <h3 class="chart-title">🗓️ Chronologie Récente</h3>
+                    <div class="chart-actions">
+                        <button class="btn-chart" onclick="loadMoreTimeline()">Voir plus</button>
+                    </div>
+                </div>
+                <div class="timeline" id="timeline">
+                    <div class="loading">
+                        <div class="loading-spinner"></div>
+                        <div>Chargement de la chronologie...</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Additional Charts -->
+        <div class="additional-charts">
+            <!-- Distribution Humeurs -->
+            <div class="small-chart">
+                <h4 class="small-chart-title">📊 Distribution des Humeurs</h4>
+                <canvas id="distributionChart"></canvas>
+            </div>
+
+            <!-- Fréquence Écriture -->
+            <div class="small-chart">
+                <h4 class="small-chart-title">✍️ Fréquence d'Écriture</h4>
+                <canvas id="frequenceChart"></canvas>
+            </div>
+
+            <!-- Score Émotionnel -->
+            <div class="small-chart">
+                <h4 class="small-chart-title">💫 Score Émotionnel</h4>
+                <canvas id="scoreChart"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/wordcloud@1.2.2/src/wordcloud2.min.js"></script>
+<script>
+// Configuration globale
+const config = {
+    currentPeriod: 'all',
+    charts: {}
+};
+
+// Fonctions principales
+async function chargerDonnees() {
+    await Promise.all([
+        chargerStatistiques(),
+        chargerEvolutionHumeur(),
+        chargerWordCloud(),
+        chargerThemes(),
+        chargerChronologie(),
+        chargerDistributionHumeurs(),
+        chargerFrequenceEcriture(),
+        chargerScoreEmotionnel()
+    ]);
+}
+
+async function chargerStatistiques() {
+    try {
+        const response = await fetch('/dashboard/api/statistiques/');
+        const data = await response.json();
+        
+        document.getElementById('total-analyses').textContent = data.total_analyses || '274';
+        document.getElementById('themes-uniques').textContent = data.themes_uniques || '20+';
+        document.getElementById('mots-cles').textContent = data.mots_cles || '150+';
+        
+        // Mise à jour de l'humeur moyenne
+        const moodEmoji = document.getElementById('mood-emoji');
+        const moodText = document.getElementById('mood-text');
+        if (data.humeur_moyenne) {
+            const moodMap = {
+                'positif': { emoji: '😊', text: 'Positif' },
+                'neutre': { emoji: '😐', text: 'Neutre' },
+                'negatif': { emoji: '😞', text: 'Négatif' }
+            };
+            const mood = moodMap[data.humeur_moyenne] || moodMap['neutre'];
+            moodEmoji.textContent = mood.emoji;
+            moodText.textContent = mood.text;
+        }
+    } catch (error) {
+        console.error('Erreur chargement statistiques:', error);
+    }
+}
+
+
+
+async function chargerEvolutionHumeur() {
+    try {
+        const response = await fetch(`/dashboard/api/evolution-humeur/?period=${config.currentPeriod}`);
+        const data = await response.json();
+        
+        const ctx = document.getElementById('humeurChart').getContext('2d');
+        
+        if (config.charts.humeur) {
+            config.charts.humeur.destroy();
+        }
+        
+        // VERSION SIMPLIFIÉE - Sans les callbacks complexes
+        config.charts.humeur = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: data.dates,
+                datasets: [{
+                    label: 'Score Humeur',
+                    data: data.scores,
+                    borderColor: '#6366f1',
+                    backgroundColor: 'rgba(99, 102, 241, 0.1)',
+                    borderWidth: 3,
+                    tension: 0.4,
+                    fill: true,
+                    pointBackgroundColor: data.scores.map(score => {
+                        if (score > 0) return '#10b981';
+                        if (score < 0) return '#ef4444';
+                        return '#f59e0b';
+                    }),
+                    pointBorderColor: '#fff',
+                    pointRadius: 6,
+                    pointHoverRadius: 8
+                }]
+            },
+            options: {
+                responsive: true,
+                scales: {
+                    y: {
+                        min: -1,
+                        max: 1,
+                        ticks: {
+                            callback: function(value) {
+                                if (value === 1) return '😊 Positif';
+                                if (value === 0) return '😐 Neutre';
+                                if (value === -1) return '😞 Négatif';
+                                return value;
+                            }
+                        }
+                    }
+                },
+                plugins: {
+                    legend: {
+                        display: false
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                let humeur = 'Neutre';
+                                if (context.parsed.y > 0) humeur = 'Positif';
+                                if (context.parsed.y < 0) humeur = 'Négatif';
+                                return `Humeur: ${humeur}`;
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    } catch (error) {
+        console.error('Erreur chargement évolution humeur:', error);
+    }
+}
+
+
+
+    
+async function chargerWordCloud() {
+    try {
+        const response = await fetch('/dashboard/api/wordcloud/');
+        const data = await response.json();
+        
+        if (data.wordcloud && data.wordcloud.length > 0) {
+            WordCloud(document.getElementById('wordcloud'), {
+                list: data.wordcloud,
+                gridSize: 20,
+                weightFactor: function(size) {
+                    return Math.pow(size, 2.5) * 2;
+                },
+                fontFamily: 'Inter, sans-serif',
+                color: function() {
+                    const colors = ['#6366f1', '#10b981', '#ef4444', '#f59e0b', '#8b5cf6', '#06b6d4', '#ec4899'];
+                    return colors[Math.floor(Math.random() * colors.length)];
+                },
+                rotateRatio: 0.3,
+                rotationSteps: 3,
+                backgroundColor: '#ffffff',
+                minSize: 10,
+                drawOutOfBound: false,
+                shrinkToFit: true
+            });
+        }
+    } catch (error) {
+        console.error('Erreur chargement word cloud:', error);
+    }
+}
+
+async function chargerThemes() {
+    try {
+        const response = await fetch('/dashboard/api/themes/');
+        const data = await response.json();
+        
+        const ctx = document.getElementById('themesChart').getContext('2d');
+        
+        if (config.charts.themes) {
+            config.charts.themes.destroy();
+        }
+        
+        config.charts.themes = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: data.labels,
+                datasets: [{
+                    label: 'Occurrences',
+                    data: data.data,
+                    backgroundColor: [
+                        '#6366f1', '#10b981', '#ef4444', '#f59e0b', '#8b5cf6',
+                        '#06b6d4', '#84cc16', '#f97316', '#ec4899', '#14b8a6'
+                    ],
+                    borderWidth: 0,
+                    borderRadius: 8
+                }]
+            },
+            options: {
+                responsive: true,
+                indexAxis: 'y',
+                plugins: {
+                    legend: {
+                        display: false
+                    }
+                },
+                scales: {
+                    x: {
+                        grid: {
+                            color: 'rgba(0, 0, 0, 0.1)'
+                        }
+                    },
+                    y: {
+                        grid: {
+                            color: 'rgba(0, 0, 0, 0.1)'
+                        }
+                    }
+                }
+            }
+        });
+    } catch (error) {
+        console.error('Erreur chargement thèmes:', error);
+    }
+}
+
+async function chargerChronologie() {
+    try {
+        const response = await fetch('/dashboard/api/chronologie/');
+        const data = await response.json();
+        
+        const timeline = document.getElementById('timeline');
+        timeline.innerHTML = '';
+        
+        data.events.forEach(event => {
+            const eventElement = document.createElement('div');
+            eventElement.className = `timeline-event ${event.ton}`;
+            
+            eventElement.innerHTML = `
+                <div class="timeline-date">${event.date}</div>
+                <div class="timeline-title">${event.titre}</div>
+                <div class="timeline-desc">${event.description}</div>
+                <div class="timeline-tags">
+                    ${event.mots_cles.map(tag => 
+                        `<span class="timeline-tag">${tag}</span>`
+                    ).join('')}
+                </div>
+            `;
+            
+            timeline.appendChild(eventElement);
+        });
+    } catch (error) {
+        console.error('Erreur chargement chronologie:', error);
+    }
+}
+
+// Nouveaux graphiques
+async function chargerDistributionHumeurs() {
+    try {
+        const response = await fetch('/dashboard/api/distribution-humeurs/');
+        const data = await response.json();
+        
+        const ctx = document.getElementById('distributionChart').getContext('2d');
+        
+        new Chart(ctx, {
+            type: 'doughnut',
+            data: {
+                labels: ['Positif', 'Neutre', 'Négatif'],
+                datasets: [{
+                    data: [data.positif, data.neutre, data.negatif],
+                    backgroundColor: ['#10b981', '#f59e0b', '#ef4444'],
+                    borderWidth: 0
+                }]
+            },
+            options: {
+                responsive: true,
+                cutout: '70%',
+                plugins: {
+                    legend: {
+                        position: 'bottom'
+                    }
+                }
+            }
+        });
+    } catch (error) {
+        console.error('Erreur chargement distribution:', error);
+    }
+}
+
+async function chargerFrequenceEcriture() {
+    try {
+        const response = await fetch('/dashboard/api/frequence-ecriture/');
+        const data = await response.json();
+        
+        const ctx = document.getElementById('frequenceChart').getContext('2d');
+        
+        new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: data.dates,
+                datasets: [{
+                    label: 'Entrées par jour',
+                    data: data.counts,
+                    borderColor: '#8b5cf6',
+                    backgroundColor: 'rgba(139, 92, 246, 0.1)',
+                    tension: 0.4,
+                    fill: true
+                }]
+            },
+            options: {
+                responsive: true,
+                scales: {
+                    y: {
+                        beginAtZero: true
+                    }
+                },
+                plugins: {
+                    legend: {
+                        display: false
+                    }
+                }
+            }
+        });
+    } catch (error) {
+        console.error('Erreur chargement fréquence:', error);
+    }
+}
+
+async function chargerScoreEmotionnel() {
+    try {
+        const response = await fetch('/dashboard/api/score-emotionnel/');
+        const data = await response.json();
+        
+        const ctx = document.getElementById('scoreChart').getContext('2d');
+        
+        new Chart(ctx, {
+            type: 'radar',
+            data: {
+                labels: ['Positivité', 'Stabilité', 'Intensité', 'Diversité', 'Croissance'],
+                datasets: [{
+                    label: 'Score Émotionnel',
+                    data: data.scores,
+                    backgroundColor: 'rgba(99, 102, 241, 0.2)',
+                    borderColor: '#6366f1',
+                    borderWidth: 2,
+                    pointBackgroundColor: '#6366f1',
+                    pointBorderColor: '#fff',
+                    pointHoverRadius: 6
+                }]
+            },
+            options: {
+                responsive: true,
+                scales: {
+                    r: {
+                        beginAtZero: true,
+                        max: 100
+                    }
+                }
+            }
+        });
+    } catch (error) {
+        console.error('Erreur chargement score:', error);
+    }
+}
+
+// Fonctions utilitaires
+function refreshWordCloud() {
+    const container = document.getElementById('wordcloud');
+    container.innerHTML = '';
+    chargerWordCloud();
+}
+
+function loadMoreTimeline() {
+    // Implémentation pour charger plus d'événements
+    console.log('Chargement de plus d\'événements...');
+}
+
+// Gestion des filtres
+document.querySelectorAll('.filter-btn').forEach(btn => {
+    btn.addEventListener('click', function() {
+        document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+        this.classList.add('active');
+        config.currentPeriod = this.dataset.period;
+        chargerDonnees();
+    });
+});
+
+// Initialisation
+document.addEventListener('DOMContentLoaded', chargerDonnees);
+</script>
+{% endblock %}
