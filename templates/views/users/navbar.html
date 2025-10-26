@@ -21,6 +21,42 @@
                         <i class="fas fa-home me-2"></i>Tableau de bord
                     </a>
                 </li>
+
+                <!-- Dropdown -->
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
+                        <i class="fas fa-chart-line me-2"></i>Rapports
+                    </a>
+                    <ul class="dropdown-menu">
+                        <li>
+                            <a class="dropdown-item" href="{% url 'communication:dashboard' %}">
+                                📊 Dashboard
+                            </a>
+                        </li>
+                        <li>
+                            <a class="dropdown-item" href="{% url 'communication:generer_rapport' %}">
+                                🚀 Générer un rapport
+                            </a>
+                        </li>
+                        <li>
+                            <a class="dropdown-item" href="{% url 'communication:liste_rapports' %}">
+                                📋 Mes rapports
+                            </a>
+                        </li>
+                        <li><hr class="dropdown-divider"></li>
+                        <li>
+                            <a class="dropdown-item" href="">
+                                🤖 Assistant IA
+                            </a>
+                        </li>
+                        <li>
+                            <a class="dropdown-item" href="">
+                                👥 Suggestions connexions
+                            </a>
+                        </li>
+                    </ul>
+                </li>
+                
                 <li class="nav-item mb-2">
                     <a class="nav-link {% if request.resolver_match.url_name == 'edit_profile' %}active bg-primary text-white{% else %}text-dark{% endif %} rounded-3" 
                        href="{% url 'users:edit_profile' %}">

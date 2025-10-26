@@ -1,0 +1,149 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Générer un Rapport - MindScribe{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-md-8 mx-auto">
+            <div class="card shadow">
+                <div class="card-header bg-primary text-white">
+                    <h3 class="card-title mb-0">
+                        🚀 Générer un Nouveau Rapport PDF
+                    </h3>
+                </div>
+                <div class="card-body">
+                    {% if messages %}
+                        {% for message in messages %}
+                            <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                                {{ message }}
+                                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                            </div>
+                        {% endfor %}
+                    {% endif %}
+
+                    <!-- ✅ CORRECTION: Ensure form has correct method and action -->
+                    <form method="POST" action="{% url 'communication:generer_rapport' %}">
+                        {% csrf_token %}
+                        
+                        <!-- Sélection des statistiques -->
+                        <div class="mb-3">
+                            <label for="statistique_id" class="form-label">📊 Statistiques à utiliser *</label>
+                            <select class="form-select" id="statistique_id" name="statistique_id" required>
+                                <option value="">Sélectionner des statistiques...</option>
+                                {% for statistique in statistiques %}
+                                    <option value="{{ statistique.id }}">
+                                        {{ statistique.periode }} - {{ statistique.frequence_ecriture }} entrées
+                                    </option>
+                                {% endfor %}
+                            </select>
+                            <div class="form-text">
+                                Choisissez les statistiques mensuelles pour votre rapport
+                            </div>
+                        </div>
+
+                        <!-- Titre du rapport -->
+                        <div class="mb-3">
+                            <label for="titre" class="form-label">📝 Titre du rapport *</label>
+                            <input type="text" class="form-control" id="titre" name="titre" 
+                                   value="Rapport Mensuel" required>
+                        </div>
+
+                        <!-- Template selection -->
+                        <div class="mb-3">
+                            <label for="template_rapport" class="form-label">🎨 Template</label>
+                            <select class="form-select" id="template_rapport" name="template_rapport">
+                                {% for value, label in templates_rapport %}
+                                    <option value="{{ value }}" {% if value == 'moderne' %}selected{% endif %}>
+                                        {{ label }}
+                                    </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <!-- Format du rapport -->
+                        <div class="mb-3">
+                            <label for="format_rapport" class="form-label">📄 Format</label>
+                            <select class="form-select" id="format_rapport" name="format_rapport">
+                                {% for value, label in formats_rapport %}
+                                    <option value="{{ value }}" {% if value == 'complet' %}selected{% endif %}>
+                                        {{ label }}
+                                    </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <!-- Options de contenu -->
+                        <div class="mb-4">
+                            <label class="form-label">📋 Sections à inclure</label>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" name="inclure_statistiques" id="inclure_statistiques" checked>
+                                <label class="form-check-label" for="inclure_statistiques">
+                                    📊 Statistiques mensuelles
+                                </label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" name="inclure_graphiques" id="inclure_graphiques" checked>
+                                <label class="form-check-label" for="inclure_graphiques">
+                                    📈 Graphiques et visualisations
+                                </label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" name="inclure_analyse_ia" id="inclure_analyse_ia" checked>
+                                <label class="form-check-label" for="inclure_analyse_ia">
+                                    🤖 Analyse IA et thèmes
+                                </label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" name="inclure_journaux" id="inclure_journaux">
+                                <label class="form-check-label" for="inclure_journaux">
+                                    📖 Extraits de journal
+                                </label>
+                            </div>
+                            <!-- ✅ ADD: Missing checkboxes -->
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" name="inclure_objectifs" id="inclure_objectifs" checked>
+                                <label class="form-check-label" for="inclure_objectifs">
+                                    🎯 Objectifs et progrès
+                                </label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" name="inclure_recommandations" id="inclure_recommandations" checked>
+                                <label class="form-check-label" for="inclure_recommandations">
+                                    💡 Recommandations
+                                </label>
+                            </div>
+                        </div>
+
+                        <!-- Couleur principale -->
+                        <div class="mb-3">
+                            <label for="couleur_principale" class="form-label">🎨 Couleur principale</label>
+                            <input type="color" class="form-control form-control-color" id="couleur_principale" 
+                                   name="couleur_principale" value="#3498db" title="Choisissez la couleur principale">
+                        </div>
+
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-primary btn-lg" id="generate-btn">
+                                🚀 Générer le Rapport PDF
+                            </button>
+                            <a href="{% url 'communication:liste_rapports' %}" class="btn btn-outline-secondary">
+                                📋 Voir mes rapports
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Optional: Add loading state
+document.querySelector('form').addEventListener('submit', function() {
+    const btn = document.getElementById('generate-btn');
+    btn.innerHTML = '⏳ Génération en cours...';
+    btn.disabled = true;
+});
+</script>
+{% endblock %}
