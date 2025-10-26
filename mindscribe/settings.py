@@ -39,6 +39,8 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    # Third-party apps
+    'rest_framework',
     # Custom apps
     'users',
     'journal',
@@ -46,6 +48,7 @@ INSTALLED_APPS = [
     'dashboard',
     'recommendations',
     'communication',
+    'module2_analysis.apps.Module2AnalysisConfig',
 ]
 
 MIDDLEWARE = [
