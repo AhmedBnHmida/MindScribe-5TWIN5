@@ -1,0 +1,74 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Communication - MindScribe{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h1 class="mb-4">📊 Tableau de Bord Communication</h1>
+
+    <!-- Statistiques -->
+    <div class="row mb-5">
+        <div class="col-md-4">
+            <div class="card text-center bg-primary text-white">
+                <div class="card-body">
+                    <h2>{{ rapports_count }}</h2>
+                    <p class="mb-0">📋 Rapports PDF</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card text-center bg-success text-white">
+                <div class="card-body">
+                    <h2>{{ assistant_messages_count }}</h2>
+                    <p class="mb-0">🤖 Messages Assistant</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card text-center bg-info text-white">
+                <div class="card-body">
+                    <h2>{{ suggestions_count }}</h2>
+                    <p class="mb-0">👥 Suggestions</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Actions rapides -->
+    <div class="row">
+        <div class="col-md-6 mb-4">
+            <div class="card">
+                <div class="card-header bg-warning text-dark">
+                    <h5 class="mb-0">🚀 Actions Rapides</h5>
+                </div>
+                <div class="card-body">
+                    <div class="d-grid gap-2">
+                        <a href="{% url 'communication:generer_rapport' %}" class="btn btn-primary">
+                            📊 Générer un rapport PDF
+                        </a>
+                        <a href="{% url 'communication:liste_rapports' %}" class="btn btn-outline-primary">
+                            📋 Voir mes rapports
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-6 mb-4">
+            <div class="card">
+                <div class="card-header bg-info text-white">
+                    <h5 class="mb-0">💡 Fonctionnalités à venir</h5>
+                </div>
+                <div class="card-body">
+                    <ul class="list-group list-group-flush">
+                        <li class="list-group-item">🤖 Assistant IA conversationnel</li>
+                        <li class="list-group-item">👥 Suggestions de connexions</li>
+                        <li class="list-group-item">📈 Analytics avancés</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
