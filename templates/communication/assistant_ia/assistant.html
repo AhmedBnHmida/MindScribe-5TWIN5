@@ -1,0 +1,328 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Assistant IA - MindScribe{% endblock %}
+
+{% block content %}
+<div class="content-wrapper">
+    <div class="container">
+        <div class="container-fluid py-4">
+            <div class="row">
+                <!-- Sidebar avec les journaux -->
+                <div class="col-md-4 col-lg-3">
+                    <div class="card">
+                        <div class="card-header d-flex justify-content-between align-items-center">
+                            <h5 class="card-title mb-0">
+                                <i class="fas fa-book me-2"></i>Vos Journaux
+                            </h5>
+                            <small class="text-muted" id="drag-hint">
+                                <i class="fas fa-arrows-alt me-1"></i>Glisser
+                            </small>
+                        </div>
+                        <div class="card-body p-0">
+                            <div id="journals-list-loading" class="text-center p-3" style="display: none;">
+                                <i class="fas fa-spinner fa-spin fa-2x"></i>
+                                <p class="text-muted">Chargement des journaux...</p>
+                            </div>
+                            <div class="list-group list-group-flush" id="journals-list">
+                                {% for journal in journals %}
+                                <div class="list-group-item journal-item draggable-journal" 
+                                     tabindex="0"
+                                     draggable="true"
+                                     data-journal-id="{{ journal.id }}"
+                                     data-journal-titre="{% if journal.contenu_texte %}{{ journal.contenu_texte|truncatechars:50 }}{% else %}Journal {{ journal.date_creation|date:'Y-m-d' }}{% endif %}"
+                                     data-journal-date="{{ journal.date_creation|date:'d/m/Y' }}"
+                                     data-journal-contenu="{% if journal.contenu_texte %}{{ journal.contenu_texte|escape }}{% else %}[{{ journal.type_entree }}: {{ journal.audio.name|default:journal.image.name|default:'Sans contenu' }}]{% endif %}"
+                                     data-journal-type="{{ journal.type_entree }}"
+                                     data-journal-categorie="{{ journal.categorie|default:'Non catégorisé' }}">
+                                    <div class="journal-content">
+                                        <div class="d-flex w-100 justify-content-between">
+                                            <h6 class="mb-1">{% if journal.contenu_texte %}{{ journal.contenu_texte|truncatechars:50 }}{% else %}Journal {{ journal.date_creation|date:'Y-m-d' }}{% endif %}</h6>
+                                            <small>{{ journal.date_creation|date:"d/m" }}</small>
+                                        </div>
+                                        <p class="mb-1 text-muted small">
+                                            {% if journal.contenu_texte %}
+                                                {{ journal.contenu_texte|truncatewords:10 }}
+                                            {% elif journal.audio %}
+                                                [Audio: {{ journal.audio.name }}]
+                                            {% elif journal.image %}
+                                                [Image: {{ journal.image.name }}]
+                                            {% else %}
+                                                Sans contenu
+                                            {% endif %}
+                                        </p>
+                                        <div class="d-flex justify-content-between align-items-center">
+                                            <small class="badge bg-secondary">{{ journal.type_entree }}</small>
+                                            {% if journal.categorie %}
+                                            <small class="badge bg-light text-dark">{{ journal.categorie }}</small>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                    <div class="drag-handle">
+                                        <i class="fas fa-grip-vertical text-muted"></i>
+                                    </div>
+                                </div>
+                                {% empty %}
+                                <div class="list-group-item text-muted text-center">
+                                    <i class="fas fa-book-open fa-2x mb-2"></i>
+                                    <p>Aucun journal récent</p>
+                                    <a href="/journal/creer/" class="btn btn-primary btn-sm">
+                                        Créer un journal
+                                    </a>
+                                </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card mt-3 d-md-none">
+                        <div class="card-header">
+                            <h6 class="card-title mb-0">
+                                <i class="fas fa-hand-paper me-2"></i>Zone de dépôt
+                            </h6>
+                        </div>
+                        <div class="card-body text-center p-3">
+                            <div id="mobile-drop-zone" class="border-dashed p-4 rounded">
+                                <i class="fas fa-cloud-upload-alt fa-2x text-muted mb-2"></i>
+                                <p class="small text-muted mb-0">
+                                    Glissez un journal ici pour l'analyser
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card mt-3">
+                        <div class="card-header">
+                            <h5 class="card-title mb-0">
+                                <i class="fas fa-history me-2"></i>Conversations Récentes
+                            </h5>
+                        </div>
+                        <div class="card-body p-0">
+                            <div class="list-group list-group-flush">
+                                {% for conv in conversations_recentes %}
+                                <div class="list-group-item conversation-item">
+                                    <div class="d-flex w-100 justify-content-between">
+                                        <small class="text-primary">{{ conv.get_type_interaction_display }}</small>
+                                        <small>{{ conv.date_creation|date:"H:i" }}</small>
+                                    </div>
+                                    <p class="mb-1 small">{{ conv.message_utilisateur|truncatewords:8 }}</p>
+                                    <small class="text-muted">{{ conv.reponse_ia|truncatewords:5 }}</small>
+                                </div>
+                                {% empty %}
+                                <div class="list-group-item text-muted text-center">
+                                    <i class="fas fa-comments fa-2x mb-2"></i>
+                                    <p>Aucune conversation</p>
+                                </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+
+                    {% if stats %}
+                    <div class="card mt-3">
+                        <div class="card-header">
+                            <h5 class="card-title mb-0">
+                                <i class="fas fa-chart-bar me-2"></i>Statistiques
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row text-center">
+                                <div class="col-6">
+                                    <h4 class="text-primary">{{ stats.total_conversations }}</h4>
+                                    <small class="text-muted">Conversations</small>
+                                </div>
+                                <div class="col-6">
+                                    <h4 class="text-success">{{ stats.total_tokens }}</h4>
+                                    <small class="text-muted">Tokens</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+
+                <div class="col-md-8 col-lg-9">
+                    <div class="card h-100">
+                        <div class="card-header d-flex justify-content-between align-items-center">
+                            <h4 class="mb-0">
+                                <i class="fas fa-robot me-2"></i>Assistant IA
+                            </h4>
+                            <div>
+                                <span class="badge bg-success me-2" id="connection-status">
+                                    <i class="fas fa-circle me-1"></i>Connecté
+                                </span>
+                                <a href="{% url 'communication:historique_conversations' %}" class="btn btn-outline-primary btn-sm">
+                                    <i class="fas fa-history me-1"></i>Historique
+                                </a>
+                            </div>
+                        </div>
+                        
+                        <div class="card-body d-flex flex-column p-0">
+                            <div id="drop-zone" class="drop-zone p-4 text-center border-dashed" style="display: none;">
+                                <i class="fas fa-cloud-upload-alt fa-3x text-primary mb-3"></i>
+                                <h5 class="text-primary">Déposez le journal ici</h5>
+                                <p class="text-muted mb-0">Relâchez pour analyser ce journal avec l'IA</p>
+                            </div>
+
+                            <div id="chat-messages" class="flex-grow-1 p-3 overflow-auto" style="max-height: 60vh; min-height: 400px;">
+                                <div class="text-center text-muted my-5">
+                                    <i class="fas fa-robot fa-3x mb-3 text-primary"></i>
+                                    <h5>Bonjour {{ user.first_name|default:user.username }} ! 👋</h5>
+                                    <p class="mb-3">Je suis MindScribe, votre assistant pour l'écriture de journal.</p>
+                                    
+                                    <div class="alert alert-info mb-4">
+                                        <div class="d-flex align-items-center">
+                                            <i class="fas fa-info-circle fa-2x me-3 text-primary"></i>
+                                            <div>
+                                                <strong>Astuce :</strong> Glissez-déposez un journal depuis la colonne de gauche 
+                                                pour l'analyser rapidement !
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="row g-2">
+                                        <div class="col-6">
+                                            <button class="btn btn-outline-primary btn-sm w-100 quick-prompt" data-prompt="Analyse mon journal">
+                                                📊 Analyser un journal
+                                            </button>
+                                        </div>
+                                        <div class="col-6">
+                                            <button class="btn btn-outline-primary btn-sm w-100 quick-prompt" data-prompt="Donne-moi des idées d'écriture">
+                                                ✍️ Idées d'écriture
+                                            </button>
+                                        </div>
+                                        <div class="col-6">
+                                            <button class="btn btn-outline-primary btn-sm w-100 quick-prompt" data-prompt="Comment créer un journal">
+                                                📖 Créer un journal
+                                            </button>
+                                        </div>
+                                        <div class="col-6">
+                                            <button class="btn btn-outline-primary btn-sm w-100 quick-prompt" data-prompt="J'ai besoin de soutien émotionnel">
+                                                💖 Soutien émotionnel
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div id="message-input-area" class="p-3 border-top bg-white">
+                                <form id="message-form">
+                                    {% csrf_token %}
+                                    <input type="hidden" id="session-id" value="{{ session_id }}">
+                                    <input type="hidden" id="selected-journal" value="">
+                                    
+                                    <div class="input-group">
+                                        <button type="button" class="btn btn-outline-secondary" id="attach-journal-btn" title="Attacher un journal">
+                                            <i class="fas fa-paperclip"></i>
+                                        </button>
+                                        <input type="text" id="message-input" 
+                                               class="form-control" 
+                                               placeholder="Posez votre question ou demandez une analyse..."
+                                               autocomplete="off">
+                                        <button type="submit" class="btn btn-primary" id="send-btn">
+                                            <i class="fas fa-paper-plane"></i>
+                                        </button>
+                                    </div>
+                                    
+                                    <div class="d-flex justify-content-between align-items-center mt-2">
+                                        <small class="text-muted">
+                                            <span id="selected-journal-indicator" style="display: none;">
+                                                <i class="fas fa-book me-1"></i>Journal sélectionné
+                                            </span>
+                                        </small>
+                                        <small class="text-muted">
+                                            Appuyez sur <kbd>Enter</kbd> pour envoyer
+                                        </small>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="modal fade" id="journalModal" tabindex="-1" aria-labelledby="journalModalLabel" aria-hidden="true">
+            <div class="modal-dialog modal-lg">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="journalModalLabel">Sélectionner ce journal</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <strong id="modal-journal-title" class="h6"></strong>
+                            <small id="modal-journal-date" class="text-muted ms-2"></small>
+                        </div>
+                        <div class="mb-2">
+                            <span class="badge bg-primary" id="modal-journal-type"></span>
+                            <span class="badge bg-secondary ms-1" id="modal-journal-category"></span>
+                        </div>
+                        <div class="border rounded p-3 bg-light">
+                            <p id="modal-journal-content" class="mb-0"></p>
+                        </div>
+                        <div class="mt-3">
+                            <small class="text-muted">
+                                Ce journal sera utilisé comme contexte pour l'analyse de l'assistant IA.
+                            </small>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+                        <button type="button" class="btn btn-primary" id="confirm-journal-selection">
+                            <i class="fas fa-check me-1"></i>Utiliser ce journal
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="modal fade" id="journalDetailsModal" tabindex="-1" aria-labelledby="journalDetailsModalLabel" aria-hidden="true">
+            <div class="modal-dialog modal-lg">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="journalDetailsModalLabel">Détails du Journal</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <strong id="journal-details-title" class="h5"></strong>
+                            <small id="journal-details-date" class="text-muted ms-2"></small>
+                        </div>
+                        <div class="mb-3">
+                            <span class="badge bg-primary" id="journal-details-type"></span>
+                            <span class="badge bg-secondary ms-1" id="journal-details-category"></span>
+                        </div>
+                        <div class="journal-details-content">
+                            <p id="journal-details-content" class="mb-0"></p>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fermer</button>
+                        <button type="button" class="btn btn-primary" onclick="window.assistantChat.analyzeSelectedJournal()">
+                            <i class="fas fa-magic me-1"></i>Analyser ce journal
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/assistant-ia.css' %}">
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'js/assistant-ia.js' %}"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        document.querySelectorAll('a[href="/journal/creer/"]').forEach(link => {
+            link.addEventListener('click', () => {
+                setTimeout(() => window.assistantChat.refreshJournals(), 1000);
+            });
+        });
+    });
+</script>
+{% endblock %}

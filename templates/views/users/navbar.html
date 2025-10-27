@@ -22,7 +22,7 @@
                     </a>
                 </li>
 
-                <!-- Dropdown -->
+                <!-- Rapports -->
                 <li class="nav-item dropdown">
                     <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
                         <i class="fas fa-chart-line me-2"></i>Rapports
@@ -43,12 +43,36 @@
                                 📋 Mes rapports
                             </a>
                         </li>
-                        <li><hr class="dropdown-divider"></li>
+                    </ul>
+                </li>
+
+                <!-- Assistant IA -->
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
+                        <i class="fas fa-robot me-2"></i>Assistant IA
+                    </a>
+                    <ul class="dropdown-menu">
                         <li>
-                            <a class="dropdown-item" href="">
+                            <a class="dropdown-item {% if request.resolver_match.url_name == 'assistant_ia' %}active{% endif %}" 
+                                href="{% url 'communication:assistant_ia' %}">
                                 🤖 Assistant IA
                             </a>
                         </li>
+                        <li>
+                            <a class="dropdown-item {% if request.resolver_match.url_name == 'historique_conversations' %}active{% endif %}" 
+                                href="{% url 'communication:historique_conversations' %}">
+                                📝 Historique Conversations
+                            </a>
+                        </li>
+                    </ul>
+                </li>
+
+                <!-- Suggestions connexions -->
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
+                        <i class="fas fa-link me-2"></i>Suggestions connexions
+                    </a>
+                    <ul class="dropdown-menu">
                         <li>
                             <a class="dropdown-item" href="">
                                 👥 Suggestions connexions

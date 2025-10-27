@@ -2,6 +2,7 @@ from django.db import models
 from django.conf import settings
 import uuid
 import logging
+from django.db.models import Count
 
 logger = logging.getLogger(__name__)
 
@@ -275,38 +276,162 @@ class HistoriqueGeneration(models.Model):
         verbose_name_plural = "Historiques de génération"
         ordering = ['-date_debut']
 
+#############################################################################################################################
+#############################################################################################################################
 
 class AssistantIA(models.Model):
-    """Model pour les interactions avec l'assistant IA"""
+    """Modèle robuste pour les interactions avec l'IA"""
     
+    TYPE_INTERACTION_CHOICES = [
+        ('question', '❓ Question'),
+        ('analyse_journal', '📊 Analyse Journal'),
+        ('suggestion_ecriture', '✍️ Suggestion Écriture'),
+        ('support_emotionnel', '💖 Support Émotionnel'),
+        ('reflexion_guidee', '🧠 Réflexion Guidée'),
+        ('autre', '🔗 Autre'),
+    ]
+    
+    STATUT_CHOICES = [
+        ('en_attente', '⏳ En attente'),
+        ('en_cours', '🔄 En cours'),
+        ('termine', '✅ Terminé'),
+        ('erreur', '❌ Erreur'),
+    ]
+
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     utilisateur = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
-        related_name='conversations_ia',
-        verbose_name="Utilisateur"
+        related_name='conversations_ia'
     )
     journal = models.ForeignKey(
         'journal.Journal',
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
-        related_name='conversations_ia',
-        verbose_name="Journal de référence"
+        related_name='conversations_ia'
     )
     
-    # Conversation
-    message_utilisateur = models.TextField(verbose_name="Message utilisateur")
-    reponse_ia = models.TextField(verbose_name="Réponse IA")
-    date_interaction = models.DateTimeField(auto_now_add=True, verbose_name="Date d'interaction")
+    # Métadonnées conversation
+    session_id = models.UUIDField(default=uuid.uuid4, db_index=True)
+    type_interaction = models.CharField(
+        max_length=25,
+        choices=TYPE_INTERACTION_CHOICES,
+        default='question'
+    )
+    statut = models.CharField(
+        max_length=15,
+        choices=STATUT_CHOICES,
+        default='termine'
+    )
+    modele_utilise = models.CharField(max_length=100, blank=True)
     
-    def __str__(self):
-        return f"Conversation {self.utilisateur.username} - {self.date_interaction.strftime('%Y-%m-%d %H:%M')}"
+    # Contenu conversation
+    message_utilisateur = models.TextField()
+    reponse_ia = models.TextField()
+    prompt_utilise = models.TextField(blank=True)  # Pour le debugging
+    
+    # Métriques
+    tokens_utilises = models.IntegerField(default=0)
+    duree_generation = models.FloatField(null=True, blank=True)  # en secondes
+    score_confiance = models.FloatField(null=True, blank=True)  # 0-1
+    
+    # Analyse sémantique
+    mots_cles = models.JSONField(default=list, blank=True)
+    sentiment_utilisateur = models.CharField(
+        max_length=10,
+        choices=[('positif', '😊 Positif'), ('neutre', '😐 Neutre'), ('negatif', '😔 Négatif')],
+        null=True,
+        blank=True
+    )
+    
+    # Timestamps
+    date_creation = models.DateTimeField(auto_now_add=True)
+    date_modification = models.DateTimeField(auto_now=True)
     
     class Meta:
         verbose_name = "Assistant IA"
         verbose_name_plural = "Assistants IA"
-        ordering = ['-date_interaction']
+        ordering = ['-date_creation']
+        indexes = [
+            models.Index(fields=['session_id', 'date_creation']),
+            models.Index(fields=['utilisateur', 'statut']),
+            models.Index(fields=['type_interaction', 'date_creation']),
+        ]
+    
+    def __str__(self):
+        return f"{self.utilisateur.username} - {self.get_type_interaction_display()} - {self.date_creation.strftime('%d/%m %H:%M')}"
+    
+    def save(self, *args, **kwargs):
+        # Auto-détection du type d'interaction
+        if not self.type_interaction:
+            self.type_interaction = self._detecter_type_interaction()
+        
+        # Extraction des mots-clés
+        if self.message_utilisateur and not self.mots_cles:
+            self.mots_cles = self._extraire_mots_cles()
+            
+        super().save(*args, **kwargs)
+    
+    def _detecter_type_interaction(self):
+        """Détecte automatiquement le type d'interaction"""
+        message = self.message_utilisateur.lower()
+        
+        mots_analyse = ['analyse', 'analyser', 'commente', 'pense', 'que dire']
+        mots_suggestion = ['suggère', 'suggestion', 'idée', 'exercice', 'écrire']
+        mots_support = ['triste', 'heureux', 'stress', 'anxieux', 'émotion', 'sentiment']
+        mots_reflexion = ['réfléchir', 'penser', 'philosophie', 'question existentielle']
+        
+        if any(mot in message for mot in mots_analyse) and self.journal:
+            return 'analyse_journal'
+        elif any(mot in message for mot in mots_suggestion):
+            return 'suggestion_ecriture'
+        elif any(mot in message for mot in mots_support):
+            return 'support_emotionnel'
+        elif any(mot in message for mot in mots_reflexion):
+            return 'reflexion_guidee'
+        else:
+            return 'question'
+    
+    def _extraire_mots_cles(self):
+        """Extrait les mots-clés du message utilisateur"""
+        try:
+            # Liste de mots vides à ignorer
+            stop_words = {'le', 'la', 'les', 'de', 'du', 'des', 'un', 'une', 'et', 'ou', 'mais', 'donc'}
+            mots = self.message_utilisateur.lower().split()
+            mots_filtres = [mot for mot in mots if len(mot) > 3 and mot not in stop_words]
+            return list(set(mots_filtres))[:10]
+        except:
+            return []
+    
+    @property
+    def est_termine(self):
+        return self.statut == 'termine'
+    
+    @property
+    def duree_formatee(self):
+        if self.duree_generation:
+            return f"{self.duree_generation:.2f}s"
+        return "N/A"
+    
+    def get_conversation_session(self):
+        """Retourne toute la conversation de la session"""
+        return AssistantIA.objects.filter(
+            session_id=self.session_id
+        ).order_by('date_creation')
+    
+    def get_statistiques_session(self):
+        """Retourne les stats de la session"""
+        conversations = self.get_conversation_session()
+        return {
+            'total_messages': conversations.count(),
+            'total_tokens': sum(conv.tokens_utilises for conv in conversations),
+            'types_interactions': dict(conversations.values_list('type_interaction').annotate(count=Count('id')))
+        }
+    
+
+#############################################################################################################################
+#############################################################################################################################
 
 
 class SuggestionConnexion(models.Model):
