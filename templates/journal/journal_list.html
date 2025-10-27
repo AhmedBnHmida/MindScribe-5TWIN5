@@ -1,0 +1,211 @@
+{% extends 'base.html' %}
+{% block title %}Mon Journal{% endblock %}
+
+{% block extra_css %}
+<style>
+    .journal-list-container {
+        background-color: rgba(255, 255, 255, 0.9);
+        border-radius: 15px;
+        box-shadow: 0 5px 20px rgba(0, 0, 0, 0.1);
+        padding: 2rem;
+        margin-bottom: 2rem;
+    }
+    
+    .journal-card {
+        border-radius: 12px;
+        transition: transform 0.3s, box-shadow 0.3s;
+        margin-bottom: 1.5rem;
+        overflow: hidden;
+        border: none;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+    }
+    
+    .journal-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 8px 15px rgba(0, 0, 0, 0.1);
+    }
+    
+    .journal-card .card-header {
+        background-color: #f8f9fa;
+        border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+        padding: 0.75rem 1.25rem;
+    }
+    
+    .journal-card .card-body {
+        padding: 1.5rem;
+    }
+    
+    .journal-text {
+        max-height: 100px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        display: -webkit-box;
+        -webkit-line-clamp: 3;
+        -webkit-box-orient: vertical;
+    }
+    
+    .journal-type-badge {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        padding: 0.25rem 0.75rem;
+        border-radius: 20px;
+        font-size: 0.8rem;
+        font-weight: 500;
+    }
+    
+    .journal-type-texte {
+        background-color: rgba(95, 116, 169, 0.2);
+        color: #3E4E88;
+    }
+    
+    .journal-type-audio {
+        background-color: rgba(58, 183, 149, 0.2);
+        color: #2a856c;
+    }
+    
+    .journal-type-image {
+        background-color: rgba(255, 183, 77, 0.2);
+        color: #e09e00;
+    }
+    
+    .journal-media-indicator {
+        display: inline-block;
+        margin-right: 0.5rem;
+        font-size: 0.9rem;
+    }
+    
+    .sentiment-indicator {
+        display: inline-block;
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        margin-right: 0.5rem;
+    }
+    
+    .sentiment-positif {
+        background-color: #3ab795;
+    }
+    
+    .sentiment-neutre {
+        background-color: #6c757d;
+    }
+    
+    .sentiment-negatif {
+        background-color: #ff7d7d;
+    }
+    
+    .empty-state {
+        text-align: center;
+        padding: 3rem 0;
+    }
+    
+    .empty-state i {
+        font-size: 4rem;
+        color: #ced4da;
+        margin-bottom: 1.5rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="content-wrapper">
+    <div class="container py-5">
+        <div class="row justify-content-center">
+            <div class="col-lg-10">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h2>Mon Journal</h2>
+                    <a href="{% url 'journal:create' %}" class="btn btn-primary">
+                        <i class="fas fa-plus-circle me-2"></i>Nouvelle Entrée
+                    </a>
+                </div>
+                
+                <div class="journal-list-container">
+                    {% if journals %}
+                        <div class="row">
+                            {% for journal in journals %}
+                                <div class="col-md-6">
+                                    <div class="card journal-card">
+                                        <div class="card-header d-flex justify-content-between align-items-center">
+                                            <div>
+                                                <small class="text-muted">{{ journal.date_creation|date:"d/m/Y H:i" }}</small>
+                                                {% if journal.analyse %}
+                                                    <span class="sentiment-indicator sentiment-{{ journal.analyse.ton_general }}" title="Sentiment: {{ journal.analyse.ton_general }}"></span>
+                                                {% endif %}
+                                            </div>
+                                            <div>
+                                                {% if journal.categorie %}
+                                                    <span class="badge bg-secondary">{{ journal.categorie }}</span>
+                                                {% endif %}
+                                            </div>
+                                        </div>
+                                        <div class="card-body position-relative">
+                                            <span class="journal-type-badge journal-type-{{ journal.type_entree }}">
+                                                {% if journal.type_entree == 'texte' %}
+                                                    <i class="fas fa-pen-alt me-1"></i>Texte
+                                                {% elif journal.type_entree == 'audio' %}
+                                                    <i class="fas fa-microphone me-1"></i>Audio
+                                                {% elif journal.type_entree == 'image' %}
+                                                    <i class="fas fa-image me-1"></i>Image
+                                                {% endif %}
+                                            </span>
+                                            
+                                            {% if journal.contenu_texte %}
+                                                <p class="journal-text">{{ journal.contenu_texte }}</p>
+                                            {% endif %}
+                                            
+                                            {% if journal.image %}
+                                                <div class="journal-media-indicator">
+                                                    <i class="fas fa-image text-primary"></i>
+                                                </div>
+                                            {% endif %}
+                                            
+                                            {% if journal.audio %}
+                                                <div class="journal-media-indicator">
+                                                    <i class="fas fa-volume-up text-success"></i>
+                                                </div>
+                                            {% endif %}
+                                            
+                                            {% if journal.analyse %}
+                                                <div class="mt-3">
+                                                    {% if journal.analyse.mots_cles %}
+                                                        <div class="mb-2">
+                                                            <small class="text-muted">Mots-clés:</small>
+                                                            {% for mot in journal.analyse.mots_cles|slice:":3" %}
+                                                                <span class="badge bg-light text-dark me-1">{{ mot }}</span>
+                                                            {% endfor %}
+                                                            {% if journal.analyse.mots_cles|length > 3 %}
+                                                                <small class="text-muted">...</small>
+                                                            {% endif %}
+                                                        </div>
+                                                    {% endif %}
+                                                </div>
+                                            {% endif %}
+                                            
+                                            <div class="text-end mt-3">
+                                                <a href="{% url 'journal:detail' journal.id %}" class="btn btn-sm btn-outline-primary">
+                                                    <i class="fas fa-eye me-1"></i>Voir détails
+                                                </a>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <div class="empty-state">
+                            <i class="fas fa-book-open"></i>
+                            <h4>Aucune entrée de journal</h4>
+                            <p class="text-muted">Commencez à écrire votre première entrée de journal pour voir les analyses IA.</p>
+                            <a href="{% url 'journal:create' %}" class="btn btn-primary mt-3">
+                                <i class="fas fa-plus-circle me-2"></i>Créer ma première entrée
+                            </a>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+

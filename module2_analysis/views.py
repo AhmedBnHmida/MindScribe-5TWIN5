@@ -1,20 +1,20 @@
+"""
+Views for the module2_analysis app.
+"""
 import os
 import logging
-from django.shortcuts import render
 from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.views.decorators.csrf import csrf_exempt
-from rest_framework import status
-from rest_framework.views import APIView
+from rest_framework import status, viewsets
+from rest_framework.decorators import api_view, permission_classes, parser_classes
+from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.response import Response
-from rest_framework.decorators import api_view, permission_classes
-from rest_framework.permissions import AllowAny
 from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
 
-from .serializers import AnalyseRequestSerializer, AnalyseResponseSerializer, AnalyseIASerializer
-from .models import AnalyseIA
-from journal.models import Journal
-from .ai_services import analyze_multimodal_content
+from .models import JournalAnalysis
+from .serializers import AnalysisRequestSerializer, AnalysisResponseSerializer, JournalAnalysisSerializer
+from .services import analyze_multimodal_content
 
 # Configure logging
 logger = logging.getLogger(__name__)
@@ -24,13 +24,23 @@ User = get_user_model()
 @csrf_exempt
 @api_view(['POST'])
 @permission_classes([AllowAny])
+@parser_classes([MultiPartParser, FormParser, JSONParser])
 def analyse_api_view(request):
     """
-    API view for multimodal analysis.
+    API endpoint for multimodal analysis.
     
-    POST: Analyze text, audio, and/or image content
+    Accepts text, audio, and/or image content and returns analysis results.
+    
+    POST:
+        - text: optional string
+        - audio_file: optional file (mp3, wav)
+        - image_file: optional file (jpg, png)
+        - user_id: optional string (user ID for saving results)
+    
+    Returns:
+        JSON with analysis results
     """
-    serializer = AnalyseRequestSerializer(data=request.data)
+    serializer = AnalysisRequestSerializer(data=request.data)
     
     if not serializer.is_valid():
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
@@ -75,7 +85,7 @@ def analyse_api_view(request):
         )
         
         # Validate response data
-        response_serializer = AnalyseResponseSerializer(data=analysis_results)
+        response_serializer = AnalysisResponseSerializer(data=analysis_results)
         if response_serializer.is_valid():
             # If user_id is provided, save the analysis to the database
             if user_id:
@@ -83,39 +93,38 @@ def analyse_api_view(request):
                     # Try to get the user
                     user = User.objects.get(id=user_id)
                     
-                    # Create a journal entry if needed
-                    journal_type = 'texte'
-                    if audio_file and not text and not image_file:
-                        journal_type = 'audio'
-                    elif image_file and not text and not audio_file:
-                        journal_type = 'image'
-                    
-                    journal = Journal.objects.create(
-                        utilisateur=user,
-                        contenu_texte=text if text else '',
-                        type_entree=journal_type
+                    # Create a journal analysis entry with enhanced fields
+                    journal_analysis = JournalAnalysis.objects.create(
+                        user=user,
+                        text=text if text else '',
+                        sentiment=analysis_results.get('sentiment', 'neutre'),
+                        emotion_score=analysis_results.get('emotion_score', 0.5),
+                        emotions_detected=analysis_results.get('emotions_detected', []),
+                        keywords=analysis_results.get('keywords', []),
+                        topics=analysis_results.get('topics', []),
+                        summary=analysis_results.get('summary', ''),
+                        detailed_summary=analysis_results.get('detailed_summary', ''),
+                        positive_aspects=analysis_results.get('positive_aspects', []),
+                        negative_aspects=analysis_results.get('negative_aspects', []),
+                        action_items=analysis_results.get('action_items', []),
+                        mood_analysis=analysis_results.get('mood_analysis', ''),
+                        audio_transcription=analysis_results.get('audio_transcription', ''),
+                        image_caption=analysis_results.get('image_caption', ''),
+                        image_scene=analysis_results.get('image_scene', ''),
+                        image_analysis=analysis_results.get('image_analysis', '')
                     )
                     
                     # Save audio and image if provided
                     if audio_file:
-                        journal.audio = audio_file
+                        journal_analysis.audio_file = audio_file
                     
                     if image_file:
-                        journal.image = image_file
+                        journal_analysis.image_file = image_file
                     
-                    journal.save()
-                    
-                    # Create analysis entry
-                    analyse = AnalyseIA.objects.create(
-                        journal=journal,
-                        mots_cles=analysis_results.get('keywords', []),
-                        ton_general=analysis_results.get('sentiment', 'neutre'),
-                        themes_detectes=analysis_results.get('topics', []),
-                        resume_journee=analysis_results.get('summary', '')
-                    )
+                    journal_analysis.save()
                     
                     # Include the analysis ID in the response
-                    analysis_results['analyse_id'] = str(analyse.id)
+                    analysis_results['analysis_id'] = str(journal_analysis.id)
                 
                 except User.DoesNotExist:
                     logger.warning(f"User with ID {user_id} not found")
@@ -128,9 +137,12 @@ def analyse_api_view(request):
     
     except Exception as e:
         logger.error(f"Error during analysis: {e}")
+        error_message = str(e)
+        
+        # Return all errors directly to the client
         return Response(
-            {"error": "An error occurred during analysis."},
-            status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            {"error": error_message},
+            status=status.HTTP_503_SERVICE_UNAVAILABLE
         )
     finally:
         # Clean up temporary files
@@ -141,10 +153,19 @@ def analyse_api_view(request):
             os.remove(image_path)
 
 
-class AnalyseAPIView(APIView):
+class JournalAnalysisViewSet(viewsets.ModelViewSet):
     """
-    API view for multimodal analysis (class-based version).
-    This is kept for reference but not used.
+    ViewSet for JournalAnalysis model.
+    
+    Provides CRUD operations for journal analyses.
     """
-    parser_classes = (MultiPartParser, FormParser, JSONParser)
-    permission_classes = [AllowAny]
+    queryset = JournalAnalysis.objects.all()
+    serializer_class = JournalAnalysisSerializer
+    permission_classes = [IsAuthenticated]
+    
+    def get_queryset(self):
+        """
+        Filter queryset to only return analyses for the current user.
+        """
+        return JournalAnalysis.objects.filter(user=self.request.user)
+

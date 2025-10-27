@@ -4,17 +4,27 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>MindScribe - {% block title %}{% endblock %}</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     {% load static %}
     <link rel="stylesheet" href="{% static 'css/styles.css' %}">
+    <link rel="stylesheet" href="{% static 'css/modern-styles.css' %}">
+    <link rel="stylesheet" href="{% static 'css/advanced-styles.css' %}">
     {% block extra_css %}{% endblock %}
 </head>
 <body>
     {% if not user.is_authenticated %}
         {% include 'commun/header.html' %}
     {% endif %}
+    
+    <!-- Dynamic Background Effects -->
+    <div class="bg-gradient"></div>
+    <div class="bg-shapes">
+        <div class="bg-shape bg-shape-1"></div>
+        <div class="bg-shape bg-shape-2"></div>
+        <div class="bg-shape bg-shape-3"></div>
+    </div>
     
     <div class="{% if user.is_authenticated %}container-fluid{% else %}container{% endif %} p-0">
         <div class="row g-0">
@@ -27,7 +37,6 @@
 
             <!-- Main Content -->
             <main class="{% if user.is_authenticated %}col-md-9 col-lg-10{% else %}col-12{% endif %}">
-                <!-- <canvas id="authBrainCanvas" class="auth-brain-canvas"></canvas>-->
                 <div class="main-content-container">
                     {% if messages %}
                         {% for message in messages %}
@@ -46,7 +55,8 @@
     
 
     
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     {% load static %}
     <script src="{% static 'js/scripts.js' %}"></script>
     {% block extra_js %}{% endblock %}

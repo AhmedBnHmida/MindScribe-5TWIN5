@@ -1,0 +1,603 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bilan Mensuel - Journal Émotionnel</title>
+    
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        :root {
+            --primary-color: #4e73df;
+            --secondary-color: #1cc88a;
+            --warning-color: #f6c23e;
+            --danger-color: #e74a3b;
+            --light-bg: #f8f9fc;
+            --dark-text: #5a5c69;
+        }
+        
+        body {
+            background-color: #f8f9fc;
+            font-family: 'Nunito', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            color: var(--dark-text);
+        }
+        
+        .dashboard-header {
+            background: linear-gradient(135deg, var(--primary-color) 0%, #224abe 100%);
+            color: white;
+            padding: 2rem 0;
+            margin-bottom: 2rem;
+            border-radius: 0 0 15px 15px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        
+        .stat-card {
+            border-radius: 10px;
+            box-shadow: 0 0.15rem 1.75rem 0 rgba(58, 59, 69, 0.15);
+            border: none;
+            transition: transform 0.3s;
+            margin-bottom: 1.5rem;
+        }
+        
+        .stat-card:hover {
+            transform: translateY(-5px);
+        }
+        
+        .stat-card .card-body {
+            padding: 1.5rem;
+        }
+        
+        .stat-icon {
+            font-size: 2rem;
+            opacity: 0.7;
+        }
+        
+        .humeur-positive { color: var(--secondary-color); }
+        .humeur-neutre { color: var(--warning-color); }
+        .humeur-negative { color: var(--danger-color); }
+        
+        .bilan-content {
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 0.15rem 1.75rem 0 rgba(58, 59, 69, 0.15);
+            padding: 2rem;
+            margin-bottom: 2rem;
+        }
+        
+        .point-important {
+            border-left: 4px solid var(--primary-color);
+            padding-left: 1rem;
+            margin: 1.5rem 0;
+        }
+        
+        .theme-badge {
+            background-color: #e8e8e8;
+            color: #333;
+            padding: 0.4rem 0.8rem;
+            border-radius: 20px;
+            margin: 0.2rem;
+            display: inline-block;
+            font-size: 0.85rem;
+        }
+        
+        .recommandation-card {
+            border-left: 4px solid var(--secondary-color);
+            background-color: #f8fff9;
+        }
+        
+        .timeline {
+            position: relative;
+            padding-left: 2rem;
+        }
+        
+        .timeline::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            width: 4px;
+            background-color: #e3e6f0;
+            border-radius: 2px;
+        }
+        
+        .timeline-item {
+            position: relative;
+            margin-bottom: 1.5rem;
+        }
+        
+        .timeline-item::before {
+            content: '';
+            position: absolute;
+            left: -2.3rem;
+            top: 0.5rem;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background-color: var(--primary-color);
+            z-index: 1;
+        }
+        
+        .nav-tabs .nav-link.active {
+            color: var(--primary-color);
+            font-weight: bold;
+            border-bottom: 3px solid var(--primary-color);
+        }
+        
+        .nav-tabs .nav-link {
+            color: var(--dark-text);
+        }
+        
+        .period-selector {
+            background: white;
+            border-radius: 10px;
+            padding: 1rem;
+            box-shadow: 0 0.15rem 1.75rem 0 rgba(58, 59, 69, 0.1);
+            margin-bottom: 1.5rem;
+        }
+        
+        .humeur-indicator {
+            height: 10px;
+            border-radius: 5px;
+            background: linear-gradient(to right, var(--danger-color), var(--warning-color), var(--secondary-color));
+            position: relative;
+        }
+        
+        .humeur-marker {
+            position: absolute;
+            top: -5px;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: white;
+            border: 3px solid var(--primary-color);
+            transform: translateX(-50%);
+        }
+
+        .btn-regenerate {
+            background: linear-gradient(135deg, var(--secondary-color), var(--primary-color));
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 10px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        .btn-regenerate:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+
+        .btn-period {
+            background: white;
+            border: 2px solid var(--primary-color);
+            color: var(--primary-color);
+            padding: 8px 16px;
+            border-radius: 8px;
+            margin: 0 5px;
+            transition: all 0.3s ease;
+        }
+
+        .btn-period:hover {
+            background: var(--primary-color);
+            color: white;
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <header class="dashboard-header">
+        <div class="container">
+            <div class="row align-items-center">
+                <div class="col-md-8">
+                    <h1 class="h2 mb-1"><i class="fas fa-chart-line me-2"></i>Bilan Mensuel</h1>
+                    <p class="mb-0">Analyse de votre parcours émotionnel et de réflexion</p>
+                </div>
+                <div class="col-md-4 text-md-end">
+                    <a href="/dashboard/" class="btn btn-light btn-sm">
+                        <i class="fas fa-tachometer-alt me-1"></i>Tableau de bord
+                    </a>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <div class="container">
+        <!-- Period Selector -->
+        <div class="period-selector">
+            <div class="row align-items-center">
+                <div class="col-md-6">
+                    <h4 class="mb-0">Période : {{ periode }}</h4>
+                </div>
+             
+            </div>
+
+      
+        </div>
+
+        <!-- Stats Overview -->
+        <div class="row">
+            <div class="col-xl-3 col-md-6">
+                <div class="stat-card card">
+                    <div class="card-body">
+                        <div class="row align-items-center">
+                            <div class="col">
+                                <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
+                                    Fréquence d'écriture
+                                </div>
+                                <div class="h5 mb-0 font-weight-bold text-gray-800">
+                                    {{ bilan.frequence_ecriture }} entrées
+                                </div>
+                            </div>
+                            <div class="col-auto">
+                                <i class="fas fa-pen-alt stat-icon text-primary"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-xl-3 col-md-6">
+                <div class="stat-card card">
+                    <div class="card-body">
+                        <div class="row align-items-center">
+                            <div class="col">
+                                <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
+                                    Humeur moyenne
+                                </div>
+                                <div class="h5 mb-0 font-weight-bold text-gray-800">
+                                    {% if bilan.humeur_moyenne > 0.3 %}
+                                    <span class="humeur-positive">Positive</span>
+                                    {% elif bilan.humeur_moyenne < -0.3 %}
+                                    <span class="humeur-negative">Négative</span>
+                                    {% else %}
+                                    <span class="humeur-neutre">Neutre</span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="col-auto">
+                                <i class="fas fa-smile stat-icon text-success"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-xl-3 col-md-6">
+                <div class="stat-card card">
+                    <div class="card-body">
+                        <div class="row align-items-center">
+                            <div class="col">
+                                <div class="text-xs font-weight-bold text-info text-uppercase mb-1">
+                                    Thèmes abordés
+                                </div>
+                                <div class="h5 mb-0 font-weight-bold text-gray-800">
+                                    {{ bilan.themes_dominants|length }}
+                                </div>
+                            </div>
+                            <div class="col-auto">
+                                <i class="fas fa-tags stat-icon text-info"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-xl-3 col-md-6">
+                <div class="stat-card card">
+                    <div class="card-body">
+                        <div class="row align-items-center">
+                            <div class="col">
+                                <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
+                                    Score d'humeur
+                                </div>
+                                <div class="h5 mb-0 font-weight-bold text-gray-800">
+                                    {{ bilan.humeur_moyenne|floatformat:2 }}
+                                </div>
+                            </div>
+                            <div class="col-auto">
+                                <i class="fas fa-chart-bar stat-icon text-warning"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="row">
+            <div class="col-lg-8">
+                <!-- Bilan Content -->
+                <div class="bilan-content">
+                    <div class="d-flex justify-content-between align-items-center mb-4">
+                        <h2 class="h4 text-gray-800">{{ bilan.titre }}</h2>
+                        <span class="badge bg-{% if bilan.statut == 'genere' %}success{% elif bilan.statut == 'en_attente' %}warning{% else %}danger{% endif %}">
+                            {{ bilan.get_statut_display }}
+                        </span>
+                    </div>
+                    
+                    <div class="point-important">
+                        <h5 class="text-primary mb-2"><i class="fas fa-star me-2"></i>Résumé exécutif</h5>
+                        <p class="mb-0">{{ bilan.resume }}</p>
+                    </div>
+                    
+                    <div class="mb-4">
+                        <h5 class="text-primary mb-3"><i class="fas fa-bullseye me-2"></i>Points clés du mois</h5>
+                        <ul class="list-group list-group-flush">
+                            {% for point in bilan.points_cles %}
+                            <li class="list-group-item d-flex align-items-center">
+                                <i class="fas fa-check text-success me-3"></i>
+                                {{ point }}
+                            </li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                    
+                    <div class="mb-4">
+                        <h5 class="text-primary mb-3"><i class="fas fa-chart-line me-2"></i>Tendances détectées</h5>
+                        <div class="row">
+                            {% for tendance in bilan.tendances %}
+                            <div class="col-md-6 mb-2">
+                                <div class="d-flex align-items-center">
+                                    <i class="fas fa-arrow-right text-info me-2"></i>
+                                    <span>{{ tendance }}</span>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    
+                    <div>
+                        <h5 class="text-primary mb-3"><i class="fas fa-lightbulb me-2"></i>Recommandations personnalisées</h5>
+                        <div class="row">
+                            {% for recommandation in bilan.recommandations %}
+                            <div class="col-lg-6 mb-3">
+                                <div class="card recommandation-card h-100">
+                                    <div class="card-body">
+                                        <div class="d-flex align-items-start">
+                                            <i class="fas fa-hand-point-right text-success mt-1 me-2"></i>
+                                            <p class="mb-0">{{ recommandation }}</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-lg-4">
+                <!-- Thèmes dominants -->
+                <div class="stat-card card mb-4">
+                    <div class="card-header py-3">
+                        <h6 class="m-0 font-weight-bold text-primary">
+                            <i class="fas fa-tags me-1"></i>Thèmes dominants
+                        </h6>
+                    </div>
+                    <div class="card-body">
+                        {% for theme in bilan.themes_dominants %}
+                        <span class="theme-badge">{{ theme }}</span>
+                        {% empty %}
+                        <p class="text-muted">Aucun thème dominant détecté ce mois-ci.</p>
+                        {% endfor %}
+                    </div>
+                </div>
+                
+                <!-- Indicateur d'humeur -->
+                <div class="stat-card card mb-4">
+                    <div class="card-header py-3">
+                        <h6 class="m-0 font-weight-bold text-primary">
+                            <i class="fas fa-smile me-1"></i>Niveau d'humeur
+                        </h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="humeur-indicator mb-3">
+                            <div class="humeur-marker" id="humeur-marker"></div>
+                        </div>
+                        <div class="d-flex justify-content-between text-xs">
+                            <span>Négatif</span>
+                            <span>Neutre</span>
+                            <span>Positif</span>
+                        </div>
+                        <div class="mt-3 text-center">
+                            <p class="mb-0">Score: <strong>{{ bilan.humeur_moyenne|floatformat:2 }}</strong></p>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Historique des bilans -->
+                <div class="stat-card card">
+                    <div class="card-header py-3">
+                        <h6 class="m-0 font-weight-bold text-primary">
+                            <i class="fas fa-history me-1"></i>Historique des bilans
+                        </h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="timeline">
+                            {% for bilan_hist in bilans_historique %}
+                            <div class="timeline-item">
+                                <div class="mb-1">
+                                    <a href="/dashboard/bilan-mensuel/{{ bilan_hist.statistique.periode|slice:'3:' }}/{{ bilan_hist.statistique.periode|slice:':2' }}/" 
+                                       class="fw-bold {% if bilan_hist.id == bilan.id %}text-primary{% else %}text-gray-800{% endif %}">
+                                        {{ bilan_hist.statistique.periode }}
+                                    </a>
+                                </div>
+                                <div class="text-xs text-muted">
+                                    {{ bilan_hist.titre|truncatewords:5 }}
+                                </div>
+                            </div>
+                            {% empty %}
+                            <p class="text-muted">Aucun bilan précédent disponible.</p>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Bouton de régénération -->
+       
+    </div>
+
+    <!-- Footer -->
+    <footer class="py-4 mt-5 bg-white">
+        <div class="container">
+            <div class="row align-items-center">
+                <div class="col-md-6 text-center text-md-start">
+                    <small class="text-muted">
+                        &copy; {% now "Y" %} Journal Émotionnel. Généré le {{ bilan.date_generation|date:"d/m/Y à H:i" }}
+                    </small>
+                </div>
+                <div class="col-md-6 text-center text-md-end">
+                    <small class="text-muted">
+                        <i class="fas fa-robot me-1"></i>Bilan généré automatiquement par IA
+                    </small>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Bootstrap & jQuery -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <script>
+        $(document).ready(function() {
+            // Positionne le marqueur d'humeur
+            function positionnerMarqueurHumeur() {
+                const score = {{ bilan.humeur_moyenne|default:0 }};
+                // Convertir le score (-1 à 1) en pourcentage (0% à 100%)
+                const pourcentage = ((score + 1) / 2) * 100;
+                $('#humeur-marker').css('left', pourcentage + '%');
+            }
+
+            positionnerMarqueurHumeur();
+
+            // Calcul des années disponibles (3 ans en arrière, année actuelle)
+            function getYears() {
+                const currentYear = new Date().getFullYear();
+                const years = [];
+                for (let i = currentYear - 3; i <= currentYear; i++) {
+                    years.push(i);
+                }
+                return years;
+            }
+
+            // Remplir le sélecteur d'années si vide
+            if ($('#year-select option').length <= 1) {
+                const years = getYears();
+                $('#year-select').empty();
+                years.forEach(year => {
+                    $('#year-select').append(new Option(year, year));
+                });
+                // Sélectionner l'année courante
+                $('#year-select').val({{ annee }});
+            }
+
+            // Load bilan when period changes
+            $('#load-bilan').click(function() {
+                chargerBilan();
+            });
+
+            // Navigation rapide
+            $('.btn-period').click(function() {
+                const monthsToAdd = parseInt($(this).data('months'));
+                let newMonth = {{ mois }};
+                let newYear = {{ annee }};
+
+                if (monthsToAdd === 0) {
+                    // Mois actuel
+                    const now = new Date();
+                    newMonth = now.getMonth() + 1;
+                    newYear = now.getFullYear();
+                } else {
+                    // Mois précédent/suivant
+                    newMonth += monthsToAdd;
+                    if (newMonth > 12) {
+                        newMonth = 1;
+                        newYear++;
+                    } else if (newMonth < 1) {
+                        newMonth = 12;
+                        newYear--;
+                    }
+                }
+
+                $('#month-select').val(newMonth);
+                $('#year-select').val(newYear);
+                chargerBilan();
+            });
+
+            // Fonction pour charger le bilan
+            function chargerBilan() {
+                const month = $('#month-select').val();
+                const year = $('#year-select').val();
+                window.location.href = `/dashboard/bilan-mensuel/${year}/${month}/`;
+            }
+            
+            // Regenerate bilan with AI
+            $('#regenerate-bilan').click(function() {
+                const month = {{ mois }};
+                const year = {{ annee }};
+                
+                // Show loading state
+                const btn = $(this);
+                const originalText = btn.html();
+                btn.html('<i class="fas fa-spinner fa-spin me-2"></i>Génération en cours...');
+                btn.prop('disabled', true);
+                
+                // Call API to regenerate bilan
+                $.ajax({
+                    url: '/dashboard/api/generer-bilan/',
+                    method: 'POST',
+                    contentType: 'application/json',
+                    data: JSON.stringify({
+                        mois: month,
+                        annee: year
+                    }),
+                    headers: {
+                        'X-CSRFToken': getCookie('csrftoken')
+                    },
+                    success: function(response) {
+                        if (response.success) {
+                            // Reload the page to show updated bilan
+                            window.location.reload();
+                        } else {
+                            alert('Erreur lors de la génération: ' + response.error);
+                            btn.html(originalText);
+                            btn.prop('disabled', false);
+                        }
+                    },
+                    error: function() {
+                        alert('Erreur lors de la communication avec le serveur');
+                        btn.html(originalText);
+                        btn.prop('disabled', false);
+                    }
+                });
+            });
+            
+            // Helper function to get CSRF token
+            function getCookie(name) {
+                let cookieValue = null;
+                if (document.cookie && document.cookie !== '') {
+                    const cookies = document.cookie.split(';');
+                    for (let i = 0; i < cookies.length; i++) {
+                        const cookie = cookies[i].trim();
+                        if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                            cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                            break;
+                        }
+                    }
+                }
+                return cookieValue;
+            }
+        });
+    </script>
+</body>
+</html>

@@ -2,7 +2,7 @@
 <div class="sidebar bg-light vh-100 position-fixed start-0 top-0" style="width: 250px; z-index: 1000;">
     <div class="sidebar-content h-100 d-flex flex-column">
 
-        <a class="navbar-brand" href="{% url 'users:landing' %}">
+        <a class="navbar-brand" style="margin-left: 20px;" href="{% url 'users:landing' %}">
             <i class="fas fa-book me-2"></i>MindScribe
         </a>
 
@@ -16,8 +16,8 @@
         <div class="flex-grow-1 p-3">
             <ul class="nav flex-column">
                 <li class="nav-item mb-2">
-                    <a class="nav-link {% if request.resolver_match.url_name == 'home' %}active bg-primary text-white{% else %}text-dark{% endif %} rounded-3" 
-                       href="{% url 'users:home' %}">
+                    <a class="nav-link active bg-primary text-whitetext-dark rounded-3" 
+                     href="/dashboard/">
                         <i class="fas fa-home me-2"></i>Tableau de bord
                     </a>
                 </li>
@@ -85,6 +85,18 @@
                     <a class="nav-link {% if request.resolver_match.url_name == 'edit_profile' %}active bg-primary text-white{% else %}text-dark{% endif %} rounded-3" 
                        href="{% url 'users:edit_profile' %}">
                         <i class="fas fa-user-edit me-2"></i>Modifier le profil
+                    </a>
+                </li>
+                <li class="nav-item mb-2">
+                    <a class="nav-link {% if request.resolver_match.url_name == 'list' and request.resolver_match.namespace == 'journal' %}active bg-primary text-white{% else %}text-dark{% endif %} rounded-3" 
+                       href="{% url 'journal:list' %}">
+                        <i class="fas fa-book-open me-2"></i>Mon Journal
+                    </a>
+                </li>
+                <li class="nav-item mb-2">
+                    <a class="nav-link {% if request.resolver_match.url_name == 'create' and request.resolver_match.namespace == 'journal' %}active bg-primary text-white{% else %}text-dark{% endif %} rounded-3" 
+                       href="{% url 'journal:create' %}">
+                        <i class="fas fa-plus-circle me-2"></i>Nouvelle Entrée
                     </a>
                 </li>
                 <li class="nav-item mb-2">

@@ -42,6 +42,8 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    # Third-party apps
+    'rest_framework',
     # Custom apps
     'users',
     'journal',
@@ -49,6 +51,7 @@ INSTALLED_APPS = [
     'dashboard',
     'recommendations',
     'communication',
+    'module2_analysis.apps.Module2AnalysisConfig',
 ]
 
 MIDDLEWARE = [
@@ -173,10 +176,9 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 # Custom user model
 AUTH_USER_MODEL = 'users.CustomUser'
 
-# Login/Logout URLs
-LOGIN_REDIRECT_URL = '/'
+LOGIN_URL = '/login/'  # 👈 AJOUTE/MODIFIE CETTE LIGNE
+LOGIN_REDIRECT_URL = '/dashboard/'  # 👈 MODIFIE POUR REDIRIGER VERS TON DASHBOARD
 LOGOUT_REDIRECT_URL = '/'
-
 # Email backend (for development)
 EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 
