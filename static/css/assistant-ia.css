@@ -1,0 +1,439 @@
+/* ===== MODAL FIXES ===== */
+.modal-backdrop {
+    z-index: 1050 !important;
+}
+
+.modal {
+    z-index: 1060 !important;
+}
+
+#journalDetailsModal {
+    z-index: 1070 !important;
+}
+
+#journalDetailsModal + .modal-backdrop {
+    z-index: 1065 !important;
+}
+
+/* ===== JOURNAL ITEMS ===== */
+.journal-item {
+    cursor: pointer;
+    transition: all 0.3s ease;
+    border-left: 3px solid transparent;
+    position: relative;
+    user-select: none;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    border-radius: 8px;
+    margin-bottom: 8px;
+    border: 1px solid #e9ecef;
+}
+
+.journal-item:hover {
+    background-color: #f8f9fa;
+    border-left-color: #667eea;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    border-color: #667eea;
+}
+
+.journal-item.active {
+    background: linear-gradient(135deg, #667eea15, #764ba215);
+    border-left: 4px solid #667eea;
+    border-color: #667eea;
+}
+
+.journal-item.selected {
+    background: linear-gradient(135deg, #28a74515, #20c99715);
+    border-left: 4px solid #28a745;
+    border-color: #28a745;
+}
+
+.journal-item:focus {
+    outline: 2px solid #667eea;
+    outline-offset: 2px;
+}
+
+/* ===== DRAG & DROP STYLES ===== */
+.draggable-journal {
+    cursor: grab;
+    position: relative;
+    transition: all 0.3s ease;
+    touch-action: none; /* Prevent default touch behaviors */
+}
+
+.draggable-journal.dragging {
+    cursor: grabbing !important;
+    opacity: 0.7;
+    transform: scale(0.98) rotate(2deg);
+    box-shadow: 0 8px 25px rgba(102, 126, 234, 0.3);
+    border-color: #667eea !important;
+    z-index: 1000; /* Ensure dragged item is above others */
+}
+
+/* Drag handle */
+.drag-handle {
+    position: absolute;
+    top: 50%;
+    right: 12px;
+    transform: translateY(-50%);
+    opacity: 0;
+    transition: all 0.3s ease;
+    cursor: grab;
+    z-index: 2;
+    background: rgba(255, 255, 255, 0.95);
+    padding: 6px;
+    border-radius: 6px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.draggable-journal:hover .drag-handle {
+    opacity: 1;
+    transform: translateY(-50%) scale(1.1);
+}
+
+.draggable-journal.dragging .drag-handle {
+    opacity: 0;
+}
+
+/* Drop zone */
+.drop-zone {
+    display: none;
+    background: linear-gradient(135deg, #f8f9ff, #e8f4ff);
+    border: 3px dashed #4dabf7;
+    border-radius: 16px;
+    margin: 1rem;
+    padding: 2rem;
+    transition: all 0.4s ease;
+    backdrop-filter: blur(10px);
+    position: relative;
+    z-index: 999;
+}
+
+.drop-zone-active {
+    background: linear-gradient(135deg, #e3f2fd, #bbdefb) !important;
+    border-color: #2196f3 !important;
+    border-style: solid;
+    transform: scale(1.02);
+    box-shadow: 0 8px 25px rgba(33, 150, 243, 0.4);
+}
+
+.border-dashed {
+    border: 2px dashed #dee2e6;
+    border-radius: 12px;
+    transition: all 0.3s ease;
+}
+
+#mobile-drop-zone {
+    cursor: pointer;
+    transition: all 0.3s ease;
+    touch-action: manipulation; /* Optimize for touch */
+}
+
+#mobile-drop-zone:hover,
+#mobile-drop-zone:active {
+    background-color: #e9ecef;
+    border-color: #667eea;
+    transform: scale(0.98);
+}
+
+/* ===== INPUT FIELD WITH JOURNAL ===== */
+.input-with-journal {
+    position: relative;
+}
+
+.journal-attachment {
+    background: linear-gradient(135deg, #f8f9ff, #e8f4ff);
+    border: 2px solid #667eea;
+    border-radius: 12px;
+    padding: 1rem;
+    margin-bottom: 1rem;
+    animation: slideInUp 0.3s ease;
+    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.1);
+}
+
+@keyframes slideInUp {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.journal-attachment-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 0.75rem;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+
+.journal-attachment-title {
+    font-weight: 600;
+    color: #667eea;
+    margin: 0;
+    font-size: 1rem;
+}
+
+.journal-attachment-meta {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+}
+
+.journal-attachment-badge {
+    font-size: 0.75rem;
+    background: #667eea;
+    color: white;
+    border: none;
+}
+
+.journal-attachment-content {
+    color: #6c757d;
+    font-size: 0.9rem;
+    line-height: 1.4;
+    margin-bottom: 0.75rem;
+    background: rgba(255, 255, 255, 0.5);
+    padding: 0.75rem;
+    border-radius: 8px;
+    border-left: 3px solid #667eea;
+}
+
+.journal-attachment-actions {
+    display: flex;
+    gap: 0.5rem;
+    justify-content: flex-end;
+    flex-wrap: wrap;
+}
+
+.journal-attachment-btn {
+    font-size: 0.8rem;
+    padding: 0.4rem 0.75rem;
+    border-radius: 6px;
+    transition: all 0.3s ease;
+}
+
+.journal-attachment-btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+}
+
+/* ===== JOURNAL DETAILS MODAL ===== */
+.journal-details-content {
+    max-height: 400px;
+    overflow-y: auto;
+    background: #f8f9fa;
+    border-radius: 8px;
+    padding: 1rem;
+    border: 1px solid #e9ecef;
+}
+
+.journal-details-content p {
+    margin: 0;
+    line-height: 1.6;
+    white-space: pre-line;
+}
+
+/* ===== MESSAGE STYLES ===== */
+.message-container {
+    margin-bottom: 1.5rem;
+    animation: fadeIn 0.4s ease-in;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.message {
+    max-width: 85%;
+    padding: 1.25rem 1.5rem;
+    border-radius: 1.5rem;
+    position: relative;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    transition: all 0.3s ease;
+}
+
+.user-message {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    margin-left: auto;
+    border-bottom-right-radius: 0.75rem;
+}
+
+.assistant-message {
+    background: #ffffff;
+    color: #2d3748;
+    border: 1px solid #e2e8f0;
+    border-bottom-left-radius: 0.75rem;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+}
+
+.message:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(0,0,0,0.15);
+}
+
+.message-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 0.75rem;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+
+.message-sender {
+    display: flex;
+    align-items: center;
+    flex-shrink: 0;
+}
+
+.message-meta {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+}
+
+.message-time {
+    font-size: 0.75rem;
+    opacity: 0.7;
+    white-space: nowrap;
+}
+
+.message-type-badge {
+    font-size: 0.7rem;
+    background: linear-gradient(135deg, #48bb78, #38a169);
+    border: none;
+    white-space: nowrap;
+    padding: 0.25rem 0.5rem;
+}
+
+.message-stats {
+    margin-top: 0.75rem;
+    padding-top: 0.75rem;
+    border-top: 1px solid rgba(0,0,0,0.1);
+}
+
+.message-list {
+    margin: 0.5rem 0;
+    padding-left: 1.5rem;
+}
+
+.message-list li {
+    margin-bottom: 0.25rem;
+    line-height: 1.5;
+}
+
+/* ===== QUICK PROMPTS ===== */
+.quick-prompt {
+    transition: all 0.3s ease;
+    border: 2px solid #e9ecef;
+    border-radius: 10px;
+    padding: 0.75rem;
+    background: white;
+}
+
+.quick-prompt:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 6px 20px rgba(102, 126, 234, 0.2);
+    border-color: #667eea;
+    background: linear-gradient(135deg, #667eea05, #764ba205);
+}
+
+/* ===== ANIMATIONS ===== */
+@keyframes pulse {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.05); }
+    100% { transform: scale(1); }
+}
+
+.draggable-journal:active:not(.dragging) {
+    animation: pulse 0.3s ease;
+}
+
+@keyframes bounce {
+    0%, 20%, 50%, 80%, 100% { transform: translateY(0); }
+    40% { transform: translateY(-5px); }
+    60% { transform: translateY(-3px); }
+}
+
+#drag-hint {
+    font-size: 0.75rem;
+    animation: bounce 2s infinite;
+}
+
+/* ===== RESPONSIVE DESIGN ===== */
+@media (max-width: 768px) {
+    .drag-handle {
+        opacity: 1;
+        background: rgba(255, 255, 255, 0.9);
+        right: 8px;
+        padding: 4px;
+    }
+    
+    .drop-zone {
+        margin: 0.5rem;
+        padding: 1.5rem;
+    }
+    
+    .message {
+        max-width: 95%;
+        padding: 0.75rem 1rem;
+    }
+    
+    .journal-attachment-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.75rem;
+    }
+    
+    .journal-attachment-actions {
+        width: 100%;
+        justify-content: flex-start;
+        gap: 0.75rem;
+    }
+    
+    .journal-attachment-btn {
+        flex: 1;
+        min-width: 100px;
+        padding: 0.5rem;
+    }
+}
+
+/* Selection animation */
+@keyframes selectJournal {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.02); }
+    100% { transform: scale(1); }
+}
+
+.journal-item.selecting {
+    animation: selectJournal 0.4s ease;
+    background: linear-gradient(135deg, #28a74515, #20c99715);
+}
+
+/* Input area styling */
+#message-input-area {
+    transition: all 0.3s ease;
+}
+
+.journal-attached #message-input-area {
+    background: linear-gradient(135deg, #f8f9ff, #e8f4ff);
+    border-radius: 12px;
+    padding: 1rem;
+    margin-top: 1rem;
+}

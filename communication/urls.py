@@ -11,6 +11,7 @@ from .views import (
     EnvoyerMessageView,
     HistoriqueConversationsView,
     GetSessionView,
+    RefreshJournalsView,
 )
 
 app_name = 'communication'
@@ -35,8 +36,9 @@ urlpatterns = [
 
     # URLs Assistant IA
     path('assistant-ia/', AssistantIAView.as_view(), name='assistant_ia'),
-    path('assistant-ia/envoyer-message/', EnvoyerMessageView.as_view(), name='envoyer_message'),
+    path('assistant-ia/envoyer_message/', EnvoyerMessageView.as_view(), name='envoyer_message'),
     path('assistant-ia/historique/', HistoriqueConversationsView.as_view(), name='historique_conversations'),
-    path('assistant-ia/session/<uuid:session_id>/', GetSessionView.as_view(), name='get_session'),
+    path('assistant-ia/session/<str:session_id>/', GetSessionView.as_view(), name='session_history'),
+    path('assistant-ia/refresh-journals/', RefreshJournalsView.as_view(), name='refresh_journals'),
 ]
 

@@ -8,6 +8,8 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from django.core.files.base import ContentFile
 from django.views.decorators.csrf import csrf_exempt
 from django.utils.decorators import method_decorator
+from django.views.decorators.csrf import ensure_csrf_cookie
+from django.core.cache import cache
 from django.contrib import messages
 from django.utils import timezone
 from io import BytesIO
@@ -24,6 +26,7 @@ from django.shortcuts import redirect
 
 logger = logging.getLogger(__name__)
 
+from django.core import serializers
 
 # ✅ AJOUTER : Vue dashboard pour communication
 class DashboardCommunicationView(LoginRequiredMixin, View):
@@ -294,8 +297,6 @@ class SupprimerRapportView(LoginRequiredMixin, View):
 
 
 class AssistantIAView(LoginRequiredMixin, View):
-    """Vue principale optimisée pour l'assistant IA"""
-    
     def get(self, request):
         try:
             journals = Journal.objects.filter(utilisateur=request.user).order_by('-date_creation')[:10]
@@ -319,10 +320,8 @@ class AssistantIAView(LoginRequiredMixin, View):
             messages.error(request, "Erreur lors du chargement de l'assistant IA")
             return redirect('users:home')
 
-@method_decorator(csrf_exempt, name='dispatch')
+@method_decorator(ensure_csrf_cookie, name='dispatch')
 class EnvoyerMessageView(LoginRequiredMixin, View):
-    """Endpoint async pour envoyer des messages"""
-    
     def post(self, request):
         try:
             data = json.loads(request.body)
@@ -331,14 +330,21 @@ class EnvoyerMessageView(LoginRequiredMixin, View):
             session_id = data.get('session_id')
             
             if not message:
-                return JsonResponse({'error': 'Message vide'}, status=400)
+                return JsonResponse({'success': False, 'error': 'Message vide'}, status=400)
             
             if len(message) > 1000:
-                return JsonResponse({'error': 'Message trop long (max 1000 caractères)'}, status=400)
+                return JsonResponse({'success': False, 'error': 'Message trop long (max 1000 caractères)'}, status=400)
+            
+            if not session_id:
+                return JsonResponse({'success': False, 'error': 'Session ID manquant'}, status=400)
             
             journal = None
             if journal_id:
-                journal = get_object_or_404(Journal, id=journal_id, utilisateur=request.user)
+                try:
+                    journal_uuid = uuid.UUID(journal_id)
+                    journal = Journal.objects.get(id=journal_uuid, utilisateur=request.user)
+                except (ValueError, Journal.DoesNotExist):
+                    return JsonResponse({'success': False, 'error': 'Journal non trouvé ou non autorisé'}, status=404)
             
             contexte = {
                 'user_agent': request.META.get('HTTP_USER_AGENT', ''),
@@ -354,18 +360,24 @@ class EnvoyerMessageView(LoginRequiredMixin, View):
             )
             
             if resultat['success']:
-                return JsonResponse(resultat)
+                return JsonResponse({
+                    'success': True,
+                    'reponse': resultat['reponse'],
+                    'date_interaction': resultat['date_interaction'],
+                    'type_interaction': resultat['type_interaction'],
+                    'statistiques': resultat['statistiques']
+                })
             else:
                 return JsonResponse({
                     'success': False,
-                    'error': resultat.get('error', 'Erreur inconnue')
+                    'error': resultat.get('error', 'Erreur lors du traitement du message')
                 }, status=500)
                 
         except json.JSONDecodeError:
-            return JsonResponse({'error': 'Données JSON invalides'}, status=400)
+            return JsonResponse({'success': False, 'error': 'Données JSON invalides'}, status=400)
         except Exception as e:
             logger.error(f"Erreur envoi message: {str(e)}")
-            return JsonResponse({'error': 'Erreur interne du serveur'}, status=500)
+            return JsonResponse({'success': False, 'error': f'Erreur interne du serveur: {str(e)}'}, status=500)
     
     def _get_client_ip(self, request):
         x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
@@ -376,8 +388,6 @@ class EnvoyerMessageView(LoginRequiredMixin, View):
         return ip
 
 class HistoriqueConversationsView(LoginRequiredMixin, View):
-    """Page d'historique des conversations"""
-    
     def get(self, request):
         conversations = AssistantIA.objects.filter(
             utilisateur=request.user
@@ -389,27 +399,72 @@ class HistoriqueConversationsView(LoginRequiredMixin, View):
                 sessions[conv.session_id] = []
             sessions[conv.session_id].append(conv)
         
+        sessions_json = {}
+        for session_id, convs in sessions.items():
+            session_key = str(session_id)
+            sessions_json[session_key] = [
+                {
+                    'message_utilisateur': conv.message_utilisateur,
+                    'reponse_ia': conv.reponse_ia,
+                    'date_creation': conv.date_creation.isoformat(),
+                    'type_interaction': conv.type_interaction,
+                    'type_interaction_display': conv.get_type_interaction_display(),
+                }
+                for conv in convs
+            ]
+        
         context = {
             'sessions': sessions,
+            'sessions_json': json.dumps(sessions_json),
             'active_tab': 'assistant_ia',
         }
         return render(request, 'communication/assistant_ia/historique.html', context)
 
 class GetSessionView(LoginRequiredMixin, View):
-    """Récupère l'historique d'une session spécifique"""
-    
     def get(self, request, session_id):
-        conversations = AssistantIA.objects.filter(
-            utilisateur=request.user,
-            session_id=session_id
-        ).order_by('date_creation')
+        try:
+            conversations = AssistantIA.objects.filter(
+                utilisateur=request.user,
+                session_id=session_id
+            ).order_by('date_creation')
+            
+            data = [{
+                'id': str(conv.id),
+                'message_utilisateur': conv.message_utilisateur,
+                'reponse_ia': conv.reponse_ia,
+                'date_interaction': conv.date_creation.strftime('%H:%M'),
+                'type_interaction': conv.type_interaction,
+                'type_interaction_display': conv.get_type_interaction_display(),
+            } for conv in conversations]
+            
+            return JsonResponse({'conversations': data})
+        except Exception as e:
+            logger.error(f"Erreur récupération session {session_id}: {str(e)}")
+            return JsonResponse({'success': False, 'error': 'Erreur lors de la récupération de la session'}, status=500)
+
+class RefreshJournalsView(LoginRequiredMixin, View):
+    def get(self, request):
+        try:
+            cache_key = f'journals_{request.user.id}'
+            journals_data = cache.get(cache_key)
+            if not journals_data:
+                journals = Journal.objects.filter(utilisateur=request.user).order_by('-date_creation')[:10]
+                journals_data = [{
+                    'id': str(journal.id),
+                    'titre': journal.contenu_texte[:50] + '...' if journal.contenu_texte else f'Journal {journal.date_creation.strftime("%Y-%m-%d")}',
+                    'date_creation': journal.date_creation.strftime('%d/%m/%Y'),
+                    'contenu': journal.contenu_texte or f'[{journal.type_entree}: {journal.audio.name if journal.audio else journal.image.name if journal.image else "Sans contenu"}]',
+                    'type_entree': journal.type_entree,
+                    'categorie': journal.categorie or 'Non catégorisé'
+                } for journal in journals]
+                cache.set(cache_key, journals_data, timeout=300)  # Cache for 5 minutes
+            return JsonResponse({'success': True, 'journals': journals_data})
+        except Exception as e:
+            logger.error(f"Erreur récupération journaux: {str(e)}")
+            return JsonResponse({'success': False, 'error': 'Erreur lors de la récupération des journaux'}, status=500)
         
-        data = [{
-            'id': str(conv.id),
-            'message_utilisateur': conv.message_utilisateur,
-            'reponse_ia': conv.reponse_ia,
-            'date_interaction': conv.date_creation.strftime('%H:%M'),
-            'type_interaction': conv.type_interaction
-        } for conv in conversations]
-        
-        return JsonResponse({'conversations': data})
+
+
+
+
+

@@ -13,6 +13,9 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 from pathlib import Path
 import os
 from decouple import config
+from dotenv import load_dotenv
+
+load_dotenv()
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -198,23 +201,3 @@ AI_CONFIG = {
     'temperature': 0.7,
     'timeout': 60,          # Augmenté pour les modèles lents
 }
-
-# Build paths inside the project like this: BASE_DIR / 'subdir'.
-BASE_DIR = Path(__file__).resolve().parent.parent
-
-print("🔍 DEBUG SETTINGS:")
-print(f"📁 BASE_DIR: {BASE_DIR}")
-print(f"📄 Current file: {__file__}")
-
-# Check if .env file exists
-env_path = BASE_DIR / '.env'
-print(f"📄 .env file exists: {env_path.exists()}")
-
-# Load environment variables manually for debugging
-from dotenv import load_dotenv
-load_dotenv()
-
-# Debug OpenRouter config
-OPENROUTER_API_KEY = os.environ.get('OPENROUTER_API_KEY')
-print(f"🔑 OPENROUTER_API_KEY from env: {OPENROUTER_API_KEY}")
-print(f"🔑 OPENROUTER_API_KEY length: {len(OPENROUTER_API_KEY) if OPENROUTER_API_KEY else 0}")

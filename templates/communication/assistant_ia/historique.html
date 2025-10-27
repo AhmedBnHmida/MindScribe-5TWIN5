@@ -1,56 +1,559 @@
 {% extends 'base.html' %}
+{% load static %}
 
 {% block title %}Historique - Assistant IA{% endblock %}
 
 {% block content %}
-<div class="container py-4">
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <h1>
-            <i class="fas fa-history me-2"></i>Historique des Conversations
-        </h1>
-        <a href="{% url 'communication:assistant_ia' %}" class="btn btn-primary">
-            <i class="fas fa-robot me-1"></i>Nouvelle Conversation
-        </a>
-    </div>
-
-    {% if sessions %}
-        {% for session_id, conversations in sessions.items %}
-        <div class="card mb-4">
-            <div class="card-header">
-                <h5 class="mb-0">
-                    Session du {{ conversations.0.date_creation|date:"d/m/Y à H:i" }}
-                    <small class="text-muted">({{ conversations|length }} messages)</small>
-                </h5>
-            </div>
-            <div class="card-body">
-                {% for conv in conversations %}
-                <div class="mb-3">
-                    <div class="d-flex justify-content-between align-items-start mb-1">
-                        <strong>Vous:</strong>
-                        <small class="text-muted">{{ conv.date_creation|date:"H:i" }}</small>
+<div class="content-wrapper">
+    <div class="container">
+    <div class="container-fluid py-4">
+        <div class="row">
+            <!-- Sidebar des sessions -->
+            <div class="col-md-4 col-lg-3">
+                <div class="card">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h5 class="card-title mb-0">
+                            <i class="fas fa-history me-2"></i>Sessions
+                        </h5>
+                        <span class="badge bg-primary">{{ sessions|length }}</span>
                     </div>
-                    <p class="mb-2">{{ conv.message_utilisateur }}</p>
-                    
-                    <div class="d-flex justify-content-between align-items-start mb-1">
-                        <strong>Assistant:</strong>
-                        <span class="badge bg-secondary">{{ conv.get_type_interaction_display }}</span>
+                    <div class="card-body p-0">
+                        <div class="list-group list-group-flush" id="sessions-list">
+                            {% if sessions %}
+                                {% for session_id, conversations in sessions.items %}
+                                <button class="list-group-item list-group-item-action session-item" 
+                                        data-session-id="{{ session_id }}"
+                                        data-conversations-count="{{ conversations|length }}"
+                                        data-session-date="{{ conversations.0.date_creation|date:'Y-m-d H:i:s' }}">
+                                    <div class="d-flex w-100 justify-content-between align-items-start">
+                                        <div class="flex-grow-1">
+                                            <h6 class="mb-1">
+                                                {{ conversations.0.date_creation|date:"d/m/Y" }}
+                                            </h6>
+                                            <p class="mb-1 small text-muted">
+                                                {{ conversations.0.message_utilisateur|truncatewords:8 }}
+                                            </p>
+                                            <div class="d-flex gap-2">
+                                                <small class="badge bg-light text-dark">
+                                                    <i class="fas fa-comment me-1"></i>{{ conversations|length }} messages
+                                                </small>
+                                                {% with last_type=conversations.last.type_interaction %}
+                                                <small class="badge 
+                                                    {% if last_type == 'analyse_journal' %}bg-info
+                                                    {% elif last_type == 'suggestion_ecriture' %}bg-success
+                                                    {% elif last_type == 'support_emotionnel' %}bg-warning
+                                                    {% elif last_type == 'reflexion_guidee' %}bg-purple
+                                                    {% else %}bg-secondary{% endif %}">
+                                                    {{ conversations.last.get_type_interaction_display }}
+                                                </small>
+                                                {% endwith %}
+                                            </div>
+                                        </div>
+                                        <small class="text-muted ms-2">
+                                            {{ conversations.0.date_creation|date:"H:i" }}
+                                        </small>
+                                    </div>
+                                </button>
+                                {% endfor %}
+                            {% else %}
+                                <div class="list-group-item text-center text-muted py-4">
+                                    <i class="fas fa-inbox fa-2x mb-2"></i>
+                                    <p class="mb-0">Aucune session</p>
+                                </div>
+                            {% endif %}
+                        </div>
                     </div>
-                    <p class="mb-0 text-muted">{{ conv.reponse_ia }}</p>
                 </div>
-                {% if not forloop.last %}<hr>{% endif %}
-                {% endfor %}
+
+                <!-- Filtres -->
+                <div class="card mt-3">
+                    <div class="card-header">
+                        <h6 class="card-title mb-0">
+                            <i class="fas fa-filter me-2"></i>Filtres
+                        </h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <label class="form-label small">Type d'interaction</label>
+                            <select class="form-select form-select-sm" id="filter-type">
+                                <option value="">Tous les types</option>
+                                <option value="analyse_journal">📊 Analyse Journal</option>
+                                <option value="suggestion_ecriture">✍️ Suggestion Écriture</option>
+                                <option value="support_emotionnel">💖 Support Émotionnel</option>
+                                <option value="reflexion_guidee">🧠 Réflexion Guidée</option>
+                                <option value="accompagnement_pratique">🔧 Accompagnement</option>
+                                <option value="conversation_naturelle">💬 Conversation</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label small">Date</label>
+                            <select class="form-select form-select-sm" id="filter-date">
+                                <option value="">Toutes les dates</option>
+                                <option value="today">Aujourd'hui</option>
+                                <option value="week">Cette semaine</option>
+                                <option value="month">Ce mois</option>
+                            </select>
+                        </div>
+                        <button class="btn btn-outline-secondary btn-sm w-100" id="clear-filters">
+                            <i class="fas fa-times me-1"></i>Effacer les filtres
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Zone de détail de la conversation -->
+            <div class="col-md-8 col-lg-9">
+                <div class="card h-100">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <div>
+                            <h4 class="mb-0" id="conversation-title">
+                                <i class="fas fa-comments me-2"></i>Sélectionnez une session
+                            </h4>
+                            <small class="text-muted" id="conversation-subtitle">
+                                Choisissez une conversation dans la liste pour voir les détails
+                            </small>
+                        </div>
+                        <div>
+                            <a href="{% url 'communication:assistant_ia' %}" class="btn btn-primary">
+                                <i class="fas fa-robot me-1"></i>Nouvelle Conversation
+                            </a>
+                        </div>
+                    </div>
+                    
+                    <div class="card-body">
+                        <!-- État vide -->
+                        <div id="empty-state" class="text-center py-5">
+                            <i class="fas fa-comments fa-4x text-muted mb-3"></i>
+                            <h3 class="text-muted">Aucune conversation sélectionnée</h3>
+                            <p class="text-muted mb-4">
+                                Sélectionnez une session dans la liste de gauche pour afficher la conversation.
+                            </p>
+                            <a href="{% url 'communication:assistant_ia' %}" class="btn btn-primary btn-lg">
+                                <i class="fas fa-robot me-2"></i>Commencer une nouvelle conversation
+                            </a>
+                        </div>
+
+                        <!-- Conversation détaillée -->
+                        <div id="conversation-detail" style="display: none;">
+                            <!-- En-tête de la conversation -->
+                            <div class="d-flex justify-content-between align-items-center mb-4 p-3 bg-light rounded">
+                                <div>
+                                    <h5 id="session-date" class="mb-1"></h5>
+                                    <div class="d-flex gap-2 align-items-center">
+                                        <span class="badge bg-primary" id="messages-count"></span>
+                                        <span class="badge" id="session-type"></span>
+                                        <small class="text-muted" id="session-duration"></small>
+                                    </div>
+                                </div>
+                                <button class="btn btn-outline-secondary btn-sm" id="export-conversation">
+                                    <i class="fas fa-download me-1"></i>Exporter
+                                </button>
+                            </div>
+
+                            <!-- Messages -->
+                            <div id="messages-container" class="conversation-messages">
+                                <!-- Les messages seront chargés ici -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
-        {% endfor %}
-    {% else %}
-        <div class="text-center py-5">
-            <i class="fas fa-robot fa-3x text-muted mb-3"></i>
-            <h3 class="text-muted">Aucune conversation</h3>
-            <p class="text-muted">Commencez une conversation avec votre assistant IA !</p>
-            <a href="{% url 'communication:assistant_ia' %}" class="btn btn-primary">
-                Commencer
-            </a>
-        </div>
-    {% endif %}
+    </div>
 </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+class ConversationHistory {
+    constructor() {
+        this.currentSessionId = null;
+        this.sessionsData = {{ sessions_json|safe }};
+        this.initializeEventListeners();
+    }
+    
+    initializeEventListeners() {
+        // Sélection de session
+        document.querySelectorAll('.session-item').forEach(item => {
+            item.addEventListener('click', () => {
+                this.selectSession(item);
+            });
+        });
+        
+        // Filtres
+        document.getElementById('filter-type').addEventListener('change', () => {
+            this.applyFilters();
+        });
+        
+        document.getElementById('filter-date').addEventListener('change', () => {
+            this.applyFilters();
+        });
+        
+        document.getElementById('clear-filters').addEventListener('click', () => {
+            this.clearFilters();
+        });
+        
+        // Export
+        document.getElementById('export-conversation').addEventListener('click', () => {
+            this.exportConversation();
+        });
+    }
+    
+    selectSession(sessionElement) {
+        // Désélectionner toutes les sessions
+        document.querySelectorAll('.session-item').forEach(item => {
+            item.classList.remove('active');
+        });
+        
+        // Sélectionner la nouvelle session
+        sessionElement.classList.add('active');
+        this.currentSessionId = sessionElement.dataset.sessionId;
+        
+        // Afficher les détails de la conversation
+        this.displayConversationDetails();
+    }
+    
+    displayConversationDetails() {
+        const sessionData = this.sessionsData[this.currentSessionId];
+        if (!sessionData) return;
+        
+        // Masquer l'état vide et afficher les détails
+        document.getElementById('empty-state').style.display = 'none';
+        document.getElementById('conversation-detail').style.display = 'block';
+        
+        // Mettre à jour l'en-tête
+        document.getElementById('conversation-title').textContent = `Session du ${this.formatDate(sessionData[0].date_creation)}`;
+        document.getElementById('session-date').textContent = `Session du ${this.formatDate(sessionData[0].date_creation)}`;
+        document.getElementById('messages-count').textContent = `${sessionData.length} messages`;
+        document.getElementById('session-type').textContent = sessionData[sessionData.length - 1].type_interaction_display;
+        document.getElementById('session-type').className = `badge ${this.getTypeBadgeClass(sessionData[sessionData.length - 1].type_interaction)}`;
+        
+        // Calculer la durée
+        const startTime = new Date(sessionData[0].date_creation);
+        const endTime = new Date(sessionData[sessionData.length - 1].date_creation);
+        const duration = Math.round((endTime - startTime) / 60000); // en minutes
+        document.getElementById('session-duration').textContent = `${duration} min`;
+        
+        // Afficher les messages
+        this.displayMessages(sessionData);
+    }
+    
+    displayMessages(conversations) {
+        const container = document.getElementById('messages-container');
+        container.innerHTML = '';
+        
+        conversations.forEach((conv, index) => {
+            // Message utilisateur
+            const userMessage = this.createMessageElement(
+                conv.message_utilisateur,
+                'user',
+                conv.date_creation,
+                null,
+                'Vous'
+            );
+            container.appendChild(userMessage);
+            
+            // Message assistant
+            const assistantMessage = this.createMessageElement(
+                conv.reponse_ia,
+                'assistant',
+                conv.date_creation,
+                conv.type_interaction,
+                'MindScribe'
+            );
+            container.appendChild(assistantMessage);
+            
+            // Séparateur (sauf pour le dernier message)
+            if (index < conversations.length - 1) {
+                const separator = document.createElement('div');
+                separator.className = 'conversation-separator';
+                separator.innerHTML = '<i class="fas fa-ellipsis-h"></i>';
+                container.appendChild(separator);
+            }
+        });
+        
+        // Scroll vers le bas
+        container.scrollTop = container.scrollHeight;
+    }
+    
+    createMessageElement(text, sender, timestamp, type = null, senderName = '') {
+        const messageDiv = document.createElement('div');
+        messageDiv.className = `message-container ${sender}-message`;
+        
+        const timeDisplay = this.formatTime(timestamp);
+        let typeBadge = '';
+        
+        if (type && sender === 'assistant') {
+            typeBadge = `<span class="badge ${this.getTypeBadgeClass(type)} message-type-badge">${this.getTypeDisplayName(type)}</span>`;
+        }
+        
+        messageDiv.innerHTML = `
+            <div class="message ${sender}-message">
+                <div class="message-header">
+                    <div class="message-sender">
+                        <i class="fas fa-${sender === 'user' ? 'user' : 'robot'} me-2"></i>
+                        <strong>${senderName}</strong>
+                    </div>
+                    <div class="message-meta">
+                        ${typeBadge}
+                        <small class="message-time">${timeDisplay}</small>
+                    </div>
+                </div>
+                <div class="message-content">${this.formatMessage(text)}</div>
+            </div>
+        `;
+        
+        return messageDiv;
+    }
+    
+    getTypeBadgeClass(type) {
+        const typeClasses = {
+            'analyse_journal': 'bg-info',
+            'suggestion_ecriture': 'bg-success',
+            'support_emotionnel': 'bg-warning',
+            'reflexion_guidee': 'bg-purple',
+            'accompagnement_pratique': 'bg-secondary',
+            'conversation_naturelle': 'bg-primary'
+        };
+        return typeClasses[type] || 'bg-secondary';
+    }
+    
+    getTypeDisplayName(type) {
+        const typeNames = {
+            'analyse_journal': '📊 Analyse',
+            'suggestion_ecriture': '✍️ Suggestion',
+            'support_emotionnel': '💖 Support',
+            'reflexion_guidee': '🧠 Réflexion',
+            'accompagnement_pratique': '🔧 Accompagnement',
+            'conversation_naturelle': '💬 Conversation'
+        };
+        return typeNames[type] || type;
+    }
+    
+    formatMessage(text) {
+        // Convertir les retours à la ligne en <br>
+        text = text.replace(/\n/g, '<br>');
+        
+        // Mettre en forme les listes
+        text = text.replace(/\•\s*(.+?)(?=\n|$)/g, '<li>$1</li>');
+        text = text.replace(/(<li>.*<\/li>)/s, '<ul class="message-list">$1</ul>');
+        
+        return text;
+    }
+    
+    formatDate(dateString) {
+        const date = new Date(dateString);
+        return date.toLocaleDateString('fr-FR', {
+            day: '2-digit',
+            month: '2-digit',
+            year: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit'
+        });
+    }
+    
+    formatTime(dateString) {
+        const date = new Date(dateString);
+        return date.toLocaleTimeString('fr-FR', {
+            hour: '2-digit',
+            minute: '2-digit'
+        });
+    }
+    
+    applyFilters() {
+        const typeFilter = document.getElementById('filter-type').value;
+        const dateFilter = document.getElementById('filter-date').value;
+        
+        document.querySelectorAll('.session-item').forEach(item => {
+            let show = true;
+            
+            // Filtre par type
+            if (typeFilter) {
+                const lastType = item.querySelector('.badge').textContent.toLowerCase();
+                if (!lastType.includes(typeFilter.replace('_', ' '))) {
+                    show = false;
+                }
+            }
+            
+            // Filtre par date
+            if (dateFilter && show) {
+                const sessionDate = new Date(item.dataset.sessionDate);
+                const now = new Date();
+                
+                switch(dateFilter) {
+                    case 'today':
+                        show = sessionDate.toDateString() === now.toDateString();
+                        break;
+                    case 'week':
+                        const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+                        show = sessionDate >= weekAgo;
+                        break;
+                    case 'month':
+                        const monthAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+                        show = sessionDate >= monthAgo;
+                        break;
+                }
+            }
+            
+            item.style.display = show ? 'block' : 'none';
+        });
+    }
+    
+    clearFilters() {
+        document.getElementById('filter-type').value = '';
+        document.getElementById('filter-date').value = '';
+        document.querySelectorAll('.session-item').forEach(item => {
+            item.style.display = 'block';
+        });
+    }
+    
+    exportConversation() {
+        if (!this.currentSessionId) return;
+        
+        const sessionData = this.sessionsData[this.currentSessionId];
+        let content = `Conversation MindScribe - ${this.formatDate(sessionData[0].date_creation)}\n\n`;
+        
+        sessionData.forEach(conv => {
+            content += `Vous (${this.formatTime(conv.date_creation)}):\n${conv.message_utilisateur}\n\n`;
+            content += `MindScribe (${this.formatTime(conv.date_creation)}):\n${conv.reponse_ia}\n\n`;
+            content += "―".repeat(50) + "\n\n";
+        });
+        
+        const blob = new Blob([content], { type: 'text/plain' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `conversation-mindscribe-${this.formatDate(sessionData[0].date_creation).replace(/[/:\s]/g, '-')}.txt`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+    }
+}
+
+// Initialisation
+document.addEventListener('DOMContentLoaded', function() {
+    new ConversationHistory();
+});
+</script>
+
+<style>
+.session-item {
+    transition: all 0.2s ease;
+    border-left: 4px solid transparent;
+}
+
+.session-item:hover {
+    background-color: #f8f9fa;
+    border-left-color: #dee2e6;
+}
+
+.session-item.active {
+    background-color: #e3f2fd;
+    border-left: 4px solid #2196F3;
+}
+
+.conversation-messages {
+    max-height: 60vh;
+    overflow-y: auto;
+    padding: 1rem;
+}
+
+.message-container {
+    margin-bottom: 1.5rem;
+    animation: fadeIn 0.3s ease-in;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.message {
+    max-width: 85%;
+    padding: 1rem 1.25rem;
+    border-radius: 1.25rem;
+    position: relative;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.user-message {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    margin-left: auto;
+    border-bottom-right-radius: 0.5rem;
+}
+
+.assistant-message {
+    background: #ffffff;
+    color: #2d3748;
+    border: 1px solid #e2e8f0;
+    border-bottom-left-radius: 0.5rem;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+
+.message-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 0.75rem;
+}
+
+.message-sender {
+    display: flex;
+    align-items: center;
+}
+
+.message-meta {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.message-time {
+    font-size: 0.75rem;
+    opacity: 0.7;
+    white-space: nowrap;
+}
+
+.message-type-badge {
+    font-size: 0.7rem;
+    border: none;
+}
+
+.message-list {
+    margin: 0.5rem 0;
+    padding-left: 1.5rem;
+}
+
+.message-list li {
+    margin-bottom: 0.25rem;
+    line-height: 1.4;
+}
+
+.conversation-separator {
+    text-align: center;
+    margin: 1rem 0;
+    color: #6c757d;
+    opacity: 0.5;
+}
+
+.bg-purple {
+    background-color: #6f42c1 !important;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .message {
+        max-width: 95%;
+    }
+    
+    .message-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.5rem;
+    }
+}
+</style>
 {% endblock %}
