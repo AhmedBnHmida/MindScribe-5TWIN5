@@ -8,6 +8,11 @@ from datetime import datetime, timedelta
 from collections import Counter
 import json
 
+from django.views.decorators.http import require_http_methods
+from .models import BilanMensuel, Statistique
+from .services import ServiceBilanIA
+
+
 @login_required
 def tableau_bord(request):
     """Vue principale du tableau de bord"""
@@ -185,3 +190,72 @@ def donnees_score_emotionnel(request):
     return JsonResponse({
         'scores': [75, 60, 80, 55, 70]  # Positivité, Stabilité, Intensité, Diversité, Croissance
     })
+
+
+
+
+
+
+@login_required
+def bilan_mensuel(request, annee=None, mois=None):
+    """Vue pour afficher les bilans mensuels"""
+    aujourdhui = datetime.now()
+    annee = annee or aujourdhui.year
+    mois = mois or aujourdhui.month
+    
+    periode = f"{mois:02d}/{annee}"
+    
+    # Récupère ou génère le bilan
+    try:
+        statistique = Statistique.objects.get(
+            utilisateur=request.user,
+            periode=periode
+        )
+        try:
+            bilan = BilanMensuel.objects.get(statistique=statistique)
+        except BilanMensuel.DoesNotExist:
+            # Génère le bilan automatiquement
+            bilan = ServiceBilanIA.generer_bilan_mensuel(request.user, mois, annee)
+    except Statistique.DoesNotExist:
+        # Génère la statistique et le bilan
+        bilan = ServiceBilanIA.generer_bilan_mensuel(request.user, mois, annee)
+    
+    # Récupère l'historique des bilans
+    bilans_historique = BilanMensuel.objects.filter(
+        utilisateur=request.user
+    ).select_related('statistique').order_by('-date_creation')[:12]
+    
+    context = {
+        'bilan': bilan,
+        'bilans_historique': bilans_historique,
+        'annee_courante': annee,
+        'mois_courant': mois,
+        'periode': periode
+    }
+    
+    return render(request, 'dashboard/bilan_mensuel.html', context)
+
+@login_required
+@require_http_methods(["POST"])
+def generer_bilan_api(request):
+    """API pour générer un bilan mensuel"""
+    try:
+        data = json.loads(request.body)
+        mois = int(data.get('mois', datetime.now().month))
+        annee = int(data.get('annee', datetime.now().year))
+        
+        bilan = ServiceBilanIA.generer_bilan_mensuel(request.user, mois, annee)
+        
+        return JsonResponse({
+            'success': True,
+            'bilan_id': str(bilan.id),
+            'titre': bilan.titre,
+            'resume': bilan.resume,
+            'statut': bilan.statut
+        })
+        
+    except Exception as e:
+        return JsonResponse({
+            'success': False,
+            'error': str(e)
+        }, status=400)

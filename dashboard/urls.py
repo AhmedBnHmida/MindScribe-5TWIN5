@@ -16,4 +16,13 @@ urlpatterns = [
     path('api/distribution-humeurs/', views.donnees_distribution_humeurs, name='api_distribution_humeurs'),
     path('api/frequence-ecriture/', views.donnees_frequence_ecriture, name='api_frequence_ecriture'),
     path('api/score-emotionnel/', views.donnees_score_emotionnel, name='api_score_emotionnel'),
+
+# URLs pour les bilans mensuels
+path('bilan-mensuel/', views.bilan_mensuel, name='bilan_mensuel'),
+
+
+ path('', views.tableau_bord, name='tableau_bord'),  # ou le nom correct
+    path('bilan-mensuel/<int:annee>/<int:mois>/', views.bilan_mensuel, name='bilan_mensuel_detail'),
+    path('api/generer-bilan/', views.generer_bilan_api, name='generer_bilan_api'),
+
 ]
