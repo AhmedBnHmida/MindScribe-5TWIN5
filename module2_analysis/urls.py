@@ -15,6 +15,9 @@ urlpatterns = [
     # API endpoints
     path('api/analyse/v2/', views.analyse_api_view, name='api_analyse'),
     
+    # Detail view for analysis
+    path('analysis/<uuid:analysis_id>/', views.analysis_detail_view, name='analysis_detail'),
+    
     # ViewSet URLs
     path('api/', include(router.urls)),
 ]

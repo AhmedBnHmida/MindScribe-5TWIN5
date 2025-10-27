@@ -1,0 +1,278 @@
+{% extends 'base.html' %}
+{% block title %}Détails de l'Analyse{% endblock %}
+
+{% block content %}
+<div class="content-wrapper">
+    <div class="container py-5">
+        <div class="row justify-content-center">
+            <div class="col-lg-10">
+                <div class="mb-4">
+                    <a href="{% url 'journal:list' %}" class="btn btn-outline-secondary">
+                        <i class="fas fa-arrow-left me-2"></i>Retour à la liste
+                    </a>
+                </div>
+                
+                <div class="ultra-glass-card">
+                    <div class="ultra-results-header text-center">
+                        <h3>Analyse du {{ analysis.created_at|date:"d/m/Y à H:i" }}</h3>
+                        <p>Résultats détaillés de l'analyse IA</p>
+                    </div>
+                    
+                    <div class="row g-4">
+                        <!-- Sentiment Section -->
+                        <div class="col-md-6">
+                            <div class="ultra-section">
+                                <div class="ultra-section-header">
+                                    <div class="ultra-section-icon">
+                                        <i class="fas fa-heart"></i>
+                                    </div>
+                                    <h5>Sentiment</h5>
+                                </div>
+                                <div class="ultra-sentiment ultra-sentiment-{{ analysis.sentiment }}">
+                                    <i class="far fa-face-smile"></i> {{ analysis.sentiment|title }}
+                                </div>
+                                <div class="ultra-progress mt-3">
+                                    <div class="ultra-progress-bar" style="width: {{ analysis.emotion_score|floatformat:0|add:"0" }}%;"></div>
+                                </div>
+                                <small class="text-muted">Score: {{ analysis.emotion_score|floatformat:2 }}</small>
+                            </div>
+                            
+                            {% if analysis.emotions_detected %}
+                            <div class="ultra-section mt-4">
+                                <div class="ultra-section-header">
+                                    <div class="ultra-section-icon">
+                                        <i class="fas fa-smile-beam"></i>
+                                    </div>
+                                    <h5>Émotions Détectées</h5>
+                                </div>
+                                <div class="mt-3">
+                                    {% for emotion in analysis.emotions_detected %}
+                                        <span class="ultra-tag ultra-tag-warning">{{ emotion }}</span>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                            {% endif %}
+                        </div>
+                        
+                        <!-- Keywords and Topics -->
+                        <div class="col-md-6">
+                            {% if analysis.keywords %}
+                            <div class="ultra-section">
+                                <div class="ultra-section-header">
+                                    <div class="ultra-section-icon">
+                                        <i class="fas fa-tags"></i>
+                                    </div>
+                                    <h5>Mots-clés</h5>
+                                </div>
+                                <div class="mt-3">
+                                    {% for keyword in analysis.keywords %}
+                                        <span class="ultra-tag ultra-tag-primary">{{ keyword }}</span>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                            {% endif %}
+                            
+                            {% if analysis.topics %}
+                            <div class="ultra-section mt-4">
+                                <div class="ultra-section-header">
+                                    <div class="ultra-section-icon">
+                                        <i class="fas fa-layer-group"></i>
+                                    </div>
+                                    <h5>Thèmes</h5>
+                                </div>
+                                <div class="mt-3">
+                                    {% for topic in analysis.topics %}
+                                        <span class="ultra-tag ultra-tag-success">{{ topic }}</span>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <!-- Original Content -->
+                    {% if analysis.text %}
+                    <div class="ultra-section mt-4">
+                        <div class="ultra-section-header">
+                            <div class="ultra-section-icon">
+                                <i class="fas fa-file-alt"></i>
+                            </div>
+                            <h5>Contenu Original</h5>
+                        </div>
+                        <div class="mt-3 p-3 rounded" style="background: rgba(255,255,255,0.1);">
+                            {{ analysis.text }}
+                        </div>
+                    </div>
+                    {% endif %}
+                    
+                    <!-- Summary -->
+                    {% if analysis.summary %}
+                    <div class="ultra-section mt-4">
+                        <div class="ultra-section-header">
+                            <div class="ultra-section-icon">
+                                <i class="fas fa-file-alt"></i>
+                            </div>
+                            <h5>Résumé</h5>
+                        </div>
+                        <div class="mt-3 p-3 rounded" style="background: rgba(255,255,255,0.1);">
+                            {{ analysis.summary }}
+                        </div>
+                    </div>
+                    {% endif %}
+                    
+                    <!-- Detailed Summary -->
+                    {% if analysis.detailed_summary %}
+                    <div class="ultra-section mt-4">
+                        <div class="ultra-section-header">
+                            <div class="ultra-section-icon">
+                                <i class="fas fa-book-open"></i>
+                            </div>
+                            <h5>Résumé Détaillé</h5>
+                        </div>
+                        <div class="mt-3 p-3 rounded" style="background: rgba(255,255,255,0.1);">
+                            {{ analysis.detailed_summary }}
+                        </div>
+                    </div>
+                    {% endif %}
+                    
+                    <!-- Positive & Negative Aspects -->
+                    <div class="row g-4 mt-2">
+                        {% if analysis.positive_aspects %}
+                        <div class="col-md-6">
+                            <div class="ultra-section">
+                                <div class="ultra-section-header">
+                                    <div class="ultra-section-icon ultra-icon-success">
+                                        <i class="fas fa-plus-circle"></i>
+                                    </div>
+                                    <h5>Points Positifs</h5>
+                                </div>
+                                <ul class="list-group list-group-flush mt-3">
+                                    {% for aspect in analysis.positive_aspects %}
+                                        <li class="list-group-item border-0 bg-transparent">
+                                            <i class="fas fa-check-circle text-success me-2"></i>{{ aspect }}
+                                        </li>
+                                    {% endfor %}
+                                </ul>
+                            </div>
+                        </div>
+                        {% endif %}
+                        
+                        {% if analysis.negative_aspects %}
+                        <div class="col-md-6">
+                            <div class="ultra-section">
+                                <div class="ultra-section-header">
+                                    <div class="ultra-section-icon ultra-icon-danger">
+                                        <i class="fas fa-minus-circle"></i>
+                                    </div>
+                                    <h5>Points à Améliorer</h5>
+                                </div>
+                                <ul class="list-group list-group-flush mt-3">
+                                    {% for aspect in analysis.negative_aspects %}
+                                        <li class="list-group-item border-0 bg-transparent">
+                                            <i class="fas fa-exclamation-circle text-danger me-2"></i>{{ aspect }}
+                                        </li>
+                                    {% endfor %}
+                                </ul>
+                            </div>
+                        </div>
+                        {% endif %}
+                    </div>
+                    
+                    <!-- Action Items -->
+                    {% if analysis.action_items %}
+                    <div class="ultra-section mt-4">
+                        <div class="ultra-section-header">
+                            <div class="ultra-section-icon ultra-icon-primary">
+                                <i class="fas fa-tasks"></i>
+                            </div>
+                            <h5>Actions Suggérées</h5>
+                        </div>
+                        <div class="ultra-action-items mt-3">
+                            {% for item in analysis.action_items %}
+                                <div class="ultra-action-item">
+                                    <div class="ultra-action-number">{{ forloop.counter }}</div>
+                                    <div class="ultra-action-text">{{ item }}</div>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    {% endif %}
+                    
+                    <!-- Mood Analysis -->
+                    {% if analysis.mood_analysis %}
+                    <div class="ultra-section mt-4">
+                        <div class="ultra-section-header">
+                            <div class="ultra-section-icon ultra-icon-warning">
+                                <i class="fas fa-smile-beam"></i>
+                            </div>
+                            <h5>Analyse d'Humeur</h5>
+                        </div>
+                        <div class="mt-3 p-3 rounded" style="background: rgba(255,255,255,0.1);">
+                            {{ analysis.mood_analysis }}
+                        </div>
+                    </div>
+                    {% endif %}
+                    
+                    <!-- Audio Transcription -->
+                    {% if analysis.audio_transcription %}
+                    <div class="ultra-section mt-4">
+                        <div class="ultra-section-header">
+                            <div class="ultra-section-icon">
+                                <i class="fas fa-microphone"></i>
+                            </div>
+                            <h5>Transcription Audio</h5>
+                        </div>
+                        <div class="mt-3 p-3 rounded" style="background: rgba(255,255,255,0.1);">
+                            {{ analysis.audio_transcription }}
+                        </div>
+                        {% if analysis.audio_file %}
+                        <div class="mt-3">
+                            <audio controls class="w-100">
+                                <source src="{{ analysis.audio_file.url }}" type="audio/mpeg">
+                                Votre navigateur ne supporte pas l'élément audio.
+                            </audio>
+                        </div>
+                        {% endif %}
+                    </div>
+                    {% endif %}
+                    
+                    <!-- Image Analysis -->
+                    {% if analysis.image_caption or analysis.image_file %}
+                    <div class="ultra-section mt-4">
+                        <div class="ultra-section-header">
+                            <div class="ultra-section-icon">
+                                <i class="fas fa-image"></i>
+                            </div>
+                            <h5>Analyse d'Image</h5>
+                        </div>
+                        {% if analysis.image_file %}
+                        <div class="mt-3 text-center">
+                            <img src="{{ analysis.image_file.url }}" alt="Image analysée" class="img-fluid rounded" style="max-height: 400px;">
+                        </div>
+                        {% endif %}
+                        {% if analysis.image_caption %}
+                        <div class="mt-3 p-3 rounded" style="background: rgba(255,255,255,0.1);">
+                            <strong>Description:</strong> {{ analysis.image_caption }}
+                        </div>
+                        {% endif %}
+                        {% if analysis.image_scene %}
+                        <div class="mt-2">
+                            <span class="ultra-tag ultra-tag-warning">
+                                <i class="fas fa-map-marker-alt me-2"></i>{{ analysis.image_scene }}
+                            </span>
+                        </div>
+                        {% endif %}
+                        {% if analysis.image_analysis %}
+                        <div class="mt-3 p-3 rounded" style="background: rgba(255,255,255,0.1);">
+                            <strong>Analyse:</strong> {{ analysis.image_analysis }}
+                        </div>
+                        {% endif %}
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+

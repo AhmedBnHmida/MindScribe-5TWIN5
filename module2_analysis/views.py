@@ -2,10 +2,11 @@
 Views for the module2_analysis app.
 """
 import os
+import base64
 import logging
 from django.conf import settings
 from django.contrib.auth import get_user_model
-from django.views.decorators.csrf import csrf_exempt
+from django.core.files.base import ContentFile
 from rest_framework import status, viewsets
 from rest_framework.decorators import api_view, permission_classes, parser_classes
 from rest_framework.permissions import IsAuthenticated, AllowAny
@@ -21,7 +22,6 @@ logger = logging.getLogger(__name__)
 
 User = get_user_model()
 
-@csrf_exempt
 @api_view(['POST'])
 @permission_classes([AllowAny])
 @parser_classes([MultiPartParser, FormParser, JSONParser])
@@ -40,16 +40,74 @@ def analyse_api_view(request):
     Returns:
         JSON with analysis results
     """
-    serializer = AnalysisRequestSerializer(data=request.data)
+    # Log incoming data for debugging
+    print("="*80)
+    print("ANALYSE API VIEW CALLED")
+    print(f"Content-Type: {request.content_type}")
+    print(f"Request method: {request.method}")
+    print(f"Request POST keys: {list(request.POST.keys())}")
+    print(f"Request FILES keys: {list(request.FILES.keys())}")
+    
+    # Try to access request.data carefully
+    try:
+        print(f"Request data keys: {list(request.data.keys())}")
+        print(f"Request data dict: {dict(request.data)}")
+    except Exception as e:
+        print(f"Error accessing request.data: {e}")
+    
+    print("="*80)
+    
+    # Combine POST and FILES data for multipart requests
+    data = {}
+    if request.content_type and 'multipart/form-data' in request.content_type:
+        # For multipart/form-data, use POST and FILES
+        data.update(request.POST.dict())
+        data.update(request.FILES)
+        print(f"Using POST+FILES data: {list(data.keys())}")
+    else:
+        # For JSON or other types, use request.data
+        data = request.data
+        print(f"Using request.data: {list(data.keys())}")
+    
+    serializer = AnalysisRequestSerializer(data=data)
     
     if not serializer.is_valid():
+        print(f"VALIDATION FAILED: {serializer.errors}")
+        print(f"Data passed to serializer: {data}")
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
     # Extract data from request
     text = serializer.validated_data.get('text', '')
-    audio_file = serializer.validated_data.get('audio_file')
-    image_file = serializer.validated_data.get('image_file')
     user_id = serializer.validated_data.get('user_id')
+    
+    # Handle audio (either file or base64)
+    audio_file = serializer.validated_data.get('audio_file')
+    audio_data = serializer.validated_data.get('audio_data')
+    audio_filename = serializer.validated_data.get('audio_filename', 'audio.wav')
+    
+    # Handle image (either file or base64)
+    image_file = serializer.validated_data.get('image_file')
+    image_data = serializer.validated_data.get('image_data')
+    image_filename = serializer.validated_data.get('image_filename', 'image.jpg')
+    
+    # Convert base64 to files if needed
+    if audio_data and not audio_file:
+        try:
+            audio_bytes = base64.b64decode(audio_data)
+            audio_file = ContentFile(audio_bytes, name=audio_filename)
+            print(f"Converted base64 audio to file: {audio_filename}, size: {len(audio_bytes)} bytes")
+        except Exception as e:
+            print(f"Error decoding audio base64: {e}")
+            return Response({"error": "Invalid audio data"}, status=status.HTTP_400_BAD_REQUEST)
+    
+    if image_data and not image_file:
+        try:
+            image_bytes = base64.b64decode(image_data)
+            image_file = ContentFile(image_bytes, name=image_filename)
+            print(f"Converted base64 image to file: {image_filename}, size: {len(image_bytes)} bytes")
+        except Exception as e:
+            print(f"Error decoding image base64: {e}")
+            return Response({"error": "Invalid image data"}, status=status.HTTP_400_BAD_REQUEST)
     
     # Initialize paths to None
     audio_path = None
@@ -151,6 +209,18 @@ def analyse_api_view(request):
         
         if image_path and os.path.exists(image_path):
             os.remove(image_path)
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def analysis_detail_view(request, analysis_id):
+    """
+    View for displaying a single analysis in detail.
+    """
+    from django.shortcuts import render, get_object_or_404
+    
+    analysis = get_object_or_404(JournalAnalysis, id=analysis_id, user=request.user)
+    return render(request, 'journal/analysis_detail.html', {'analysis': analysis})
 
 
 class JournalAnalysisViewSet(viewsets.ModelViewSet):

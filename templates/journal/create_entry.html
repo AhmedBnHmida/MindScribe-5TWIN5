@@ -571,6 +571,20 @@
             }
         });
         
+        // Helper function to convert Blob/File to base64
+        function blobToBase64(blob) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onloadend = () => {
+                    // Remove the data URL prefix (e.g., "data:image/png;base64,")
+                    const base64 = reader.result.split(',')[1];
+                    resolve(base64);
+                };
+                reader.onerror = reject;
+                reader.readAsDataURL(blob);
+            });
+        }
+        
         // Modern analysis functionality
         analyzeButton.addEventListener('click', async () => {
             const journalText = document.getElementById('journalText').value.trim();
@@ -607,26 +621,38 @@
             // Scroll to loading spinner
             loadingSpinner.scrollIntoView({ behavior: 'smooth', block: 'center' });
             
-            // Create form data
-            const formData = new FormData();
+            // Create JSON payload with base64 encoded files
+            const payload = {};
             
             if (journalText) {
-                formData.append('text', journalText);
+                payload.text = journalText;
             }
             
+            // Convert audio to base64 if present
             if (audioBlob) {
-                formData.append('audio_file', audioBlob);
+                const audioBase64 = await blobToBase64(audioBlob);
+                payload.audio_data = audioBase64;
+                payload.audio_filename = audioBlob.name || 'recording.wav';
             }
             
+            // Convert image to base64 if present
             if (imageFile) {
-                formData.append('image_file', imageFile);
+                const imageBase64 = await blobToBase64(imageFile);
+                payload.image_data = imageBase64;
+                payload.image_filename = imageFile.name;
             }
             
             // Add user ID if available
             const userId = '{{ user.id }}';
-            if (userId) {
-                formData.append('user_id', userId);
+            if (userId && userId !== '') {
+                payload.user_id = userId;
             }
+            
+            // Debug: Log what we're sending
+            console.log('JSON payload keys:', Object.keys(payload));
+            if (payload.text) console.log('  text:', payload.text.substring(0, 50) + '...');
+            if (payload.audio_data) console.log('  audio_data: <base64 data>');
+            if (payload.image_data) console.log('  image_data: <base64 data>');
             
             try {
                 // Get CSRF token
@@ -636,9 +662,10 @@
                 const response = await fetch('/api/analyse/v2/', {
                     method: 'POST',
                     headers: {
+                        'Content-Type': 'application/json',
                         'X-CSRFToken': csrftoken
                     },
-                    body: formData,
+                    body: JSON.stringify(payload),
                     credentials: 'same-origin'
                 });
                 
@@ -986,11 +1013,23 @@
             }
         }
         
-        // Save journal button
+        // Save journal button (data is already saved after analysis)
         saveJournalButton.addEventListener('click', () => {
-            alert('Journal enregistré avec succès !');
-            // In a real implementation, you might want to redirect to the journal list or detail page
-            // window.location.href = '/journal/';
+            // Show success notification
+            const notification = document.createElement('div');
+            notification.className = 'alert alert-success animate-fade-in';
+            notification.innerHTML = '<i class="fas fa-check-circle me-2"></i>Votre journal a déjà été enregistré lors de l\'analyse ! Redirection vers la liste...';
+            notification.style.position = 'fixed';
+            notification.style.top = '20px';
+            notification.style.right = '20px';
+            notification.style.maxWidth = '400px';
+            notification.style.zIndex = '1050';
+            document.body.appendChild(notification);
+            
+            // Redirect to journal list after 2 seconds
+            setTimeout(() => {
+                window.location.href = '/journal/';
+            }, 2000);
         });
         
         // New analysis button

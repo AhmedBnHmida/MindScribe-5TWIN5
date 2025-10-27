@@ -6,6 +6,7 @@ from django.contrib import messages
 
 from .models import Journal
 from analysis.models import AnalyseIA
+from module2_analysis.models import JournalAnalysis
 
 @login_required
 def create_journal_entry(request):
@@ -17,10 +18,18 @@ def create_journal_entry(request):
 @login_required
 def journal_list(request):
     """
-    View for listing user's journal entries
+    View for listing user's journal entries from both old and new systems
     """
-    journals = Journal.objects.filter(utilisateur=request.user).order_by('-date_creation')
-    return render(request, 'journal/journal_list.html', {'journals': journals})
+    # Get entries from old Journal model
+    old_journals = Journal.objects.filter(utilisateur=request.user).order_by('-date_creation')
+    
+    # Get entries from new JournalAnalysis model
+    new_journals = JournalAnalysis.objects.filter(user=request.user).order_by('-created_at')
+    
+    return render(request, 'journal/journal_list.html', {
+        'journals': old_journals,
+        'journal_analyses': new_journals
+    })
 
 @login_required
 def journal_detail(request, journal_id):

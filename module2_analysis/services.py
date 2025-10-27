@@ -14,7 +14,7 @@ from django.conf import settings
 logger = logging.getLogger(__name__)
 
 # OpenRouter API key
-OPENROUTER_API_KEY = "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"
+OPENROUTER_API_KEY = "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"
 
 # No need for load_all_models function since we're using OpenRouter API
 
