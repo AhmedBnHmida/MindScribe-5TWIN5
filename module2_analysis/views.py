@@ -138,18 +138,12 @@ def analyse_api_view(request):
     except Exception as e:
         logger.error(f"Error during analysis: {e}")
         error_message = str(e)
-        if "Error in AI analysis:" in error_message:
-            # This is an error from our AI service, return it directly
-            return Response(
-                {"error": error_message},
-                status=status.HTTP_503_SERVICE_UNAVAILABLE
-            )
-        else:
-            # This is some other error
-            return Response(
-                {"error": f"An error occurred during analysis: {error_message}"},
-                status=status.HTTP_500_INTERNAL_SERVER_ERROR
-            )
+        
+        # Return all errors directly to the client
+        return Response(
+            {"error": error_message},
+            status=status.HTTP_503_SERVICE_UNAVAILABLE
+        )
     finally:
         # Clean up temporary files
         if audio_path and os.path.exists(audio_path):
