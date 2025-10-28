@@ -27,6 +27,7 @@ urlpatterns = [
     path('', include('analysis.urls')),  # URLs d'analyse
     path('journal/', include('journal.urls')),  # URLs du journal
     path('', include('module2_analysis.urls')),  # Module 2 - Analyse intelligente & Résumé IA
+    path('recommendations/', include('recommendations.urls')),  # Module 4 - Recommandations personnalisées
 ]
 
 # Serve media files in development

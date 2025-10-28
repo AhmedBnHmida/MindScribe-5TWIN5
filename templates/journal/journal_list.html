@@ -115,9 +115,14 @@
             <div class="col-lg-10">
                 <div class="d-flex justify-content-between align-items-center mb-4">
                     <h2>Mon Journal</h2>
-                    <a href="{% url 'journal:create' %}" class="btn btn-primary">
-                        <i class="fas fa-plus-circle me-2"></i>Nouvelle Entrée
-                    </a>
+                    <div class="d-flex gap-2">
+                        <a href="{% url 'recommendations:dashboard' %}" class="btn btn-outline-primary">
+                            <i class="fas fa-magic me-2"></i>Recommandations
+                        </a>
+                        <a href="{% url 'journal:create' %}" class="btn btn-primary">
+                            <i class="fas fa-plus-circle me-2"></i>Nouvelle Entrée
+                        </a>
+                    </div>
                 </div>
                 
                 <div class="journal-list-container">
