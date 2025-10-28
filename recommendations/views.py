@@ -50,10 +50,23 @@ def dashboard(request):
         # Get user's active goals - filter in Python to avoid Djongo date issues
         all_goals = Objectif.objects.filter(utilisateur=user).order_by('-date_creation')
         today = timezone.now().date()
+        # Un objectif est actif si sa date de fin est dans le futur ou aujourd'hui
         active_goals = [goal for goal in all_goals if goal.date_fin >= today][:5]
+        # Compter le nombre total d'objectifs actifs pour les statistiques
+        active_goals_count = len([goal for goal in all_goals if goal.date_fin >= today])
+        
+        # Identifier les objectifs qui arrivent à échéance bientôt (dans les 3 jours) et qui ne sont pas terminés
+        deadline_soon = []
+        for goal in all_goals:
+            days_remaining = (goal.date_fin - today).days
+            if days_remaining >= 0 and days_remaining <= 3 and goal.progres < 100:
+                goal.days_remaining = days_remaining
+                deadline_soon.append(goal)
     except Exception as e:
         logger.error(f"Error fetching goals: {e}")
         active_goals = []
+        active_goals_count = 0
+        deadline_soon = []
     
     try:
         # Get user's analysis summary
@@ -86,6 +99,8 @@ def dashboard(request):
         'recommendations': recent_recommendations,
         'new_recommendations_count': new_count,
         'active_goals': active_goals,
+        'active_goals_count': active_goals_count,
+        'deadline_soon': deadline_soon,
         'summary': summary,
         'total_recommendations': total_recommendations,
         'followed_count': followed_count,
@@ -110,15 +125,25 @@ def generate_recommendations(request):
                 f"✨ {len(recommendations)} nouvelles recommandations générées avec succès !"
             )
         else:
-            messages.info(
-                request,
-                "Aucune nouvelle recommandation pour le moment. Continue à écrire dans ton journal !"
-            )
+            # Vérifier si l'utilisateur a des entrées de journal
+            from module2_analysis.models import JournalAnalysis
+            has_entries = JournalAnalysis.objects.filter(user=request.user).exists()
+            
+            if has_entries:
+                messages.info(
+                    request,
+                    "Aucune nouvelle recommandation n'a pu être générée. Veuillez vérifier votre connexion internet et réessayer plus tard."
+                )
+            else:
+                messages.info(
+                    request,
+                    "Aucune nouvelle recommandation pour le moment. Continue à écrire dans ton journal !"
+                )
     except Exception as e:
         logger.error(f"Error generating recommendations: {e}")
         messages.error(
             request,
-            "Une erreur est survenue lors de la génération des recommandations."
+            "Une erreur est survenue lors de la génération des recommandations. Veuillez réessayer plus tard."
         )
     
     return redirect('recommendations:dashboard')
@@ -132,7 +157,7 @@ def update_recommendation_status(request, recommendation_id):
     """
     status = request.POST.get('status')
     
-    if status not in ['suivie', 'ignoree']:
+    if status not in ['suivie', 'ignoree', 'supprimee']:
         return JsonResponse({'error': 'Invalid status'}, status=400)
     
     recommendation = get_object_or_404(
@@ -141,14 +166,24 @@ def update_recommendation_status(request, recommendation_id):
         utilisateur=request.user
     )
     
-    recommendation.statut = status
-    recommendation.save()
-    
-    return JsonResponse({
-        'success': True,
-        'message': 'Statut mis à jour',
-        'new_status': status
-    })
+    # Si le statut est "supprimee", supprimer la recommandation
+    if status == 'supprimee':
+        recommendation.delete()
+        return JsonResponse({
+            'success': True,
+            'message': 'Recommandation supprimée',
+            'deleted': True
+        })
+    else:
+        # Sinon, mettre à jour le statut
+        recommendation.statut = status
+        recommendation.save()
+        
+        return JsonResponse({
+            'success': True,
+            'message': 'Statut mis à jour',
+            'new_status': status
+        })
 
 
 @login_required

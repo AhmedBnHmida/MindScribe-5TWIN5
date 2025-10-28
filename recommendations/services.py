@@ -118,8 +118,28 @@ def generate_recommendations_with_ai(user, summary):
     Returns:
         list: List of recommendation dictionaries
     """
-    # Prepare the prompt for AI
-    prompt = f"""Tu es un assistant de bien-être personnel. Analyse les données suivantes d'un utilisateur de journal personnel et génère 5 recommandations personnalisées.
+    # Get the 3 most recent journal analyses
+    from module2_analysis.models import JournalAnalysis
+    recent_analyses = JournalAnalysis.objects.filter(
+        user=user
+    ).order_by('-created_at')[:3]
+    
+    # Extract detailed content from recent analyses
+    recent_entries = []
+    for analysis in recent_analyses:
+        entry_data = {
+            'date': analysis.created_at.strftime('%Y-%m-%d'),
+            'sentiment': analysis.sentiment,
+            'emotion_score': analysis.emotion_score,
+            'emotions': analysis.emotions_detected,
+            'keywords': analysis.keywords,
+            'topics': analysis.topics,
+            'summary': analysis.summary
+        }
+        recent_entries.append(entry_data)
+    
+    # Prepare the prompt for AI with more detailed journal information
+    prompt = f"""Tu es un assistant de bien-être personnel spécialisé. Analyse les données suivantes d'un utilisateur de journal personnel et génère 5 recommandations TRÈS personnalisées basées sur le contenu spécifique de ses journaux.
 
 DONNÉES DE L'UTILISATEUR (derniers {summary['days_analyzed']} jours):
 - Nombre d'entrées: {summary['total_entries']}
@@ -130,27 +150,49 @@ DONNÉES DE L'UTILISATEUR (derniers {summary['days_analyzed']} jours):
 - Score émotionnel moyen: {summary['average_emotion_score']:.2f}
 - Tendance: {summary['trend']}
 
+ENTRÉES DE JOURNAL RÉCENTES (détaillées):
+"""
+
+    # Add detailed journal entries to the prompt
+    for i, entry in enumerate(recent_entries):
+        prompt += f"""
+ENTRÉE {i+1} ({entry['date']}):
+- Sentiment: {entry['sentiment']}
+- Score émotionnel: {entry['emotion_score']}
+- Émotions: {', '.join(entry['emotions']) if entry['emotions'] else 'Non spécifié'}
+- Mots-clés: {', '.join(entry['keywords']) if entry['keywords'] else 'Non spécifié'}
+- Thèmes: {', '.join(entry['topics']) if entry['topics'] else 'Non spécifié'}
+- Résumé: {entry['summary']}
+"""
+
+    prompt += """
 INSTRUCTIONS:
-Génère exactement 5 recommandations dans les catégories suivantes:
-1. Bien-être (2 recommandations)
-2. Productivité (2 recommandations)
-3. Sommeil/Repos (1 recommandation)
+Génère entre 1 et 4 recommandations TRÈS PERSONNALISÉES en fonction du contenu du journal de l'utilisateur.
+Les types possibles sont:
+1. Bien-être
+2. Productivité
+3. Sommeil
+4. Nutrition
 
 IMPORTANT:
+- Choisis UNIQUEMENT les types de recommandations qui sont vraiment pertinents selon l'analyse du journal
+- Ne génère PAS de recommandation pour un type si le journal ne contient pas d'information liée à ce domaine
+- Génère au maximum UNE recommandation par type (pas plus)
 - Chaque recommandation doit être courte (1-2 phrases max)
 - Utilise un ton chaleureux et encourageant
-- Sois spécifique et actionnable
+- Sois TRÈS spécifique et actionnable, en te référant explicitement au contenu des journaux
 - Adapte-toi aux émotions et tendances détectées
+- Fais référence aux thèmes et préoccupations spécifiques mentionnés dans les entrées récentes
 - Réponds UNIQUEMENT en JSON format strict (sans texte avant ou après):
 
 {{
   "recommendations": [
     {{
-      "type": "bien_etre",
+      "type": "bien_etre|productivite|sommeil|nutrition",
       "content": "Ta recommandation ici",
       "priority": "high|medium|low"
-    }},
-    ...
+    }}
+    // Ajoute d'autres recommandations si pertinent, maximum une par type
   ]
 }}"""
 
@@ -186,7 +228,21 @@ IMPORTANT:
         response.raise_for_status()
         
         result = response.json()
+        
+        # Vérifier si la réponse contient les données attendues
+        if 'choices' not in result or len(result['choices']) == 0:
+            logger.error(f"❌ Invalid API response format: {result}")
+            return []
+            
+        if 'message' not in result['choices'][0] or 'content' not in result['choices'][0]['message']:
+            logger.error(f"❌ Invalid message format in API response: {result['choices'][0]}")
+            return []
+        
         ai_response = result['choices'][0]['message']['content'].strip()
+        
+        if not ai_response:
+            logger.error("❌ Empty response from API")
+            return []
         
         logger.info(f"✅ AI Response received: {ai_response[:200]}...")
         
@@ -196,125 +252,42 @@ IMPORTANT:
             ai_response = ai_response.split('```json')[1].split('```')[0].strip()
         elif '```' in ai_response:
             ai_response = ai_response.split('```')[1].split('```')[0].strip()
+            
+        # Pas de recommandations par défaut - utilisation uniquement de l'IA
         
-        recommendations_data = json.loads(ai_response)
-        recommendations = recommendations_data.get('recommendations', [])
+        try:
+            recommendations_data = json.loads(ai_response)
+            recommendations = recommendations_data.get('recommendations', [])
+            
+            # Vérifier si les recommandations sont valides
+            if not recommendations or not isinstance(recommendations, list):
+                logger.warning("⚠️ No valid recommendations in API response")
+                return []
+        except json.JSONDecodeError:
+            logger.warning("⚠️ Failed to parse JSON response")
+            return []
         
         logger.info(f"🎯 Successfully generated {len(recommendations)} AI-powered recommendations!")
         return recommendations
         
     except requests.exceptions.RequestException as e:
         logger.error(f"❌ OpenRouter API error: {e}")
-        logger.warning("⚠️ Using fallback rule-based recommendations")
-        return generate_fallback_recommendations(summary)
+        # Retourner une liste vide en cas d'erreur
+        logger.warning("⚠️ Returning empty recommendations due to API error")
+        return []
     except json.JSONDecodeError as e:
         logger.error(f"❌ JSON parsing error: {e}")
-        logger.warning("⚠️ Using fallback rule-based recommendations")
-        return generate_fallback_recommendations(summary)
+        # Retourner une liste vide en cas d'erreur
+        logger.warning("⚠️ Returning empty recommendations due to JSON parsing error")
+        return []
     except Exception as e:
         logger.error(f"❌ Unexpected error generating recommendations: {e}")
-        logger.warning("⚠️ Using fallback rule-based recommendations")
-        return generate_fallback_recommendations(summary)
+        # Retourner une liste vide en cas d'erreur
+        logger.warning("⚠️ Returning empty recommendations due to unexpected error")
+        return []
 
 
-def generate_fallback_recommendations(summary):
-    """
-    Generate rule-based recommendations as fallback.
-    
-    Args:
-        summary: User analysis summary
-        
-    Returns:
-        list: List of recommendation dictionaries
-    """
-    logger.warning("⚙️ Generating FALLBACK (non-AI) recommendations")
-    recommendations = []
-    
-    # Analyze sentiment distribution
-    sentiment_dist = summary['sentiment_distribution']
-    total = sum(sentiment_dist.values()) if sentiment_dist else 0
-    
-    if total > 0:
-        negative_ratio = sentiment_dist.get('negatif', 0) / total
-        positive_ratio = sentiment_dist.get('positif', 0) / total
-    else:
-        negative_ratio = 0
-        positive_ratio = 0
-    
-    # Bien-être recommendations
-    if negative_ratio > 0.5:
-        recommendations.append({
-            "type": "bien_etre",
-            "content": "Tu sembles traverser une période difficile. Prends 10 minutes aujourd'hui pour une activité qui te fait du bien : marche, musique, ou appel à un proche.",
-            "priority": "high"
-        })
-        recommendations.append({
-            "type": "bien_etre",
-            "content": "Essaie la technique de respiration 4-7-8 : inspire 4 secondes, retiens 7 secondes, expire 8 secondes. Répète 3 fois.",
-            "priority": "high"
-        })
-    elif positive_ratio > 0.6:
-        recommendations.append({
-            "type": "bien_etre",
-            "content": "Tu es sur une belle lancée positive ! Continue à noter ce qui te rend heureux pour renforcer ces habitudes.",
-            "priority": "medium"
-        })
-        recommendations.append({
-            "type": "bien_etre",
-            "content": "Profite de cette énergie positive pour essayer quelque chose de nouveau cette semaine.",
-            "priority": "low"
-        })
-    else:
-        recommendations.append({
-            "type": "bien_etre",
-            "content": "Prends un moment pour toi aujourd'hui. Une pause de 15 minutes peut faire toute la différence.",
-            "priority": "medium"
-        })
-        recommendations.append({
-            "type": "bien_etre",
-            "content": "Pratique la gratitude : note 3 choses positives de ta journée avant de dormir.",
-            "priority": "medium"
-        })
-    
-    # Productivité recommendations
-    if 'travail' in summary['common_keywords'] or 'projet' in summary['common_keywords']:
-        recommendations.append({
-            "type": "productivite",
-            "content": "Utilise la technique Pomodoro : 25 minutes de concentration + 5 minutes de pause. Tu seras plus efficace !",
-            "priority": "medium"
-        })
-        recommendations.append({
-            "type": "productivite",
-            "content": "Planifie tes 3 priorités du jour chaque matin. Cela t'aidera à rester focalisé sur l'essentiel.",
-            "priority": "medium"
-        })
-    else:
-        recommendations.append({
-            "type": "productivite",
-            "content": "Définis un objectif clair pour demain dès ce soir. Tu démarreras la journée avec une direction précise.",
-            "priority": "medium"
-        })
-        recommendations.append({
-            "type": "productivite",
-            "content": "Range ton espace de travail en fin de journée. Un environnement ordonné favorise la concentration.",
-            "priority": "low"
-        })
-    
-    # Sommeil recommendation
-    if summary['average_emotion_score'] < 0.4:
-        recommendations.append({
-            "type": "sommeil",
-            "content": "Le repos est essentiel pour ton bien-être. Essaie de te coucher 30 minutes plus tôt ce soir.",
-            "priority": "high"
-        })
-    else:
-        recommendations.append({
-            "type": "sommeil",
-            "content": "Crée une routine du soir apaisante : pas d'écrans 30 minutes avant le coucher, lecture ou méditation.",
-            "priority": "medium"
-        })
-    
-    return recommendations[:5]  # Return max 5 recommendations
+# La fonction de fallback a été supprimée conformément à la demande de n'utiliser que l'API OpenRouter
 
 
 def create_recommendations_for_user(user):

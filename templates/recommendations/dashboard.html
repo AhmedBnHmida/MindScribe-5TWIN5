@@ -47,7 +47,7 @@
                             <div class="ultra-stat-icon bg-info">
                                 <i class="fas fa-target"></i>
                             </div>
-                            <h3 class="mt-3">{{ active_goals.count }}</h3>
+                            <h3 class="mt-3">{{ active_goals_count }}</h3>
                             <p class="text-muted mb-0">Objectifs actifs</p>
                         </div>
                     </div>
@@ -201,6 +201,28 @@
                                 </a>
                             </div>
                             
+                            {% if deadline_soon %}
+                            <div class="alert alert-warning mb-3">
+                                <i class="fas fa-exclamation-triangle me-2"></i>
+                                <strong>Attention!</strong> Objectif{% if deadline_soon|length > 1 %}s{% endif %} à échéance proche:
+                                <ul class="mb-0 mt-1">
+                                    {% for goal in deadline_soon %}
+                                    <li>
+                                        <strong>{{ goal.nom }}</strong> - 
+                                        {% if goal.days_remaining == 0 %}
+                                            <span class="text-danger">Aujourd'hui</span>
+                                        {% elif goal.days_remaining == 1 %}
+                                            <span class="text-danger">Demain</span>
+                                        {% else %}
+                                            <span class="text-danger">Dans {{ goal.days_remaining }} jours</span>
+                                        {% endif %}
+                                        ({{ goal.progres|floatformat:0 }}% complété)
+                                    </li>
+                                    {% endfor %}
+                                </ul>
+                            </div>
+                            {% endif %}
+                            
                             {% if active_goals %}
                                 {% for goal in active_goals %}
                                 <div class="goal-card mb-3">
@@ -350,7 +372,7 @@ document.addEventListener('DOMContentLoaded', function() {
     document.querySelectorAll('.mark-followed, .mark-ignored').forEach(button => {
         button.addEventListener('click', function() {
             const recommendationId = this.dataset.id;
-            const status = this.classList.contains('mark-followed') ? 'suivie' : 'ignoree';
+            const status = this.classList.contains('mark-followed') ? 'suivie' : 'supprimee';
             
             updateRecommendationStatus(recommendationId, status);
         });
@@ -371,17 +393,31 @@ document.addEventListener('DOMContentLoaded', function() {
     .then(response => response.json())
     .then(data => {
             if (data.success) {
-                // Update UI
-                const actionsDiv = card.querySelector('.recommendation-actions');
-                if (status === 'suivie') {
-                    actionsDiv.innerHTML = '<span class="badge bg-success"><i class="fas fa-check-circle me-1"></i>Suivi</span>';
+                if (data.deleted) {
+                    // Si la recommandation est supprimée, on retire la carte
+                    card.remove();
+                    showNotification('Recommandation supprimée', 'success');
+                    
+                    // Vérifier s'il reste des recommandations
+                    const remainingCards = document.querySelectorAll('.recommendation-card');
+                    if (remainingCards.length === 0) {
+                        // S'il n'y a plus de recommandations, afficher un message
+                        const container = document.querySelector('.recommendations-container');
+                        container.innerHTML = '<div class="text-center text-muted py-4"><i class="fas fa-info-circle me-2"></i>Aucune recommandation disponible</div>';
+                    }
                 } else {
-                    actionsDiv.innerHTML = '<span class="badge bg-secondary"><i class="fas fa-minus-circle me-1"></i>Ignoré</span>';
+                    // Update UI
+                    const actionsDiv = card.querySelector('.recommendation-actions');
+                    if (status === 'suivie') {
+                        actionsDiv.innerHTML = '<span class="badge bg-success"><i class="fas fa-check-circle me-1"></i>Suivi</span>';
+                    } else {
+                        actionsDiv.innerHTML = '<span class="badge bg-secondary"><i class="fas fa-minus-circle me-1"></i>Ignoré</span>';
+                    }
+                    
+                    // Show success message
+                    showNotification(data.message, 'success');
                 }
-                
-            // Show success message
-                showNotification(data.message, 'success');
-        }
+            }
     })
     .catch(error => {
         console.error('Error:', error);

@@ -3,6 +3,8 @@ Compatibility module for Django with Python 3.13+
 This module provides a minimal implementation of the cgi module that was removed in Python 3.13
 """
 
+import re
+
 import html
 import tempfile
 import warnings
@@ -11,7 +13,8 @@ from io import StringIO
 from urllib.parse import parse_qsl
 
 __all__ = ["FieldStorage", "parse", "parse_multipart", "parse_header", "test", "print_exception",
-           "print_environ", "print_form", "print_directory", "print_arguments", "print_environ_usage"]
+           "print_environ", "print_form", "print_directory", "print_arguments", "print_environ_usage", 
+           "valid_boundary"]
 
 class FieldStorage:
     """Basic implementation of FieldStorage for compatibility"""
@@ -186,3 +189,28 @@ def print_arguments():
 def print_environ_usage():
     """Print usage of environment variables."""
     print("Usage: cgi.print_environ()")
+    
+def valid_boundary(boundary):
+    """Check if the boundary is valid.
+    
+    RFC 2046 section 5.1.1 defines boundary as:
+    boundary := 0*69<bchars> bcharsnospace
+    bchars := bcharsnospace / " "
+    bcharsnospace := DIGIT / ALPHA / "'" / "(" / ")" / "+" / "_" / "," / "-" / "." / "/" / ":" / "=" / "?"
+    
+    This implementation is based on the original CPython implementation in the cgi module.
+    """
+    if not boundary:
+        return False
+    
+    # Convert to string if it's bytes
+    if isinstance(boundary, bytes):
+        boundary = boundary.decode('ascii', 'ignore')
+        
+    # Check length (should be 1-70 characters)
+    if len(boundary) > 70:
+        return False
+        
+    # Check characters
+    valid_chars = set("0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ'()+_,-./:=? ")
+    return all(c in valid_chars for c in boundary)

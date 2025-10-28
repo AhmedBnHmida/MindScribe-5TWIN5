@@ -15,10 +15,7 @@ class RecommandationAdmin(admin.ModelAdmin):
         ('Recommandation', {
             'fields': ('type', 'contenu', 'statut')
         }),
-        ('Feedback', {
-            'fields': ('utile', 'feedback_note', 'feedback_commentaire'),
-            'classes': ('collapse',)
-        }),
+
     )
 
 

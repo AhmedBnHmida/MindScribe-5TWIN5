@@ -16,12 +16,11 @@ logger = logging.getLogger(__name__)
 @receiver(post_save, sender=JournalAnalysis)
 def trigger_recommendations_on_journal_entry(sender, instance, created, **kwargs):
     """
-    Automatically generate recommendations when certain conditions are met.
+    Automatically generate recommendations every 24 hours.
     
     Conditions for automatic generation:
-    1. User has 3+ journal entries in the last 7 days
-    2. User hasn't received recommendations in the last 2 days
-    3. There's a significant emotional pattern detected
+    1. User has at least 1 journal entry
+    2. User hasn't received recommendations in the last 24 hours
     """
     if not created:
         return  # Only trigger on new entries
@@ -29,61 +28,31 @@ def trigger_recommendations_on_journal_entry(sender, instance, created, **kwargs
     try:
         user = instance.user
         
-        # Check if user has enough recent entries
-        week_ago = timezone.now() - timedelta(days=7)
-        recent_entries_count = JournalAnalysis.objects.filter(
-            user=user,
-            created_at__gte=week_ago
-        ).count()
+        # Check if user has any entries
+        any_entries = JournalAnalysis.objects.filter(user=user).exists()
         
-        if recent_entries_count < 3:
-            logger.info(f"User {user.username} has only {recent_entries_count} entries, skipping auto-recommendations")
+        if not any_entries:
+            logger.info(f"User {user.username} has no entries, skipping auto-recommendations")
             return
         
-        # Check if user already has recent recommendations
-        two_days_ago = timezone.now() - timedelta(days=2)
+        # Check if user already has recommendations from the last 24 hours
+        one_day_ago = timezone.now() - timedelta(days=1)
         recent_recommendations = Recommandation.objects.filter(
             utilisateur=user,
-            date_emission__gte=two_days_ago
+            date_emission__gte=one_day_ago
         ).exists()
         
         if recent_recommendations:
-            logger.info(f"User {user.username} already has recent recommendations, skipping")
+            logger.info(f"User {user.username} already has recommendations from the last 24 hours, skipping")
             return
         
-        # Get user's analysis summary
+        # Get user's analysis summary for the last 7 days
         summary = get_user_analysis_summary(user, days=7)
         
-        # Check for significant patterns that warrant recommendations
-        should_generate = False
-        
-        # Trigger 1: Negative trend detected
-        if summary['trend'] == 'declining':
-            should_generate = True
-            logger.info(f"Negative trend detected for {user.username}, generating recommendations")
-        
-        # Trigger 2: Low average emotion score
-        elif summary['average_emotion_score'] < 0.4:
-            should_generate = True
-            logger.info(f"Low emotion score for {user.username}, generating recommendations")
-        
-        # Trigger 3: High negative sentiment ratio
-        elif summary['sentiment_distribution']:
-            total = sum(summary['sentiment_distribution'].values())
-            negative_ratio = summary['sentiment_distribution'].get('negatif', 0) / total if total > 0 else 0
-            if negative_ratio > 0.5:
-                should_generate = True
-                logger.info(f"High negative sentiment for {user.username}, generating recommendations")
-        
-        # Trigger 4: Milestone reached (every 5th entry)
-        elif recent_entries_count % 5 == 0:
-            should_generate = True
-            logger.info(f"Milestone reached for {user.username} ({recent_entries_count} entries), generating recommendations")
-        
-        # Generate recommendations if conditions are met
-        if should_generate:
-            recommendations = create_recommendations_for_user(user)
-            logger.info(f"Auto-generated {len(recommendations)} recommendations for {user.username}")
+        # Generate recommendations automatically every 24 hours
+        logger.info(f"Generating daily recommendations for {user.username}")
+        recommendations = create_recommendations_for_user(user)
+        logger.info(f"Auto-generated {len(recommendations)} recommendations for {user.username}")
         
     except Exception as e:
         logger.error(f"Error in auto-recommendation signal: {e}", exc_info=True)
