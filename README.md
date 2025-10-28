@@ -62,6 +62,10 @@ source env_mindscribe/bin/activate
 pip install Django==4.2
 ```
 
+python setup_nltk.py
+
+
+
 4. **Configuration de la base de données**
 ```bash
 # Créer la base PostgreSQL

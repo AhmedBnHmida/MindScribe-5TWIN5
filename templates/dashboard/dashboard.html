@@ -86,6 +86,29 @@
     text-decoration: none;
 }
 
+.btn-analyse-rapide {
+    background: linear-gradient(135deg, var(--primary), var(--warning));
+    color: white;
+    border: none;
+    padding: 10px 18px;
+    border-radius: 8px;
+    font-weight: 600;
+    font-size: 0.9rem;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 8px rgba(99, 102, 241, 0.3);
+}
+
+.btn-analyse-rapide:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(99, 102, 241, 0.4);
+    color: white;
+    text-decoration: none;
+}
+
 /* Stats Grid */
 .stats-grid {
     display: grid;
@@ -415,11 +438,18 @@
                     <h1>🧠 Tableau de Bord Personnel</h1>
                     <p>Explorez vos patterns émotionnels et votre évolution personnelle</p>
                 </div>
-                <!-- Bouton de redirection vers le bilan mensuel -->
-                <a href="http://localhost:8000/dashboard/bilan-mensuel/" class="btn-bilan">
-                    <i class="fas fa-chart-pie"></i>
-                    Voir le Bilan Mensuel
-                </a>
+                <div class="header-actions">
+                    <!-- Bouton Analyse Rapide -->
+                    <a href="http://localhost:8000/dashboard/analyse-rapide/" class="btn-analyse-rapide">
+                        <i class="fas fa-bolt"></i>
+                        Analyse Rapide
+                    </a>
+                    <!-- Bouton de redirection vers le bilan mensuel -->
+                    <a href="http://localhost:8000/dashboard/bilan-mensuel/" class="btn-bilan">
+                        <i class="fas fa-chart-pie"></i>
+                        Voir le Bilan Mensuel
+                    </a>
+                </div>
             </div>
             
             <!-- Filters -->

@@ -1,0 +1,1514 @@
+{% extends 'base.html' %}
+{% block title %}MindScribe - Analyse Emotionnelle{% endblock %}
+
+{% block extra_css %}
+<style>
+.analyse-rapide-body {
+    background: #f8fafc;
+    min-height: 100vh;
+    font-family: 'Inter', 'Segoe UI', system-ui, sans-serif;
+}
+
+.analyse-container {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+/* Header sobre */
+.analyse-header {
+    background: white;
+    padding: 20px;
+    margin-bottom: 20px;
+    border-bottom: 1px solid #e5e7eb;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.analyse-header h1 {
+    color: #1f2937;
+    font-size: 1.8rem;
+    font-weight: 700;
+    margin-bottom: 5px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.analyse-header p {
+    color: #6b7280;
+    font-size: 0.95rem;
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+/* Barre d'outils sobre */
+.toolbar {
+    display: flex;
+    gap: 15px;
+    margin-bottom: 20px;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+.search-box {
+    flex: 1;
+    min-width: 300px;
+    position: relative;
+}
+
+.search-box input {
+    width: 100%;
+    padding: 10px 15px 10px 40px;
+    border: 1px solid #d1d5db;
+    background: white;
+    font-size: 0.9rem;
+    transition: border-color 0.2s ease;
+}
+
+.search-box input:focus {
+    outline: none;
+    border-color: #3b82f6;
+}
+
+.search-icon {
+    position: absolute;
+    left: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #6b7280;
+}
+
+.filter-group {
+    display: flex;
+    gap: 8px;
+}
+
+.filter-btn {
+    padding: 8px 16px;
+    border: 1px solid #d1d5db;
+    background: white;
+    color: #374151;
+    font-size: 0.85rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.filter-btn.active,
+.filter-btn:hover {
+    background: #3b82f6;
+    color: white;
+    border-color: #3b82f6;
+}
+
+/* Bouton Analyse Rapide */
+.btn-analyse-rapide {
+    background: #3b82f6;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.2s ease;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.btn-analyse-rapide:hover {
+    background: #2563eb;
+}
+
+/* Formulaire modulaire */
+.analyse-form-modal {
+    background: white;
+    border: 1px solid #e5e7eb;
+    margin-bottom: 20px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    display: none;
+}
+
+.form-header {
+    background: #f8fafc;
+    padding: 15px 20px;
+    border-bottom: 1px solid #e5e7eb;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.form-header h3 {
+    margin: 0;
+    color: #1f2937;
+    font-size: 1.1rem;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.close-btn {
+    background: none;
+    border: none;
+    color: #6b7280;
+    cursor: pointer;
+    font-size: 1.2rem;
+    padding: 0;
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.close-btn:hover {
+    color: #374151;
+}
+
+.form-content {
+    padding: 20px;
+}
+
+.analyse-form {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.form-group label {
+    font-weight: 600;
+    color: #374151;
+    font-size: 0.9rem;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.form-control {
+    padding: 10px 12px;
+    border: 1px solid #d1d5db;
+    background: white;
+    font-size: 0.9rem;
+    transition: border-color 0.2s ease;
+}
+
+.form-control:focus {
+    outline: none;
+    border-color: #3b82f6;
+}
+
+textarea.form-control {
+    min-height: 120px;
+    resize: vertical;
+    font-family: inherit;
+}
+
+.btn-submit {
+    background: #10b981;
+    color: white;
+    border: none;
+    padding: 12px 24px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+}
+
+.btn-submit:hover {
+    background: #059669;
+}
+
+/* Résultats professionnels */
+.results-section {
+    background: white;
+    border: 1px solid #e5e7eb;
+    margin-bottom: 20px;
+    display: none;
+}
+
+.results-header {
+    background: #f8fafc;
+    padding: 15px 20px;
+    border-bottom: 1px solid #e5e7eb;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.results-header h3 {
+    margin: 0;
+    color: #1f2937;
+    font-size: 1.1rem;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.close-results {
+    background: none;
+    border: none;
+    color: #6b7280;
+    cursor: pointer;
+    padding: 4px 8px;
+    font-size: 0.8rem;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.close-results:hover {
+    color: #374151;
+}
+
+.results-content {
+    padding: 20px;
+}
+
+/* Grille de résultats */
+.results-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 20px;
+}
+
+.result-card {
+    background: #f8fafc;
+    border: 1px solid #e5e7eb;
+    padding: 15px;
+}
+
+.result-card h4 {
+    margin: 0 0 10px 0;
+    color: #1f2937;
+    font-size: 1rem;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+/* Badges sobre */
+.sentiment-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 12px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    border-radius: 4px;
+}
+
+.sentiment-positive { background: #d1fae5; color: #065f46; }
+.sentiment-negative { background: #fee2e2; color: #991b1b; }
+.sentiment-neutral { background: #fef3c7; color: #92400e; }
+
+.emotion-tag {
+    display: inline-block;
+    padding: 4px 8px;
+    background: #e0e7ff;
+    color: #3730a3;
+    font-size: 0.8rem;
+    font-weight: 500;
+    margin: 2px;
+    border-radius: 2px;
+}
+
+.metric-value {
+    font-size: 0.9rem;
+    color: #374151;
+    margin: 4px 0;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.metric-value strong {
+    color: #1f2937;
+    min-width: 80px;
+}
+
+/* Indicateur de sauvegarde */
+.save-indicator {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 8px;
+    background: #d1fae5;
+    color: #065f46;
+    font-size: 0.8rem;
+    border-radius: 4px;
+    margin-left: 10px;
+}
+
+.save-error {
+    background: #fee2e2;
+    color: #991b1b;
+}
+
+/* Bouton de sauvegarde */
+.btn-save {
+    background: #10b981;
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    font-size: 0.9rem;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    border-radius: 4px;
+    transition: background 0.2s ease;
+}
+
+.btn-save:hover {
+    background: #059669;
+    transform: translateY(-1px);
+}
+
+.btn-save:disabled {
+    background: #9ca3af;
+    cursor: not-allowed;
+    transform: none;
+}
+
+/* Liste des entrées pleine largeur */
+.entries-section {
+    background: white;
+    border: 1px solid #e5e7eb;
+    margin-bottom: 20px;
+}
+
+.section-header {
+    background: #f8fafc;
+    padding: 15px 20px;
+    border-bottom: 1px solid #e5e7eb;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.section-header h3 {
+    margin: 0;
+    color: #1f2937;
+    font-size: 1.1rem;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.entries-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.entries-table th {
+    background: #f8fafc;
+    padding: 12px 15px;
+    text-align: left;
+    font-weight: 600;
+    color: #374151;
+    font-size: 0.9rem;
+    border-bottom: 1px solid #e5e7eb;
+}
+
+.entries-table td {
+    padding: 12px 15px;
+    border-bottom: 1px solid #e5e7eb;
+    font-size: 0.9rem;
+    vertical-align: top;
+}
+
+.entry-date {
+    color: #6b7280;
+    font-size: 0.85rem;
+    white-space: nowrap;
+    width: 150px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.entry-content {
+    color: #374151;
+    line-height: 1.4;
+}
+
+.entry-actions {
+    white-space: nowrap;
+    width: 140px;
+}
+
+.action-btn {
+    background: none;
+    border: 1px solid #d1d5db;
+    color: #6b7280;
+    cursor: pointer;
+    padding: 6px 10px;
+    font-size: 0.8rem;
+    transition: all 0.2s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    margin-right: 4px;
+    border-radius: 4px;
+}
+
+.action-btn:hover {
+    transform: translateY(-1px);
+}
+
+.action-btn.view:hover { background: #3b82f6; color: white; border-color: #3b82f6; }
+.action-btn.edit:hover { background: #f59e0b; color: white; border-color: #f59e0b; }
+.action-btn.analyze:hover { background: #10b981; color: white; border-color: #10b981; }
+.action-btn.redo:hover { background: #8b5cf6; color: white; border-color: #8b5cf6; }
+
+/* Modal View/Edit */
+.entry-modal {
+    background: white;
+    border: 1px solid #e5e7eb;
+    margin-bottom: 20px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    display: none;
+}
+
+.modal-header {
+    background: #f8fafc;
+    padding: 15px 20px;
+    border-bottom: 1px solid #e5e7eb;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.modal-header h3 {
+    margin: 0;
+    color: #1f2937;
+    font-size: 1.1rem;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.modal-content {
+    padding: 20px;
+}
+
+.entry-view-content {
+    background: #f8fafc;
+    padding: 15px;
+    border: 1px solid #e5e7eb;
+    margin-bottom: 15px;
+    line-height: 1.6;
+}
+
+.entry-edit-form {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.entry-edit-actions {
+    display: flex;
+    gap: 10px;
+    justify-content: flex-end;
+}
+
+.btn-cancel {
+    background: #6b7280;
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    font-size: 0.9rem;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    border-radius: 4px;
+}
+
+.btn-cancel:hover { background: #4b5563; }
+
+/* États */
+.loading {
+    display: none;
+    text-align: center;
+    padding: 40px 20px;
+    color: #6b7280;
+}
+
+.loading-spinner {
+    border: 2px solid #f3f3f3;
+    border-top: 2px solid #3b82f6;
+    border-radius: 50%;
+    width: 30px;
+    height: 30px;
+    animation: spin 1s linear infinite;
+    margin: 0 auto 10px;
+}
+
+.alert {
+    padding: 12px 15px;
+    margin-bottom: 15px;
+    display: none;
+    font-size: 0.9rem;
+    border-radius: 2px;
+}
+
+.alert-success {
+    background: #d1fae5;
+    color: #065f46;
+    border: 1px solid #a7f3d0;
+}
+
+.alert-error {
+    background: #fee2e2;
+    color: #991b1b;
+    border: 1px solid #fecaca;
+}
+
+.no-entries {
+    text-align: center;
+    padding: 40px 20px;
+    color: #6b7280;
+    font-style: italic;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* Notification flottante */
+.floating-notification {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    z-index: 1000;
+    min-width: 300px;
+    padding: 15px;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    animation: slideIn 0.3s ease;
+}
+
+.floating-notification.success {
+    background: #d1fae5;
+    color: #065f46;
+    border: 1px solid #a7f3d0;
+}
+
+.floating-notification.error {
+    background: #fee2e2;
+    color: #991b1b;
+    border: 1px solid #fecaca;
+}
+
+@keyframes slideIn {
+    from {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .analyse-container {
+        padding: 15px;
+    }
+    
+    .toolbar {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    
+    .search-box {
+        min-width: auto;
+    }
+    
+    .entries-table {
+        display: block;
+        overflow-x: auto;
+    }
+    
+    .results-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .entry-actions {
+        width: auto;
+    }
+    
+    .action-btn {
+        padding: 4px 6px;
+        font-size: 0.7rem;
+    }
+    
+    .floating-notification {
+        left: 10px;
+        right: 10px;
+        min-width: auto;
+    }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="analyse-rapide-body">
+    <div class="analyse-container">
+        <!-- Header -->
+        <div class="analyse-header">
+            <h1><i class="fas fa-brain"></i> MindScribe Analytics</h1>
+            <p><i class="fas fa-rocket"></i> Découvrez les insights cachés dans vos écrits avec notre IA avancée</p>
+        </div>
+
+        <!-- Barre d'outils -->
+        <div class="toolbar">
+            <div class="search-box">
+                <div class="search-icon">
+                    <i class="fas fa-search"></i>
+                </div>
+                <input type="text" id="globalSearch" placeholder="Rechercher dans vos entrées...">
+            </div>
+            
+          
+            
+            <button class="btn-analyse-rapide" id="showAnalysisForm">
+                <i class="fas fa-bolt"></i>
+                Analyse Express
+            </button>
+        </div>
+
+        <!-- Formulaire d'analyse -->
+        <div class="analyse-form-modal" id="analysisForm">
+            <div class="form-header">
+                <h3><i class="fas fa-chart-line"></i> Nouvelle Analyse</h3>
+                <button class="close-btn" id="closeAnalysisForm">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="form-content">
+                <div class="alert alert-success" id="successAlert">
+                    <i class="fas fa-check-circle"></i> Analyse terminée avec succès !
+                </div>
+                
+                <div class="alert alert-error" id="errorAlert">
+                    <i class="fas fa-exclamation-triangle"></i> Une erreur est survenue lors de l'analyse.
+                </div>
+
+                <form class="analyse-form" id="analyseForm">
+                    {% csrf_token %}
+                    
+                    <div class="form-group">
+                        <label for="texteInput">
+                            <i class="fas fa-edit"></i>
+                            Texte à analyser :
+                        </label>
+                        <textarea 
+                            id="texteInput" 
+                            class="form-control" 
+                            placeholder="Saisissez votre texte ici pour une analyse approfondie..."
+                            required
+                        ></textarea>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="entrySelect">
+                            <i class="fas fa-history"></i>
+                            Ou sélectionner une entrée existante :
+                        </label>
+                        <select id="entrySelect" class="form-control">
+                            <option value="">-- Choisir une entrée --</option>
+                            {% for entry in entries_recentes %}
+                            <option value="{{ entry.contenu_texte }}" data-id="{{ entry.id }}">
+                                {{ entry.date_creation|date:"d/m/Y H:i" }} - {{ entry.contenu_texte|truncatechars:60 }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <button type="submit" class="btn-submit">
+                        <i class="fas fa-play-circle"></i>
+                        Lancer l'Analyse
+                    </button>
+                </form>
+
+                <div class="loading" id="loadingIndicator">
+                    <div class="loading-spinner"></div>
+                    <p>Analyse en cours...</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Section des résultats -->
+        <div class="results-section" id="resultsSection">
+            <div class="results-header">
+                <h3><i class="fas fa-chart-bar"></i> Résultats de l'Analyse</h3>
+                <button class="close-results" id="closeResults">
+                    <i class="fas fa-times"></i>
+                    Fermer
+                </button>
+            </div>
+            <div class="results-content" id="resultsContent">
+                <!-- Les résultats seront injectés ici -->
+            </div>
+        </div>
+
+        <!-- Modal View/Edit Entry -->
+        <div class="entry-modal" id="entryModal">
+            <div class="modal-header">
+                <h3><i class="fas fa-file-alt"></i> Détails de l'Entrée</h3>
+                <button class="close-btn" id="closeEntryModal">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-content" id="entryModalContent">
+                <!-- Contenu injecté dynamiquement -->
+            </div>
+        </div>
+
+       
+        <!-- Section des analyses sauvegardées -->
+        <div class="entries-section">
+            <div class="section-header">
+                <h3><i class="fas fa-history"></i> Historique des Analyses Rapides</h3>
+                <span class="entries-count">{{ analyses_rapides|length }} analyse(s)</span>
+            </div>
+            
+            {% if analyses_rapides %}
+            <table class="entries-table">
+                <thead>
+                    <tr>
+                        <th style="width: 150px;">Date</th>
+                        <th>Texte analysé</th>
+                        <th style="width: 120px;">Ton</th>
+                        <th style="width: 140px;">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for analyse in analyses_rapides %}
+                    <tr>
+                        <td class="entry-date">
+                            <i class="fas fa-clock"></i>
+                            {{ analyse.date_creation|date:"d/m/Y H:i" }}
+                        </td>
+                        <td class="entry-content">
+                            {{ analyse.texte_tronque }}
+                        </td>
+                        <td>
+                            <span class="sentiment-badge sentiment-{{ analyse.ton_general }}">
+                                <i class="fas fa-{% if analyse.ton_general == 'positif' %}smile{% elif analyse.ton_general == 'negatif' %}frown{% else %}meh{% endif %}"></i>
+                                {{ analyse.ton_general|title }}
+                            </span>
+                        </td>
+                        <td class="entry-actions">
+                            <button class="action-btn view" onclick="viewAnalysis('{{ analyse.id }}')">
+                                <i class="fas fa-eye"></i> Voir
+                            </button>
+                            <button class="action-btn redo" onclick="reanalyzeText('{{ analyse.texte_original|escapejs }}')">
+                                <i class="fas fa-redo"></i> Réanalyser
+                            </button>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            {% else %}
+            <div class="no-entries">
+                <i class="fas fa-chart-line"></i>
+                <p>Aucune analyse rapide sauvegardée.</p>
+                <p style="font-size: 0.9rem; color: #9ca3af;">Effectuez votre première analyse pour la voir ici !</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Configuration
+const config = {
+    apiUrl: '/dashboard/api/analyser-rapide/',
+    saveUrl: '/dashboard/api/sauvegarder-analyse/'
+};
+
+// Variables globales pour stocker les données
+let currentAnalysisData = null;
+let currentText = '';
+
+// Fonction pour afficher les résultats
+function afficherResultats(data, texteOriginal) {
+    console.log('🎯 afficherResultats appelée');
+    console.log('📊 Données reçues:', data);
+    console.log('📝 Texte original:', texteOriginal);
+    
+    // Stocker les données pour la sauvegarde future
+    currentAnalysisData = data;
+    currentText = texteOriginal;
+    
+    console.log('💾 Données stockées:');
+    console.log(' - currentAnalysisData:', currentAnalysisData ? 'PRÉSENT' : 'ABSENT');
+    console.log(' - currentText:', currentText ? `"${currentText}"` : 'ABSENT');
+    
+    // Afficher les résultats dans l'interface
+    const resultsSection = document.getElementById('resultsSection');
+    const resultsContent = document.getElementById('resultsContent');
+    
+    if (data.analyse_complete) {
+        resultsContent.innerHTML = genererHTMLAnalyseProfonde(data.analyse_complete);
+    } else {
+        resultsContent.innerHTML = genererHTMLAnalyseSimple(data);
+    }
+    
+    resultsSection.style.display = 'block';
+    resultsSection.scrollIntoView({ behavior: 'smooth' });
+}
+
+// Fonction pour générer l'HTML de l'analyse profonde
+function genererHTMLAnalyseProfonde(analyse) {
+    const sentiment = analyse.sentiment_principal;
+    const sentimentClass = `sentiment-${sentiment.ton}`;
+    const sentimentIcon = sentiment.ton === 'positif' ? 'fa-smile' : 
+                         sentiment.ton === 'negatif' ? 'fa-frown' : 'fa-meh';
+
+    return `
+        <div class="results-grid">
+            <!-- Section de sauvegarde -->
+            <div class="save-section" style="grid-column: 1 / -1;">
+                <h4><i class="fas fa-save"></i> Sauvegarder cette analyse</h4>
+                <p style="color: #6b7280; margin-bottom: 15px;">
+                    Vous pouvez sauvegarder cette analyse pour la consulter plus tard dans votre historique.
+                </p>
+                <button class="btn-save-analysis" onclick="sauvegarderManuellement()" id="manualSaveBtn">
+                    <i class="fas fa-save"></i>
+                    Sauvegarder l'analyse
+                </button>
+                <div id="saveStatus" style="margin-top: 10px; font-size: 0.9rem;"></div>
+            </div>
+
+            <!-- Sentiment Principal -->
+            <div class="result-card">
+                <h4><i class="fas ${sentimentIcon}"></i> Sentiment Principal</h4>
+                <div class="sentiment-badge ${sentimentClass}">
+                    <i class="fas ${sentimentIcon}"></i>
+                    ${sentiment.ton.charAt(0).toUpperCase() + sentiment.ton.slice(1)}
+                </div>
+                <div class="metric-value"><strong>Confiance:</strong> ${Math.round(sentiment.confiance * 100)}%</div>
+                <div class="metric-value"><strong>Score:</strong> ${sentiment.score}</div>
+                <div class="metric-value"><strong>Intensité:</strong> ${sentiment.intensite}</div>
+            </div>
+
+            <!-- Métriques Générales -->
+            <div class="result-card">
+                <h4><i class="fas fa-chart-bar"></i> Métriques du Texte</h4>
+                <div class="metric-value"><strong>Longueur:</strong> ${analyse.metriques_generales.longueur_texte} caractères</div>
+                <div class="metric-value"><strong>Phrases:</strong> ${analyse.metriques_generales.nombre_phrases}</div>
+                <div class="metric-value"><strong>Complexité:</strong> ${analyse.metriques_generales.complexite_emotionnelle}</div>
+                <div class="metric-value"><strong>Intensité:</strong> ${analyse.metriques_generales.niveau_intensite}</div>
+            </div>
+
+            ${genererHTMLRecommandations(analyse.recommandations)}
+        </div>
+    `;
+}
+
+function genererHTMLRecommandations(recommandations) {
+    if (!recommandations || recommandations.length === 0) return '';
+    
+    const recHTML = recommandations.map(rec => 
+        `<div class="metric-value" style="margin-bottom: 8px;"><i class="fas fa-lightbulb"></i> ${rec}</div>`
+    ).join('');
+    
+    return `
+        <div class="result-card">
+            <h4><i class="fas fa-star"></i> Recommandations</h4>
+            ${recHTML}
+        </div>
+    `;
+}
+
+// Fonction de sauvegarde manuelle
+async function sauvegarderManuellement() {
+    console.log('🔴 sauvegarderManuellement appelée');
+    console.log('📋 Vérification des données:');
+    console.log(' - currentAnalysisData:', currentAnalysisData);
+    console.log(' - currentText:', currentText);
+    
+    if (!currentAnalysisData || !currentText) {
+        console.error('❌ Données manquantes!');
+        alert('Erreur: Aucune donnée à sauvegarder. Les données ont été perdues.');
+        return;
+    }
+
+    const saveBtn = document.getElementById('manualSaveBtn');
+    const saveStatus = document.getElementById('saveStatus');
+    
+    // Désactiver le bouton
+    saveBtn.disabled = true;
+    saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Sauvegarde...';
+    saveStatus.innerHTML = '<span style="color: #f59e0b;">Sauvegarde en cours...</span>';
+
+    try {
+        console.log('📤 Envoi de la requête de sauvegarde...');
+        
+        const response = await fetch(config.saveUrl, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+            },
+            body: JSON.stringify({
+                texte: currentText,
+                resultat_analyse: currentAnalysisData
+            })
+        });
+        
+        const data = await response.json();
+        console.log('📥 Réponse reçue:', data);
+        
+        if (data.success) {
+            saveStatus.innerHTML = '<span style="color: #10b981;">✅ Analyse sauvegardée !</span>';
+            saveBtn.innerHTML = '<i class="fas fa-check"></i> Sauvegardé';
+            
+            // Rafraîchir après 2 secondes
+            setTimeout(() => {
+                window.location.reload();
+            }, 2000);
+        } else {
+            saveStatus.innerHTML = `<span style="color: #ef4444;">❌ Erreur: ${data.error}</span>`;
+            saveBtn.disabled = false;
+            saveBtn.innerHTML = '<i class="fas fa-save"></i> Sauvegarder l\'analyse';
+        }
+    } catch (error) {
+        console.error('💥 Erreur:', error);
+        saveStatus.innerHTML = '<span style="color: #ef4444;">❌ Erreur de connexion</span>';
+        saveBtn.disabled = false;
+        saveBtn.innerHTML = '<i class="fas fa-save"></i> Sauvegarder l\'analyse';
+    }
+}
+
+// ==================== FONCTIONS POUR LES BOUTONS ET FILTRES ====================
+
+// Fonction pour voir une analyse détaillée
+
+
+
+// Fonction pour voir une analyse détaillée
+function viewAnalysis(analysisId) {
+    console.log('🔍 Chargement de l\'analyse:', analysisId);
+    
+    // Afficher un indicateur de chargement
+    const resultsSection = document.getElementById('resultsSection');
+    const resultsContent = document.getElementById('resultsContent');
+    
+    resultsContent.innerHTML = `
+        <div style="text-align: center; padding: 40px;">
+            <div class="loading-spinner"></div>
+            <p>Chargement de l'analyse...</p>
+        </div>
+    `;
+    
+    resultsSection.style.display = 'block';
+    resultsSection.scrollIntoView({ behavior: 'smooth' });
+    
+    // Faire une requête AJAX pour récupérer les détails de l'analyse
+    fetch(`/dashboard/api/analyse-details/${analysisId}/`)
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Analyse non trouvée');
+            }
+            return response.json();
+        })
+        .then(data => {
+            if (data.success) {
+                afficherDetailsAnalyse(data.analyse);
+            } else {
+                throw new Error(data.error || 'Erreur lors du chargement');
+            }
+        })
+        .catch(error => {
+            console.error('❌ Erreur:', error);
+            resultsContent.innerHTML = `
+                <div class="alert alert-error">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    Erreur: ${error.message}
+                </div>
+                <div style="text-align: center; margin-top: 20px;">
+                    <button class="action-btn" onclick="afficherListeAnalyses()">
+                        <i class="fas fa-arrow-left"></i>
+                        Retour à la liste
+                    </button>
+                </div>
+            `;
+        });
+}
+
+// Fonction pour afficher les détails d'une analyse
+function afficherDetailsAnalyse(analyse) {
+    const resultsContent = document.getElementById('resultsContent');
+    
+    const html = `
+        <div class="results-header" style="margin-bottom: 20px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px;">
+                <div>
+                    <h3 style="margin: 0; display: flex; align-items: center; gap: 10px;">
+                        <i class="fas fa-chart-bar"></i>
+                        Analyse Détaillée
+                    </h3>
+                    <p style="margin: 5px 0 0 0; color: #6b7280; font-size: 0.9rem;">
+                        ID: ${analyse.id} • ${new Date(analyse.date_creation).toLocaleDateString('fr-FR')}
+                    </p>
+                </div>
+                <div style="display: flex; gap: 10px;">
+                    <button class="action-btn redo" onclick="reanalyzeText('${analyse.texte_original.replace(/'/g, "\\'")}')">
+                        <i class="fas fa-redo"></i>
+                        Réanalyser
+                    </button>
+                    <button class="action-btn" onclick="afficherListeAnalyses()">
+                        <i class="fas fa-arrow-left"></i>
+                        Retour
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div class="results-grid">
+            <!-- Texte Original -->
+            <div class="result-card" style="grid-column: 1 / -1;">
+                <h4><i class="fas fa-file-alt"></i> Texte Original</h4>
+                <div style="background: #f8fafc; padding: 15px; border-radius: 6px; border: 1px solid #e5e7eb; margin-top: 10px;">
+                    <p style="margin: 0; line-height: 1.6; white-space: pre-wrap;">${analyse.texte_original}</p>
+                </div>
+            </div>
+
+            <!-- Sentiment Principal -->
+            <div class="result-card">
+                <h4><i class="fas fa-smile"></i> Sentiment Principal</h4>
+                <div class="sentiment-badge sentiment-${analyse.ton_general}">
+                    <i class="fas fa-${analyse.ton_general === 'positif' ? 'smile' : analyse.ton_general === 'negatif' ? 'frown' : 'meh'}"></i>
+                    ${analyse.ton_general.charAt(0).toUpperCase() + analyse.ton_general.slice(1)}
+                </div>
+                <div class="metric-value"><strong>Score:</strong> ${analyse.score_sentiment}</div>
+                <div class="metric-value"><strong>Confiance:</strong> ${Math.round(analyse.confiance_analyse * 100)}%</div>
+            </div>
+
+            <!-- Métriques -->
+            <div class="result-card">
+                <h4><i class="fas fa-chart-bar"></i> Métriques</h4>
+                <div class="metric-value"><strong>Longueur:</strong> ${analyse.texte_original.length} caractères</div>
+                <div class="metric-value"><strong>Mots-clés:</strong> ${analyse.mots_cles.length}</div>
+                <div class="metric-value"><strong>Thèmes:</strong> ${analyse.themes_detectes.length}</div>
+            </div>
+
+            <!-- Mots-clés -->
+            ${analyse.mots_cles && analyse.mots_cles.length > 0 ? `
+                <div class="result-card">
+                    <h4><i class="fas fa-tags"></i> Mots-clés Détectés</h4>
+                    <div style="margin-top: 10px;">
+                        ${analyse.mots_cles.map(mot => `<span class="emotion-tag">${mot}</span>`).join('')}
+                    </div>
+                </div>
+            ` : ''}
+
+            <!-- Thèmes -->
+            ${analyse.themes_detectes && analyse.themes_detectes.length > 0 ? `
+                <div class="result-card">
+                    <h4><i class="fas fa-layer-group"></i> Thèmes Détectés</h4>
+                    <div style="margin-top: 10px;">
+                        ${analyse.themes_detectes.map(theme => `<span class="emotion-tag">${theme}</span>`).join('')}
+                    </div>
+                </div>
+            ` : ''}
+
+            <!-- Émotions -->
+            ${analyse.emotions_detectees && Object.keys(analyse.emotions_detectees).length > 0 ? `
+                <div class="result-card">
+                    <h4><i class="fas fa-heart"></i> Émotions Détectées</h4>
+                    <div style="margin-top: 10px;">
+                        ${Object.entries(analyse.emotions_detectees).map(([emotion, details]) => 
+                            `<span class="emotion-tag">${emotion} (${details.presence})</span>`
+                        ).join('')}
+                    </div>
+                </div>
+            ` : ''}
+
+            <!-- Recommandations -->
+            ${analyse.recommandations && analyse.recommandations.length > 0 ? `
+                <div class="result-card">
+                    <h4><i class="fas fa-lightbulb"></i> Recommandations</h4>
+                    <div style="margin-top: 10px;">
+                        ${analyse.recommandations.map(rec => 
+                            `<div class="metric-value" style="margin-bottom: 8px; align-items: flex-start;">
+                                <i class="fas fa-bullseye" style="color: #10b981; margin-top: 2px;"></i>
+                                <span>${rec}</span>
+                            </div>`
+                        ).join('')}
+                    </div>
+                </div>
+            ` : ''}
+
+            <!-- Résumé -->
+            ${analyse.resume_analyse ? `
+                <div class="result-card" style="grid-column: 1 / -1;">
+                    <h4><i class="fas fa-file-medical-alt"></i> Résumé de l'Analyse</h4>
+                    <div style="background: #f0f9ff; padding: 15px; border-radius: 6px; border: 1px solid #bae6fd; margin-top: 10px;">
+                        <p style="margin: 0; line-height: 1.6; color: #0369a1;">${analyse.resume_analyse}</p>
+                    </div>
+                </div>
+            ` : ''}
+
+            <!-- Données Brutes (développable) -->
+            <div class="result-card" style="grid-column: 1 / -1;">
+                <h4>
+                    <i class="fas fa-database"></i> 
+                    Données Complètes
+                    <button class="action-btn" onclick="toggleDonneesBrutes()" style="margin-left: 10px; font-size: 0.8rem;">
+                        <i class="fas fa-chevron-down"></i>
+                        Afficher
+                    </button>
+                </h4>
+                <div id="donneesBrutes" style="display: none; margin-top: 10px;">
+                    <pre style="background: #1f2937; color: #f3f4f6; padding: 15px; border-radius: 6px; font-size: 0.8rem; overflow-x: auto; max-height: 400px;">${JSON.stringify(analyse, null, 2)}</pre>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    resultsContent.innerHTML = html;
+}
+
+// Fonction pour afficher/masquer les données brutes
+function toggleDonneesBrutes() {
+    const donneesBrutes = document.getElementById('donneesBrutes');
+    const bouton = document.querySelector('button[onclick="toggleDonneesBrutes()"]');
+    
+    if (donneesBrutes.style.display === 'none') {
+        donneesBrutes.style.display = 'block';
+        bouton.innerHTML = '<i class="fas fa-chevron-up"></i> Masquer';
+    } else {
+        donneesBrutes.style.display = 'none';
+        bouton.innerHTML = '<i class="fas fa-chevron-down"></i> Afficher';
+    }
+}
+
+// Fonction pour retourner à la liste des analyses
+function afficherListeAnalyses() {
+    const resultsSection = document.getElementById('resultsSection');
+    resultsSection.style.display = 'none';
+    
+    // Optionnel: scroll vers la section des analyses
+    document.querySelector('.entries-section:last-child').scrollIntoView({ 
+        behavior: 'smooth' 
+    });
+}
+
+
+
+
+// Fonction pour réanalyser un texte
+function reanalyzeText(text) {
+    console.log('🔄 Réanalyser texte:', text.substring(0, 50) + '...');
+    
+    // Afficher le formulaire d'analyse
+    const analysisForm = document.getElementById('analysisForm');
+    const texteInput = document.getElementById('texteInput');
+    
+    // Remplir le texte
+    texteInput.value = text;
+    
+    // Afficher le formulaire
+    analysisForm.style.display = 'block';
+    
+    // Focus sur le textarea
+    texteInput.focus();
+    
+    // Scroller vers le formulaire
+    analysisForm.scrollIntoView({ behavior: 'smooth' });
+}
+
+// Fonction pour voir une entrée détaillée
+function viewEntry(entryId, content) {
+    console.log('📄 Voir entrée:', entryId);
+    
+    const modal = document.getElementById('entryModal');
+    const modalContent = document.getElementById('entryModalContent');
+    
+    const html = `
+        <div class="entry-view-content">
+            <div class="metric-value"><strong><i class="fas fa-id-card"></i> ID:</strong> ${entryId}</div>
+            <div style="margin-top: 15px;">
+                <strong><i class="fas fa-align-left"></i> Contenu:</strong>
+                <div style="margin-top: 10px; padding: 15px; background: white; border: 1px solid #e5e7eb; border-radius: 6px; max-height: 300px; overflow-y: auto;">
+                    ${content.replace(/\n/g, '<br>')}
+                </div>
+            </div>
+        </div>
+        <div style="text-align: center; margin-top: 20px;">
+            <button class="action-btn analyze" onclick="analyzeEntry('${entryId}', '${content.replace(/'/g, "\\'")}')">
+                <i class="fas fa-chart-line"></i>
+                Analyser ce texte
+            </button>
+        </div>
+    `;
+    
+    modalContent.innerHTML = html;
+    modal.style.display = 'block';
+}
+
+// Fonction pour analyser une entrée existante
+function analyzeEntry(entryId, content) {
+    console.log('🔬 Analyser entrée:', entryId);
+    
+    // Fermer le modal
+    document.getElementById('entryModal').style.display = 'none';
+    
+    // Afficher le formulaire d'analyse
+    const analysisForm = document.getElementById('analysisForm');
+    const texteInput = document.getElementById('texteInput');
+    const entrySelect = document.getElementById('entrySelect');
+    
+    // Remplir le texte
+    texteInput.value = content;
+    
+    // Sélectionner l'entrée dans le select
+    entrySelect.value = content;
+    
+    // Afficher le formulaire
+    analysisForm.style.display = 'block';
+    
+    // Focus sur le textarea
+    texteInput.focus();
+    
+    // Scroller vers le formulaire
+    analysisForm.scrollIntoView({ behavior: 'smooth' });
+}
+
+// ==================== FONCTIONS DE RECHERCHE ET FILTRES ====================
+
+// Recherche en temps réel
+function initialiserRecherche() {
+    const searchInput = document.getElementById('globalSearch');
+    
+    searchInput.addEventListener('input', function() {
+        const searchTerm = this.value.toLowerCase().trim();
+        console.log('🔎 Recherche:', searchTerm);
+        
+        // Rechercher dans les entrées
+        const entryRows = document.querySelectorAll('.entries-table tbody tr');
+        let entriesFound = 0;
+        
+        entryRows.forEach(row => {
+            const content = row.querySelector('.entry-content').textContent.toLowerCase();
+            if (content.includes(searchTerm)) {
+                row.style.display = '';
+                entriesFound++;
+            } else {
+                row.style.display = 'none';
+            }
+        });
+        
+        // Rechercher dans les analyses
+        const analysisRows = document.querySelectorAll('.entries-section:last-child .entries-table tbody tr');
+        let analysesFound = 0;
+        
+        analysisRows.forEach(row => {
+            const content = row.querySelector('.entry-content').textContent.toLowerCase();
+            if (content.includes(searchTerm)) {
+                row.style.display = '';
+                analysesFound++;
+            } else {
+                row.style.display = 'none';
+            }
+        });
+        
+        console.log(`📊 Résultats: ${entriesFound} entrées, ${analysesFound} analyses`);
+    });
+}
+
+// Filtres
+function initialiserFiltres() {
+    const filterButtons = document.querySelectorAll('.filter-btn');
+    
+    filterButtons.forEach(btn => {
+        btn.addEventListener('click', function() {
+            // Retirer la classe active de tous les boutons
+            filterButtons.forEach(b => b.classList.remove('active'));
+            
+            // Ajouter la classe active au bouton cliqué
+            this.classList.add('active');
+            
+            const filter = this.getAttribute('data-filter');
+            console.log('🎛️ Filtre activé:', filter);
+            
+            // Appliquer le filtre
+            appliquerFiltre(filter);
+        });
+    });
+}
+
+function appliquerFiltre(filter) {
+    const entryRows = document.querySelectorAll('.entries-table tbody tr');
+    const analysisRows = document.querySelectorAll('.entries-section:last-child .entries-table tbody tr');
+    
+    switch(filter) {
+        case 'all':
+            // Afficher tout
+            entryRows.forEach(row => row.style.display = '');
+            analysisRows.forEach(row => row.style.display = '');
+            break;
+            
+        case 'recent':
+            // Pour les récentes, on pourrait trier par date
+            // Pour l'instant, on affiche tout
+            entryRows.forEach(row => row.style.display = '');
+            analysisRows.forEach(row => row.style.display = '');
+            alert('Filtre "Récentes" - Cette fonctionnalité triera les entrées par date récente');
+            break;
+            
+        case 'frequent':
+            // Pour les fréquentes, on pourrait compter les occurrences
+            entryRows.forEach(row => row.style.display = '');
+            analysisRows.forEach(row => row.style.display = '');
+            alert('Filtre "Fréquentes" - Cette fonctionnalité montrera les entrées les plus analysées');
+            break;
+    }
+}
+
+// ==================== GESTION DU FORMULAIRE ====================
+
+// Gestion du formulaire d'analyse
+document.getElementById('analyseForm').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    
+    const texte = document.getElementById('texteInput').value.trim();
+    const loading = document.getElementById('loadingIndicator');
+    
+    if (!texte) {
+        alert('Veuillez saisir un texte à analyser.');
+        return;
+    }
+    
+    // Afficher le chargement
+    loading.style.display = 'block';
+    
+    try {
+        console.log('🚀 Envoi de l\'analyse...');
+        
+        const response = await fetch(config.apiUrl, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+            },
+            body: JSON.stringify({ texte: texte })
+        });
+        
+        const data = await response.json();
+        console.log('🎉 Analyse terminée:', data);
+        
+        if (data.success) {
+            afficherResultats(data, texte);
+            // Fermer le formulaire
+            document.getElementById('analysisForm').style.display = 'none';
+            // Reset du formulaire
+            this.reset();
+        } else {
+            alert('Erreur: ' + data.error);
+        }
+    } catch (error) {
+        console.error('💥 Erreur:', error);
+        alert('Erreur de connexion au serveur.');
+    } finally {
+        loading.style.display = 'none';
+    }
+});
+
+// Gestion du select d'entrées existantes
+document.getElementById('entrySelect').addEventListener('change', function() {
+    if (this.value) {
+        document.getElementById('texteInput').value = this.value;
+        document.getElementById('texteInput').focus();
+    }
+});
+
+// ==================== GESTION DES BOUTONS ====================
+
+// Bouton pour afficher le formulaire d'analyse
+document.getElementById('showAnalysisForm').addEventListener('click', function() {
+    document.getElementById('analysisForm').style.display = 'block';
+    document.getElementById('texteInput').focus();
+});
+
+// Bouton pour fermer le formulaire d'analyse
+document.getElementById('closeAnalysisForm').addEventListener('click', function() {
+    document.getElementById('analysisForm').style.display = 'none';
+    document.getElementById('analyseForm').reset();
+    currentAnalysisData = null;
+    currentText = '';
+});
+
+// Bouton pour fermer les résultats
+document.getElementById('closeResults').addEventListener('click', function() {
+    document.getElementById('resultsSection').style.display = 'none';
+});
+
+// Bouton pour fermer le modal d'entrée
+document.getElementById('closeEntryModal').addEventListener('click', function() {
+    document.getElementById('entryModal').style.display = 'none';
+});
+
+// ==================== INITIALISATION ====================
+
+// Fonction d'initialisation
+function initialiserPage() {
+    console.log('🧠 Initialisation de MindScribe Analytics...');
+    
+    // Initialiser la recherche
+    initialiserRecherche();
+    
+    // Initialiser les filtres
+    initialiserFiltres();
+    
+    // Vérifier les données stockées
+    console.log('💾 État initial des données:');
+    console.log(' - currentAnalysisData:', currentAnalysisData);
+    console.log(' - currentText:', currentText);
+    
+    console.log('✅ MindScribe Analytics initialisé avec succès!');
+}
+
+// Initialiser quand la page est chargée
+document.addEventListener('DOMContentLoaded', function() {
+    initialiserPage();
+});
+</script>
+{% endblock %}
