@@ -488,7 +488,7 @@ class HistoriqueConversationsView(LoginRequiredMixin, View):
                         'reponse_ia': conv.reponse_ia or '',
                         'date_creation': conv.date_creation.isoformat(),
                         'type_interaction': conv.type_interaction or 'question',
-                        'type_interaction_display': conv.get_type_interaction_display(),
+                        'type_interaction_display': conv.get_type_interaction_display() or 'Question',
                         'journal_id': str(conv.journal.id) if conv.journal else None,
                         'journal_type': getattr(conv.journal, 'type_entree', None) if conv.journal else None,
                         'multimodal': getattr(conv, 'type_contenu_journal', None) in ['audio', 'image', 'multimodal'] if conv.journal else False,
