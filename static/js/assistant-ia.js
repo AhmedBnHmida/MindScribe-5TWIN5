@@ -363,6 +363,8 @@ class AssistantIAChat {
                 this.addMessageToChat(conv.message_utilisateur, 'user', conv.date_interaction);
                 this.addMessageToChat(conv.reponse_ia, 'assistant', conv.date_interaction, conv.type_interaction);
             });
+            // Scroll to bottom after loading all history (instant scroll for faster load)
+            setTimeout(() => this.scrollToBottom(false), 300);
         }
     }
 
@@ -483,7 +485,26 @@ class AssistantIAChat {
         `;
 
         chatMessages.appendChild(messageDiv);
-        chatMessages.scrollTop = chatMessages.scrollHeight;
+        this.scrollToBottom();
+    }
+
+    scrollToBottom(smooth = true) {
+        const chatMessages = document.getElementById('chat-messages');
+        if (!chatMessages) return;
+        
+        // Use smooth scrolling for better UX when new messages arrive
+        if (smooth) {
+            // Small delay to ensure DOM is updated
+            setTimeout(() => {
+                chatMessages.scrollTo({
+                    top: chatMessages.scrollHeight,
+                    behavior: 'smooth'
+                });
+            }, 100);
+        } else {
+            // Instant scroll for initial load or bulk loading
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
     }
 
     addSystemMessage(text) {
@@ -496,7 +517,7 @@ class AssistantIAChat {
             </div>
         `;
         chatMessages.appendChild(messageDiv);
-        chatMessages.scrollTop = chatMessages.scrollHeight;
+        this.scrollToBottom();
     }
 
     formatMessage(text) {

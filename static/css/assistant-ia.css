@@ -144,16 +144,18 @@
 }
 
 #chat-messages {
+    scroll-behavior: smooth;
     display: flex !important;
     flex-direction: column;
     flex: 1 1 auto !important;
     min-height: 0 !important;
-    max-height: 100% !important;
     overflow-y: auto !important;
     overflow-x: hidden !important;
     background-color: #f8f9fa !important;
     position: relative;
     padding: 1.5rem !important;
+    /* Ensure scrollbar is always visible when content overflows */
+    -webkit-overflow-scrolling: touch;
 }
 
 #welcome-message {
@@ -212,6 +214,8 @@
 /* ===== MAIN ASSISTANT IA PAGE LAYOUT ===== */
 .content-wrapper {
     min-height: calc(100vh - 60px);
+    padding: 0;
+    margin: 0;
 }
 
 .content-wrapper .container {
