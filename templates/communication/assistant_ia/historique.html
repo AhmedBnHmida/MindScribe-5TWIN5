@@ -8,34 +8,35 @@
     <div class="container">
     <div class="container-fluid py-4">
         <div class="row">
-            <!-- Sidebar des sessions -->
-            <div class="col-md-4 col-lg-3">
+            <!-- Sidebar des sessions - Made smaller -->
+            <div class="col-md-3 col-lg-2">
                 <div class="card">
-                    <div class="card-header d-flex justify-content-between align-items-center">
-                        <h5 class="card-title mb-0">
-                            <i class="fas fa-history me-2"></i>Sessions
-                        </h5>
-                        <span class="badge bg-primary">{{ sessions|length }}</span>
+                    <div class="card-header d-flex justify-content-between align-items-center p-2" style="padding: 0.5rem;">
+                        <h6 class="card-title mb-0" style="font-size: 0.9rem; font-weight: 600;">
+                            <i class="fas fa-history me-1"></i>Sessions
+                        </h6>
+                        <span class="badge bg-primary" style="font-size: 0.7rem;">{{ sessions|length }}</span>
                     </div>
                     <div class="card-body p-0">
                         <div class="list-group list-group-flush" id="sessions-list">
                             {% if sessions %}
                                 {% for session_id, conversations in sessions.items %}
-                                <button class="list-group-item list-group-item-action session-item" 
+                                <button class="list-group-item list-group-item-action session-item p-2" 
                                         data-session-id="{{ session_id }}"
                                         data-conversations-count="{{ conversations|length }}"
-                                        data-session-date="{{ conversations.0.date_creation|date:'Y-m-d H:i:s' }}">
+                                        data-session-date="{{ conversations.0.date_creation|date:'Y-m-d H:i:s' }}"
+                                        style="padding: 0.5rem;">
                                     <div class="d-flex w-100 justify-content-between align-items-start">
                                         <div class="flex-grow-1">
-                                            <h6 class="mb-1">
+                                            <h6 class="mb-1" style="font-size: 0.85rem; font-weight: 600;">
                                                 {{ conversations.0.date_creation|date:"d/m/Y" }}
                                             </h6>
-                                            <p class="mb-1 small text-muted">
-                                                {{ conversations.0.message_utilisateur|truncatewords:8 }}
+                                            <p class="mb-1 text-muted" style="font-size: 0.7rem; line-height: 1.2;">
+                                                {{ conversations.0.message_utilisateur|truncatewords:5 }}
                                             </p>
-                                            <div class="d-flex gap-2">
-                                                <small class="badge bg-light text-dark">
-                                                    <i class="fas fa-comment me-1"></i>{{ conversations|length }} messages
+                                            <div class="d-flex flex-column gap-1" style="gap: 0.25rem; margin-top: 0.25rem;">
+                                                <small class="badge bg-light text-dark" style="font-size: 0.65rem; padding: 0.15rem 0.35rem;">
+                                                    <i class="fas fa-comment me-1"></i>{{ conversations|length }}
                                                 </small>
                                                 {% with last_type=conversations.last.type_interaction %}
                                                 <small class="badge 
@@ -43,22 +44,23 @@
                                                     {% elif last_type == 'suggestion_ecriture' %}bg-success
                                                     {% elif last_type == 'support_emotionnel' %}bg-warning
                                                     {% elif last_type == 'reflexion_guidee' %}bg-purple
-                                                    {% else %}bg-secondary{% endif %}">
-                                                    {{ conversations.last.get_type_interaction_display }}
+                                                    {% else %}bg-secondary{% endif %}"
+                                                    style="font-size: 0.65rem; padding: 0.15rem 0.35rem;">
+                                                    {{ conversations.last.get_type_interaction_display|truncatechars:12 }}
                                                 </small>
                                                 {% endwith %}
                                             </div>
                                         </div>
-                                        <small class="text-muted ms-2">
+                                        <small class="text-muted ms-2" style="font-size: 0.7rem; white-space: nowrap;">
                                             {{ conversations.0.date_creation|date:"H:i" }}
                                         </small>
                                     </div>
                                 </button>
                                 {% endfor %}
                             {% else %}
-                                <div class="list-group-item text-center text-muted py-4">
-                                    <i class="fas fa-inbox fa-2x mb-2"></i>
-                                    <p class="mb-0">Aucune session</p>
+                                <div class="list-group-item text-center text-muted py-3" style="padding: 1rem;">
+                                    <i class="fas fa-inbox fa-lg mb-2"></i>
+                                    <p class="mb-0" style="font-size: 0.8rem;">Aucune session</p>
                                 </div>
                             {% endif %}
                         </div>
@@ -66,20 +68,20 @@
                 </div>
             </div>
 
-            <!-- Zone de détail de la conversation -->
-            <div class="col-md-8 col-lg-9">
+            <!-- Zone de détail de la conversation - Made bigger -->
+            <div class="col-md-9 col-lg-10">
                 <div class="card h-100">
-                    <div class="card-header d-flex justify-content-between align-items-center">
+                    <div class="card-header d-flex justify-content-between align-items-center p-2" style="padding: 0.75rem;">
                         <div>
-                            <h4 class="mb-0" id="conversation-title">
+                            <h5 class="mb-0" id="conversation-title" style="font-size: 1.1rem;">
                                 <i class="fas fa-comments me-2"></i>Sélectionnez une session
-                            </h4>
-                            <small class="text-muted" id="conversation-subtitle">
+                            </h5>
+                            <small class="text-muted" id="conversation-subtitle" style="font-size: 0.8rem;">
                                 Choisissez une conversation dans la liste pour voir les détails
                             </small>
                         </div>
                         <div>
-                            <a href="{% url 'communication:assistant_ia' %}" class="btn btn-primary">
+                            <a href="{% url 'communication:assistant_ia' %}" class="btn btn-primary btn-sm" style="font-size: 0.85rem;">
                                 <i class="fas fa-robot me-1"></i>Nouvelle Conversation
                             </a>
                         </div>
@@ -93,24 +95,21 @@
                             <p class="text-muted mb-4">
                                 Sélectionnez une session dans la liste de gauche pour afficher la conversation.
                             </p>
-                            <a href="{% url 'communication:assistant_ia' %}" class="btn btn-primary btn-lg">
-                                <i class="fas fa-robot me-2"></i>Commencer une nouvelle conversation
-                            </a>
                         </div>
 
                         <!-- Conversation détaillée -->
                         <div id="conversation-detail" style="display: none;">
                             <!-- En-tête de la conversation -->
-                            <div class="d-flex justify-content-between align-items-center mb-4 p-3 bg-light rounded">
+                            <div class="d-flex justify-content-between align-items-center mb-3 p-2 bg-light rounded" style="padding: 0.75rem;">
                                 <div>
-                                    <h5 id="session-date" class="mb-1"></h5>
-                                    <div class="d-flex gap-2 align-items-center">
-                                        <span class="badge bg-primary" id="messages-count"></span>
-                                        <span class="badge" id="session-type"></span>
-                                        <small class="text-muted" id="session-duration"></small>
+                                    <h6 id="session-date" class="mb-1" style="font-size: 0.95rem; font-weight: 600;"></h6>
+                                    <div class="d-flex gap-2 align-items-center flex-wrap">
+                                        <span class="badge bg-primary" id="messages-count" style="font-size: 0.75rem;"></span>
+                                        <span class="badge" id="session-type" style="font-size: 0.75rem;"></span>
+                                        <small class="text-muted" id="session-duration" style="font-size: 0.75rem;"></small>
                                     </div>
                                 </div>
-                                <button class="btn btn-outline-secondary btn-sm" id="export-conversation">
+                                <button class="btn btn-outline-secondary btn-sm" id="export-conversation" style="font-size: 0.8rem;">
                                     <i class="fas fa-download me-1"></i>Exporter
                                 </button>
                             </div>
@@ -195,8 +194,12 @@ class ConversationHistory {
         document.getElementById('conversation-title').textContent = `Session du ${this.formatDate(sessionData[0].date_creation)}`;
         document.getElementById('session-date').textContent = `Session du ${this.formatDate(sessionData[0].date_creation)}`;
         document.getElementById('messages-count').textContent = `${sessionData.length} messages`;
-        document.getElementById('session-type').textContent = sessionData[sessionData.length - 1].type_interaction_display;
-        document.getElementById('session-type').className = `badge ${this.getTypeBadgeClass(sessionData[sessionData.length - 1].type_interaction)}`;
+        
+        // Fix: Ensure type_interaction_display is properly set with fallback
+        const lastMessage = sessionData[sessionData.length - 1];
+        const typeDisplay = lastMessage.type_interaction_display || this.getTypeDisplayName(lastMessage.type_interaction) || 'Question';
+        document.getElementById('session-type').textContent = typeDisplay;
+        document.getElementById('session-type').className = `badge ${this.getTypeBadgeClass(lastMessage.type_interaction || 'question')}`;
         
         // Calculer la durée
         const startTime = new Date(sessionData[0].date_creation);
@@ -254,7 +257,8 @@ class ConversationHistory {
         let typeBadge = '';
         
         if (type && sender === 'assistant') {
-            typeBadge = `<span class="badge ${this.getTypeBadgeClass(type)} message-type-badge">${this.getTypeDisplayName(type)}</span>`;
+            const typeDisplay = this.getTypeDisplayName(type);
+            typeBadge = `<span class="badge ${this.getTypeBadgeClass(type)} message-type-badge">${typeDisplay}</span>`;
         }
         
         messageDiv.innerHTML = `
@@ -277,25 +281,31 @@ class ConversationHistory {
     }
     
     getTypeBadgeClass(type) {
+        if (!type) return 'bg-secondary';
         const typeClasses = {
+            'question': 'bg-primary',
             'analyse_journal': 'bg-info',
             'suggestion_ecriture': 'bg-success',
             'support_emotionnel': 'bg-warning',
             'reflexion_guidee': 'bg-purple',
             'accompagnement_pratique': 'bg-secondary',
-            'conversation_naturelle': 'bg-primary'
+            'conversation_naturelle': 'bg-primary',
+            'autre': 'bg-secondary'
         };
         return typeClasses[type] || 'bg-secondary';
     }
     
     getTypeDisplayName(type) {
+        if (!type) return 'Question';
         const typeNames = {
-            'analyse_journal': '📊 Analyse',
-            'suggestion_ecriture': '✍️ Suggestion',
-            'support_emotionnel': '💖 Support',
-            'reflexion_guidee': '🧠 Réflexion',
-            'accompagnement_pratique': '🔧 Accompagnement',
-            'conversation_naturelle': '💬 Conversation'
+            'question': 'Question',
+            'analyse_journal': 'Analyse Journal',
+            'suggestion_ecriture': 'Suggestion Écriture',
+            'support_emotionnel': 'Support Émotionnel',
+            'reflexion_guidee': 'Réflexion Guidée',
+            'accompagnement_pratique': 'Accompagnement',
+            'conversation_naturelle': 'Conversation',
+            'autre': 'Autre'
         };
         return typeNames[type] || type;
     }
@@ -377,9 +387,10 @@ document.addEventListener('DOMContentLoaded', function() {
 }
 
 .conversation-messages {
-    max-height: 60vh;
+    max-height: 70vh;
     overflow-y: auto;
-    padding: 1rem;
+    padding: 0.75rem;
+    scroll-behavior: smooth;
 }
 
 .message-container {

@@ -199,7 +199,90 @@
                         <i class="fas fa-user-plus"></i> Non connecté
                     </div>
                 {% endif %}
+                
+                <!-- Similarity Score Badge -->
+                {% if similarity_data and not connection_exists %}
+                <div style="margin-top: 15px; padding: 10px; background: rgba(255,255,255,0.2); border-radius: 10px;">
+                    <div style="font-size: 0.9em; margin-bottom: 5px;">Compatibilité</div>
+                    <div style="display: flex; align-items: center; justify-content: center; gap: 10px;">
+                        <div style="flex: 1; background: rgba(0,0,0,0.2); border-radius: 10px; height: 10px; overflow: hidden;">
+                            {% widthratio similarity_data.overall_score 1 100 as badge_bar_width %}
+                            <div style="height: 100%; background: white; width: {{ badge_bar_width }}%; transition: width 0.3s ease;"></div>
+                        </div>
+                        <span style="font-size: 1.3em; font-weight: bold;">{% widthratio similarity_data.overall_score 1 100 as badge_score_display %}{{ badge_score_display|floatformat:0 }}%</span>
+                    </div>
+                    <div style="font-size: 0.8em; margin-top: 5px; opacity: 0.9;">
+                        {% if similarity_data.type == 'objectif_similaire' %}
+                            <i class="fas fa-target"></i> Objectifs similaires
+                        {% elif similarity_data.type == 'humeur_proche' %}
+                            <i class="fas fa-smile"></i> Humeur proche
+                        {% else %}
+                            <i class="fas fa-star"></i> Intérêts communs
+                        {% endif %}
+                    </div>
+                </div>
+                {% endif %}
             </div>
+            
+            <!-- Similarity Breakdown (if available) -->
+            {% if similarity_data and not connection_exists %}
+            <div class="row mb-4">
+                <div class="col-12">
+                    <div class="profile-info" style="background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%); border-left: 4px solid #667eea;">
+                        <div class="info-section">
+                            <h4><i class="fas fa-chart-pie"></i> Analyse de Compatibilité Détaillée</h4>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="info-item">
+                                        <span class="info-label">Score global:</span>
+                                        <span class="info-value" style="font-weight: bold; color: #667eea; font-size: 1.2em;">
+                                            {% widthratio similarity_data.overall_score 1 100 as profile_global_score %}{{ profile_global_score|floatformat:0 }}%
+                                        </span>
+                                    </div>
+                                    <div class="info-item">
+                                        <span class="info-label">Raison principale:</span>
+                                        <span class="info-value">
+                                            {% if similarity_data.type == 'objectif_similaire' %}
+                                                <i class="fas fa-target"></i> Objectifs similaires
+                                            {% elif similarity_data.type == 'humeur_proche' %}
+                                                <i class="fas fa-smile"></i> Humeur proche
+                                            {% else %}
+                                                <i class="fas fa-star"></i> Intérêts communs
+                                            {% endif %}
+                                        </span>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    {% if similarity_data.detailed_scores %}
+                                    <div style="padding: 10px; background: white; border-radius: 8px;">
+                                        <strong style="display: block; margin-bottom: 8px; color: #667eea;">Détails des scores:</strong>
+                                        {% for key, value in similarity_data.detailed_scores.items %}
+                                        {% if value %}
+                                        <div style="display: flex; justify-content: space-between; padding: 5px 0; border-bottom: 1px solid #f0f0f0;">
+                                            <span>
+                                                {% if key == 'objectif_similaire' %}
+                                                    <i class="fas fa-target"></i> Objectifs (40%)
+                                                {% elif key == 'humeur_proche' %}
+                                                    <i class="fas fa-smile"></i> Humeur (15%)
+                                                {% elif key == 'interet_commun' %}
+                                                    <i class="fas fa-star"></i> Intérêts (35%)
+                                                {% else %}
+                                                    <i class="fas fa-info-circle"></i> {{ key|title }} (10%)
+                                                {% endif %}
+                                            </span>
+                                            <span style="font-weight: 600; color: #667eea;">{% widthratio value 1 100 as profile_detail_score %}{{ profile_detail_score|floatformat:0 }}%</span>
+                                        </div>
+                                        {% endif %}
+                                        {% endfor %}
+                                    </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
             
             <div class="row">
                 <!-- Profile Information -->
@@ -219,11 +302,29 @@
                                 <span class="info-label">Profession:</span>
                                 <span class="info-value">{{ profile_user.profession|default:"Non spécifié" }}</span>
                             </div>
+                            {% if profile_user.humeur_generale %}
                             <div class="info-item">
                                 <span class="info-label">Humeur générale:</span>
-                                <span class="info-value">{{ profile_user.humeur_generale|default:"Non spécifié" }}</span>
+                                <span class="info-value">
+                                    <i class="fas fa-smile"></i> {{ profile_user.get_humeur_generale_display }}
+                                </span>
                             </div>
+                            {% endif %}
                         </div>
+                        
+                        {% if profile_user.centres_interet %}
+                        <div class="info-section">
+                            <h4><i class="fas fa-star"></i> Centres d'intérêt</h4>
+                            <div class="tags">
+                                {% for interet in profile_user.centres_interet %}
+                                    <span class="tag">{{ interet }}</span>
+                                {% endfor %}
+                            </div>
+                            <small style="color: #6c757d; display: block; margin-top: 5px;">
+                                <i class="fas fa-info-circle"></i> Utilisé pour calculer la compatibilité (35% du score)
+                            </small>
+                        </div>
+                        {% endif %}
                         
                         {% if profile_user.passions %}
                         <div class="info-section">
@@ -244,17 +345,9 @@
                                     <span class="tag">{{ objectif }}</span>
                                 {% endfor %}
                             </div>
-                        </div>
-                        {% endif %}
-                        
-                        {% if profile_user.centres_interet %}
-                        <div class="info-section">
-                            <h4><i class="fas fa-star"></i> Centres d'intérêt</h4>
-                            <div class="tags">
-                                {% for interet in profile_user.centres_interet %}
-                                    <span class="tag">{{ interet }}</span>
-                                {% endfor %}
-                            </div>
+                            <small style="color: #6c757d; display: block; margin-top: 5px;">
+                                <i class="fas fa-info-circle"></i> Utilisé pour calculer la compatibilité (40% du score)
+                            </small>
                         </div>
                         {% endif %}
                     </div>

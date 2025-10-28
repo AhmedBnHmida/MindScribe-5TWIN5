@@ -1,5 +1,6 @@
 from django.db import models
 from django.conf import settings
+from django.db.models import Q
 import uuid
 import logging
 from django.db.models import Count
@@ -617,6 +618,122 @@ class SuggestionConnexion(models.Model):
     
     def __str__(self):
         return f"Suggestion {self.utilisateur_source.username} → {self.utilisateur_cible.username}"
+    
+    def envoyer_demande_connexion(self):
+        """
+        Envoie une demande de connexion après acceptation d'une suggestion.
+        Crée une nouvelle suggestion avec statut 'proposee' dans l'autre sens.
+        
+        Returns:
+            SuggestionConnexion: La demande de connexion créée ou existante
+        """
+        if self.statut != 'acceptee':
+            raise ValueError("Seules les suggestions acceptées peuvent envoyer une demande de connexion")
+        
+        # Créer une demande de connexion de l'utilisateur qui a accepté vers l'autre
+        # C'est-à-dire: si Alice (cible) accepte la suggestion de Bob (source),
+        # on crée une demande d'Alice vers Bob
+        demande_connexion, created = SuggestionConnexion.objects.get_or_create(
+            utilisateur_source=self.utilisateur_cible,  # Celui qui a accepté
+            utilisateur_cible=self.utilisateur_source,  # L'autre utilisateur
+            defaults={
+                'score_similarite': self.score_similarite,
+                'type_suggestion': self.type_suggestion,
+                'statut': 'proposee'  # Demande en attente
+            }
+        )
+        
+        if created:
+            logger.info(
+                f"Demande de connexion envoyée: {self.utilisateur_cible.username} → "
+                f"{self.utilisateur_source.username}"
+            )
+        
+        return demande_connexion
+    
+    def accepter_demande_connexion(self):
+        """
+        Accepte une demande de connexion. Si les deux utilisateurs ont accepté,
+        la connexion est établie (les deux suggestions deviennent 'acceptee').
+        
+        Returns:
+            bool: True si connexion établie, False sinon
+        """
+        if self.statut != 'proposee':
+            return False
+        
+        # Marquer cette suggestion comme acceptée
+        self.statut = 'acceptee'
+        self.save()
+        
+        # Vérifier si l'autre utilisateur a déjà accepté
+        reverse_suggestion = SuggestionConnexion.objects.filter(
+            utilisateur_source=self.utilisateur_cible,
+            utilisateur_cible=self.utilisateur_source,
+            statut='acceptee'
+        ).first()
+        
+        if reverse_suggestion:
+            # Les deux ont accepté - connexion établie!
+            logger.info(
+                f"Connexion établie entre {self.utilisateur_source.username} et "
+                f"{self.utilisateur_cible.username}"
+            )
+            return True
+        
+        # Sinon, créer la demande dans l'autre sens si elle n'existe pas
+        reverse_suggestion, _ = SuggestionConnexion.objects.get_or_create(
+            utilisateur_source=self.utilisateur_cible,
+            utilisateur_cible=self.utilisateur_source,
+            defaults={
+                'score_similarite': self.score_similarite,
+                'type_suggestion': self.type_suggestion,
+                'statut': 'proposee'
+            }
+        )
+        
+        logger.info(
+            f"Demande de connexion acceptée: {self.utilisateur_source.username} → "
+            f"{self.utilisateur_cible.username}. En attente de l'autre utilisateur."
+        )
+        return False
+    
+    @property
+    def est_connexion_etablie(self):
+        """
+        Vérifie si la connexion est établie (les deux suggestions sont acceptées).
+        """
+        if self.statut != 'acceptee':
+            return False
+        
+        reverse_exists = SuggestionConnexion.objects.filter(
+            utilisateur_source=self.utilisateur_cible,
+            utilisateur_cible=self.utilisateur_source,
+            statut='acceptee'
+        ).exists()
+        
+        return reverse_exists
+    
+    @classmethod
+    def get_connections_etablies(cls, user):
+        """
+        Récupère toutes les connexions établies pour un utilisateur.
+        
+        Args:
+            user: User object
+            
+        Returns:
+            QuerySet: Suggestions avec connexions établies
+        """
+        return cls.objects.filter(
+            Q(utilisateur_source=user) | Q(utilisateur_cible=user),
+            statut='acceptee'
+        ).filter(
+            # Vérifier que l'autre sens existe aussi et est accepté
+            id__in=cls.objects.filter(
+                statut='acceptee'
+            ).values_list('id', flat=True)
+        ).select_related('utilisateur_source', 'utilisateur_cible')
     
     class Meta:
         verbose_name = "Suggestion de connexion"
