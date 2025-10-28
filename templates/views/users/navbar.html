@@ -29,7 +29,7 @@
                         <i class="fas fa-chart-line me-2"></i>Rapports
                         <i class="fas fa-chevron-down ms-auto {% if request.resolver_match.namespace == 'communication' and request.resolver_match.url_name in 'dashboard,generer_rapport,liste_rapports' %}rotated{% endif %}" id="rapports-chevron"></i>
                     </a>
-                    <ul class="nav flex-column ms-3 mt-2" id="rapports-submenu" style="display: {% if request.resolver_match.namespace == 'communication' and request.resolver_match.url_name in 'dashboard,generer_rapport,liste_rapports' %}block{% else %}none{% endif %};">
+                    <ul class="nav flex-column ms-3 mt-2" id="rapports-submenu" {% if request.resolver_match.namespace == 'communication' and request.resolver_match.url_name in 'dashboard,generer_rapport,liste_rapports' %}style="display: block;"{% else %}style="display: none;"{% endif %}>
                         <li class="nav-item mb-1">
                             <a class="nav-link {% if request.resolver_match.namespace == 'communication' and request.resolver_match.url_name == 'dashboard' %}active bg-primary text-white{% else %}text-dark{% endif %} rounded-3 py-2 px-3" 
                                href="{% url 'communication:dashboard' %}">
@@ -58,7 +58,7 @@
                         <i class="fas fa-robot me-2"></i>Assistant IA
                         <i class="fas fa-chevron-down ms-auto {% if request.resolver_match.namespace == 'communication' and request.resolver_match.url_name in 'assistant_ia,historique_conversations' %}rotated{% endif %}" id="assistant-chevron"></i>
                     </a>
-                    <ul class="nav flex-column ms-3 mt-2" id="assistant-submenu" style="display: {% if request.resolver_match.namespace == 'communication' and request.resolver_match.url_name in 'assistant_ia,historique_conversations' %}block{% else %}none{% endif %};">
+                    <ul class="nav flex-column ms-3 mt-2" id="assistant-submenu" {% if request.resolver_match.namespace == 'communication' and request.resolver_match.url_name in 'assistant_ia,historique_conversations' %}style="display: block;"{% else %}style="display: none;"{% endif %}>
                         <li class="nav-item mb-1">
                             <a class="nav-link {% if request.resolver_match.namespace == 'communication' and request.resolver_match.url_name == 'assistant_ia' %}active bg-primary text-white{% else %}text-dark{% endif %} rounded-3 py-2 px-3" 
                                href="{% url 'communication:assistant_ia' %}">
@@ -81,7 +81,7 @@
                         <i class="fas fa-magic me-2"></i>Recommandations
                         <i class="fas fa-chevron-down ms-auto {% if request.resolver_match.namespace == 'recommendations' %}rotated{% endif %}" id="recommandations-chevron"></i>
                     </a>
-                    <ul class="nav flex-column ms-3 mt-2" id="recommandations-submenu" style="display: {% if request.resolver_match.namespace == 'recommendations' %}block{% else %}none{% endif %};">
+                    <ul class="nav flex-column ms-3 mt-2" id="recommandations-submenu" {% if request.resolver_match.namespace == 'recommendations' %}style="display: block;"{% else %}style="display: none;"{% endif %}>
                         <li class="nav-item mb-1">
                             <a class="nav-link {% if request.resolver_match.url_name == 'dashboard' and request.resolver_match.namespace == 'recommendations' %}active bg-primary text-white{% else %}text-dark{% endif %} rounded-3 py-2 px-3" 
                                href="{% url 'recommendations:dashboard' %}">
