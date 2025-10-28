@@ -62,6 +62,10 @@ source env_mindscribe/bin/activate
 pip install -r requirements.txt
 ```
 
+python setup_nltk.py
+
+
+
 4. **Configuration de la base de données**
 ```bash
 # Appliquer les migrations
