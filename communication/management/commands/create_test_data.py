@@ -26,7 +26,8 @@ try:
 except ImportError:
     print("⚠️  Modèles Recommandation/Objectif non trouvés")
 
-from communication.models import RapportPDF, HistoriqueGeneration
+from communication.models import RapportPDF, HistoriqueGeneration, SuggestionConnexion
+from communication.services.suggestion_service import SuggestionConnexionService
 
 User = get_user_model()
 
@@ -55,12 +56,19 @@ class Command(BaseCommand):
         # Créer un rapport PDF de test
         rapport = self._create_test_pdf_report(user, statistique)
         
-        self.stdout.write(self.style.SUCCESS('🎉 Données de test créées avec succès!'))
-        self.stdout.write(f"👤 Utilisateur: {user.email}")
+        # Create suggestions if other users exist
+        self._create_test_suggestions(user)
+        
+        self.stdout.write(self.style.SUCCESS('[OK] Test data created successfully!'))
+        self.stdout.write(f"  User: {user.email} / password: testpass123")
         if statistique:
-            self.stdout.write(f"📊 Statistiques: {statistique.periode}")
+            self.stdout.write(f"  Statistics: {statistique.periode}")
         if rapport:
-            self.stdout.write(f"📄 Rapport: {rapport.titre}")
+            self.stdout.write(f"  Report: {rapport.titre}")
+        
+        self.stdout.write("\n[INFO] To test suggestions:")
+        self.stdout.write("  1. Run: python manage.py create_two_users_test")
+        self.stdout.write("  2. Login and go to /communication/suggestions/")
 
     def _create_test_user(self):
         """Crée un utilisateur de test avec les champs exacts de CustomUser"""
@@ -407,3 +415,49 @@ class Command(BaseCommand):
                 historique.message_erreur = str(e)
                 historique.date_fin = timezone.now()
                 historique.save()
+    
+    def _create_test_suggestions(self, user):
+        """Crée des suggestions de connexion pour l'utilisateur de test"""
+        try:
+            # Only create suggestions if there are other users to match with
+            other_users = User.objects.exclude(id=user.id).filter(is_active=True)[:5]
+            
+            if not other_users:
+                self.stdout.write(self.style.WARNING('[INFO] No other users found, skipping suggestions'))
+                self.stdout.write('      Run "python manage.py create_two_users_test" to create test users for suggestions')
+                return
+            
+            suggestions_created = 0
+            for other_user in other_users:
+                # Check if suggestion already exists
+                if SuggestionConnexion.objects.filter(
+                    utilisateur_source=user,
+                    utilisateur_cible=other_user
+                ).exists():
+                    continue
+                
+                # Calculate real similarity
+                try:
+                    similarity_data = SuggestionConnexionService.calculate_similarity(user, other_user)
+                    
+                    # Only create if above threshold
+                    if similarity_data['overall_score'] >= SuggestionConnexionService.MIN_SIMILARITY_SCORE:
+                        SuggestionConnexion.objects.create(
+                            utilisateur_source=user,
+                            utilisateur_cible=other_user,
+                            score_similarite=similarity_data['overall_score'],
+                            type_suggestion=similarity_data['type'],
+                            statut='proposee'
+                        )
+                        suggestions_created += 1
+                except Exception as e:
+                    # Skip if calculation fails
+                    continue
+            
+            if suggestions_created > 0:
+                self.stdout.write(self.style.SUCCESS(f'[OK] Created {suggestions_created} test suggestions'))
+            else:
+                self.stdout.write(self.style.WARNING('[INFO] No suggestions created (low similarity scores)'))
+                
+        except Exception as e:
+            self.stdout.write(self.style.WARNING(f'[INFO] Could not create suggestions: {e}'))

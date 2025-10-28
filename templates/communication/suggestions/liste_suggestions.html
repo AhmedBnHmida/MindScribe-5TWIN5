@@ -1,6 +1,8 @@
 {% extends 'base.html' %}
 {% load static %}
 
+{% comment %} Custom filter to get dictionary item {% endcomment %}
+
 {% block title %}Notifications de Connexion - MindScribe{% endblock %}
 
 {% block extra_css %}
@@ -387,52 +389,41 @@
                     <div class="filter-tabs">
                         <button class="filter-tab {% if filter_type == 'all' %}active{% endif %}" 
                                 onclick="filterNotifications('all')">
-                            <i class="fas fa-list"></i> Toutes ({{ all_suggestions.count }})
+                            <i class="fas fa-list"></i> Toutes ({{ counts.total }})
                         </button>
-                        <button class="filter-tab {% if filter_type == 'received' %}active{% endif %}" 
-                                onclick="filterNotifications('received')">
-                            <i class="fas fa-inbox"></i> Reçues ({{ all_suggestions|length|add:"-1" }})
-                        </button>
-                        <button class="filter-tab {% if filter_type == 'sent' %}active{% endif %}" 
-                                onclick="filterNotifications('sent')">
-                            <i class="fas fa-paper-plane"></i> Envoyées ({{ all_suggestions|length|add:"-1" }})
+                        <button class="filter-tab {% if filter_type == 'proposed' or filter_type == 'received' %}active{% endif %}" 
+                                onclick="filterNotifications('proposed')">
+                            <i class="fas fa-lightbulb"></i> Proposées ({{ counts.proposed }})
                         </button>
                         <button class="filter-tab {% if filter_type == 'accepted' %}active{% endif %}" 
                                 onclick="filterNotifications('accepted')">
-                            <i class="fas fa-check-circle"></i> Acceptées ({{ all_suggestions|length|add:"-1" }})
+                            <i class="fas fa-check-circle"></i> Acceptées ({{ counts.accepted }})
                         </button>
                         <button class="filter-tab {% if filter_type == 'ignored' %}active{% endif %}" 
                                 onclick="filterNotifications('ignored')">
-                            <i class="fas fa-times-circle"></i> Ignorées ({{ all_suggestions|length|add:"-1" }})
+                            <i class="fas fa-times-circle"></i> Ignorées ({{ counts.ignored }})
                         </button>
+                        <a href="{% url 'communication:connexions' %}" class="filter-tab" style="text-decoration: none; color: inherit;">
+                            <i class="fas fa-users"></i> Mes Connexions
+                        </a>
                     </div>
 
                     <!-- Notifications List -->
                     {% if suggestions %}
                         {% for suggestion in suggestions %}
                         <div class="notification-item 
-                                    {% if suggestion.utilisateur_cible == user %}received{% else %}sent{% endif %}
+                                    received
                                     {% if suggestion.statut == 'acceptee' %}accepted{% elif suggestion.statut == 'ignoree' %}ignored{% endif %}
-                                    {% if selected_user and suggestion.utilisateur_source.id == selected_user.id or suggestion.utilisateur_cible.id == selected_user.id %}selected{% endif %}"
-                             onclick="selectNotification('{{ suggestion.id }}', '{{ suggestion.utilisateur_source.id }}', '{{ suggestion.utilisateur_cible.id }}')">
+                                    {% if selected_user and suggestion.utilisateur_cible.id == selected_user.id %}selected{% endif %}"
+                             onclick="selectNotification('{{ suggestion.id }}', '{{ suggestion.utilisateur_cible.id }}')">
                             
                             <div class="notification-header">
                                 <div class="notification-user">
                                     <div class="user-avatar">
-                                        {% if suggestion.utilisateur_cible == user %}
-                                            {{ suggestion.utilisateur_source.username|first|upper }}
-                                        {% else %}
-                                            {{ suggestion.utilisateur_cible.username|first|upper }}
-                                        {% endif %}
+                                        {{ suggestion.utilisateur_cible.username|first|upper }}
                                     </div>
                                     <div class="notification-info">
-                                        <h4>
-                                            {% if suggestion.utilisateur_cible == user %}
-                                                {{ suggestion.utilisateur_source.username }}
-                                            {% else %}
-                                                {{ suggestion.utilisateur_cible.username }}
-                                            {% endif %}
-                                        </h4>
+                                        <h4>{{ suggestion.utilisateur_cible.username }}</h4>
                                         <p>{{ suggestion.date_suggestion|date:"d/m/Y à H:i" }}</p>
                                     </div>
                                 </div>
@@ -441,38 +432,91 @@
                                 </div>
                             </div>
                             
-                            <div class="d-flex justify-content-between align-items-center">
+                            <div class="d-flex justify-content-between align-items-center mb-2">
                                 <span class="notification-status status-{{ suggestion.statut }}">
                                     {{ suggestion.get_statut_display }}
                                 </span>
-                                <small class="text-muted">{{ suggestion.get_type_suggestion_display }}</small>
+                                <small class="text-muted">
+                                    {% if suggestion.type_suggestion == 'objectif_similaire' %}
+                                        <i class="fas fa-target"></i>
+                                    {% elif suggestion.type_suggestion == 'humeur_proche' %}
+                                        <i class="fas fa-smile"></i>
+                                    {% else %}
+                                        <i class="fas fa-star"></i>
+                                    {% endif %}
+                                    {{ suggestion.get_type_suggestion_display }}
+                                </small>
                             </div>
                             
-                            {% if suggestion.statut == 'proposee' and suggestion.utilisateur_cible == user %}
-                            <div class="notification-actions">
-                                <form method="post" action="{% url 'communication:accepter_suggestion' suggestion.id %}" style="display: inline;">
-                                    {% csrf_token %}
-                                    <button type="submit" class="btn-action btn-accept">
-                                        <i class="fas fa-check"></i> Accepter
-                                    </button>
-                                </form>
-                                <form method="post" action="{% url 'communication:ignorer_suggestion' suggestion.id %}" style="display: inline;">
-                                    {% csrf_token %}
-                                    <button type="submit" class="btn-action btn-ignore">
-                                        <i class="fas fa-times"></i> Ignorer
-                                    </button>
-                                </form>
+                            <!-- Enhanced similarity score display -->
+                            <div class="similarity-details" style="font-size: 0.85em; opacity: 0.9; margin-top: 5px;">
+                                <div style="display: flex; align-items: center; gap: 10px;">
+                                    <span style="font-weight: 600;">Score de compatibilité:</span>
+                                    <div style="flex: 1; background: rgba(0,0,0,0.1); border-radius: 10px; height: 8px; overflow: hidden;">
+                                        {% widthratio suggestion.score_similarite 1 100 as score_percent %}
+                                        <div class="similarity-bar" data-score="{{ score_percent }}" style="height: 100%; background: linear-gradient(90deg, #667eea, #764ba2); transition: width 0.3s ease;"></div>
+                                    </div>
+                                    <span style="font-weight: bold; color: #667eea;">{{ score_percent }}%</span>
+                                </div>
                             </div>
+                            
+                            <!-- Action buttons based on suggestion status -->
+                            {% if suggestion.statut == 'proposee' %}
+                                <!-- All suggestions here are shown to utilisateur_source (current user) -->
+                                <!-- When accepted, sends request to utilisateur_cible -->
+                                <div class="notification-actions">
+                                    <form method="post" action="{% url 'communication:accepter_suggestion' suggestion.id %}" style="display: inline;">
+                                        {% csrf_token %}
+                                        <button type="submit" class="btn-action btn-accept">
+                                            <i class="fas fa-check"></i> Accepter et envoyer demande
+                                        </button>
+                                    </form>
+                                    <form method="post" action="{% url 'communication:ignorer_suggestion' suggestion.id %}" style="display: inline;">
+                                        {% csrf_token %}
+                                        <button type="submit" class="btn-action btn-ignore">
+                                            <i class="fas fa-times"></i> Ignorer
+                                        </button>
+                                    </form>
+                                </div>
                             {% elif suggestion.statut == 'acceptee' %}
-                            <div class="notification-actions">
-                                <form method="post" action="{% url 'communication:supprimer_connexion' suggestion.id %}" style="display: inline;">
-                                    {% csrf_token %}
-                                    <button type="submit" class="btn-action btn-remove" 
-                                            onclick="return confirm('Êtes-vous sûr de vouloir supprimer cette connexion ?')">
-                                        <i class="fas fa-trash"></i> Supprimer
-                                    </button>
-                                </form>
-                            </div>
+                                <!-- Check if connection is established (both accepted) -->
+                                {% with est_etablie=suggestion.est_connexion_etablie %}
+                                {% if est_etablie %}
+                                    <!-- Full connection established -->
+                                    <div class="notification-actions">
+                                        <span class="btn-action" style="background: #28a745; color: white; cursor: default; pointer-events: none;">
+                                            <i class="fas fa-check-circle"></i> Connecté
+                                        </span>
+                                        <form method="post" action="{% url 'communication:supprimer_connexion' suggestion.id %}" style="display: inline;">
+                                            {% csrf_token %}
+                                            <button type="submit" class="btn-action btn-remove" 
+                                                    onclick="return confirm('Êtes-vous sûr de vouloir supprimer cette connexion ?')">
+                                                <i class="fas fa-trash"></i> Supprimer
+                                            </button>
+                                        </form>
+                                    </div>
+                                {% else %}
+                                    <!-- One-way acceptance: waiting for other user to accept the request -->
+                                    {% if suggestion.utilisateur_cible == user %}
+                                        <!-- We accepted, waiting for them -->
+                                        <div class="notification-actions">
+                                            <span class="btn-action" style="background: #ffc107; color: #333; cursor: default; pointer-events: none;">
+                                                <i class="fas fa-hourglass-half"></i> Demande envoyée, en attente
+                                            </span>
+                                        </div>
+                                    {% else %}
+                                        <!-- They accepted our suggestion, we need to accept their request -->
+                                        <!-- Since we only show received suggestions, if this is acceptee, it means they accepted the suggestion we sent -->
+                                        <!-- But we can't see their request here - it's shown from their perspective -->
+                                        <!-- So this case shouldn't happen in the suggestions view - redirect to connections view -->
+                                        <div class="notification-actions">
+                                            <a href="{% url 'communication:connexions' %}" class="btn-action btn-accept">
+                                                <i class="fas fa-users"></i> Voir la connexion
+                                            </a>
+                                        </div>
+                                    {% endif %}
+                                {% endif %}
+                                {% endwith %}
                             {% endif %}
                         </div>
                         {% endfor %}
@@ -506,6 +550,56 @@
                             {% endif %}
                         </div>
                         
+                        <!-- Similarity Breakdown -->
+                        {% if similarity_data %}
+                        <div class="profile-info" style="background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%); border-left: 4px solid #667eea;">
+                            <div class="info-section">
+                                <h5><i class="fas fa-chart-pie"></i> Analyse de Compatibilité</h5>
+                                <div class="info-item">
+                                    <span class="info-label">Score global:</span>
+                                    <span class="info-value" style="font-weight: bold; color: #667eea; font-size: 1.1em;">
+                                        {{ similarity_data.overall_score|floatformat:0 }}%
+                                    </span>
+                                </div>
+                                <div class="info-item">
+                                    <span class="info-label">Type de suggestion:</span>
+                                    <span class="info-value">
+                                        {% if similarity_data.type == 'objectif_similaire' %}
+                                            <i class="fas fa-target"></i> Objectifs similaires
+                                        {% elif similarity_data.type == 'humeur_proche' %}
+                                            <i class="fas fa-smile"></i> Humeur proche
+                                        {% else %}
+                                            <i class="fas fa-star"></i> Intérêts communs
+                                        {% endif %}
+                                    </span>
+                                </div>
+                                {% if similarity_data.detailed_scores %}
+                                <div style="margin-top: 10px; padding-top: 10px; border-top: 1px solid rgba(0,0,0,0.1);">
+                                    <small style="font-weight: 600; display: block; margin-bottom: 5px;">Détails:</small>
+                                    {% for key, value in similarity_data.detailed_scores.items %}
+                                    {% if value %}
+                                    <div style="display: flex; justify-content: space-between; font-size: 0.85em; margin-bottom: 3px;">
+                                        <span>
+                                            {% if key == 'objectif_similaire' %}
+                                                <i class="fas fa-target"></i> Objectifs
+                                            {% elif key == 'humeur_proche' %}
+                                                <i class="fas fa-smile"></i> Humeur
+                                            {% elif key == 'interet_commun' %}
+                                                <i class="fas fa-star"></i> Intérêts
+                                            {% else %}
+                                                {{ key|title }}
+                                            {% endif %}
+                                        </span>
+                                        <span style="font-weight: 600;">{{ value|floatformat:0 }}%</span>
+                                    </div>
+                                    {% endif %}
+                                    {% endfor %}
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        {% endif %}
+                        
                         <!-- Profile Information -->
                         <div class="profile-info">
                             <div class="info-section">
@@ -522,7 +616,26 @@
                                     <span class="info-label">Profession:</span>
                                     <span class="info-value">{{ selected_user.profession|default:"Non spécifié" }}</span>
                                 </div>
+                                {% if selected_user.humeur_generale %}
+                                <div class="info-item">
+                                    <span class="info-label">Humeur générale:</span>
+                                    <span class="info-value">
+                                        <i class="fas fa-smile"></i> {{ selected_user.get_humeur_generale_display }}
+                                    </span>
+                                </div>
+                                {% endif %}
                             </div>
+                            
+                            {% if selected_user.centres_interet %}
+                            <div class="info-section">
+                                <h5><i class="fas fa-star"></i> Centres d'intérêt</h5>
+                                <div class="tags">
+                                    {% for interet in selected_user.centres_interet %}
+                                        <span class="tag">{{ interet }}</span>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                            {% endif %}
                             
                             {% if selected_user.passions %}
                             <div class="info-section">
@@ -583,17 +696,26 @@ function filterNotifications(filter) {
     window.location.href = url.toString();
 }
 
-function selectNotification(suggestionId, userId1, userId2) {
+function selectNotification(suggestionId, userId1) {
     const url = new URL(window.location);
-    // Determine which user to show profile for
-    const currentUserId = {{ user.id }};
-    const selectedUserId = (userId1 == currentUserId) ? userId2 : userId1;
-    url.searchParams.set('user_id', selectedUserId);
+    // All suggestions are shown to utilisateur_source (current user)
+    // userId1 is utilisateur_cible (the suggested user) - we want to show their profile
+    const userId1Int = parseInt(userId1, 10);
+    url.searchParams.set('user_id', userId1Int.toString());
     window.location.href = url.toString();
 }
 
-// Add click animations
+// Add click animations and set similarity bar widths
 document.addEventListener('DOMContentLoaded', function() {
+    // Set similarity bar widths
+    const similarityBars = document.querySelectorAll('.similarity-bar');
+    similarityBars.forEach(bar => {
+        const score = bar.getAttribute('data-score');
+        if (score) {
+            bar.style.width = score + '%';
+        }
+    });
+    
     const notificationItems = document.querySelectorAll('.notification-item');
     notificationItems.forEach(item => {
         item.addEventListener('click', function() {

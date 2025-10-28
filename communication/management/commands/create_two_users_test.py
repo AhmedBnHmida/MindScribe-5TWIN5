@@ -3,16 +3,17 @@ from django.contrib.auth import get_user_model
 from django.utils import timezone
 from datetime import timedelta
 from communication.models import SuggestionConnexion
+from communication.services.suggestion_service import SuggestionConnexionService
 
 User = get_user_model()
 
 class Command(BaseCommand):
-    help = 'Crée deux utilisateurs de test pour tester les suggestions de connexion'
+    help = 'Crée deux utilisateurs de test pour tester les suggestions de connexion avec la logique améliorée'
 
     def handle(self, *args, **options):
-        self.stdout.write("🚀 Création de deux utilisateurs pour tester les suggestions...")
+        self.stdout.write("Creating test users for suggestion system testing...")
         
-        # Créer le premier utilisateur
+        # Créer le premier utilisateur (Alice) - avec profil qui matche bien avec Bob
         user1 = self._create_user(
             email='alice@test.com',
             username='alice_test',
@@ -20,39 +21,68 @@ class Command(BaseCommand):
             last_name='Test',
             profession='Développeuse',
             passions=['programmation', 'lecture', 'voyage'],
-            objectifs_personnels=['Apprendre Django', 'Voyager plus']
+            objectifs_personnels=['Apprendre Django', 'Voyager plus', 'Méditation quotidienne'],
+            centres_interet=['Programmation', 'Yoga', 'Lecture', 'Photographie'],
+            humeur_generale='heureux'
         )
         
-        # Créer le deuxième utilisateur
+        # Créer le deuxième utilisateur (Bob) - avec profil similaire à Alice
         user2 = self._create_user(
             email='bob@test.com', 
             username='bob_test',
             first_name='Bob',
             last_name='Test',
-            profession='Designer',
-            passions=['design', 'art', 'musique'],
-            objectifs_personnels=['Améliorer le design', 'Apprendre la musique']
+            profession='Développeur',
+            passions=['code', 'fitness', 'lecture'],
+            objectifs_personnels=['Apprendre Python', 'Fitness', 'Lire plus'],
+            centres_interet=['Programmation', 'Fitness', 'Lecture'],
+            humeur_generale='heureux'
         )
+        
+        if not user1 or not user2:
+            self.stdout.write(self.style.ERROR('Failed to create test users'))
+            return
         
         # Créer des journaux de test pour les utilisateurs
         self._create_test_journals(user1, user2)
         
-        # Créer des suggestions entre les deux utilisateurs
-        self._create_suggestions(user1, user2)
+        # Calculer la similarité réelle avec le service amélioré
+        self.stdout.write("\n[INFO] Calculating real similarity between Alice and Bob...")
+        similarity_data = SuggestionConnexionService.calculate_similarity(user1, user2)
+        self.stdout.write(f"  Overall Score: {similarity_data['overall_score']:.2%}")
+        self.stdout.write(f"  Match Type: {similarity_data['type']}")
         
-        self.stdout.write(self.style.SUCCESS('🎉 Utilisateurs de test créés avec succès!'))
-        self.stdout.write(f"👤 Alice: {user1.email} / motdepasse: testpass123")
-        self.stdout.write(f"👤 Bob: {user2.email} / motdepasse: testpass123")
-        self.stdout.write("\n📝 Instructions de test:")
-        self.stdout.write("1. Connectez-vous avec Alice")
-        self.stdout.write("2. Allez sur /communication/suggestions/")
-        self.stdout.write("3. Acceptez la suggestion de Bob")
-        self.stdout.write("4. Connectez-vous avec Bob")
-        self.stdout.write("5. Vérifiez que la connexion est acceptée")
-
-    def _create_user(self, email, username, first_name, last_name, profession, passions, objectifs_personnels):
-        """Crée un utilisateur de test"""
+        # Créer des suggestions avec les scores réels
+        self._create_suggestions(user1, user2, similarity_data)
+        
+        # Optionally generate more suggestions using the service
         try:
+            self.stdout.write("\n[INFO] Generating additional suggestions for Alice...")
+            count = SuggestionConnexionService.generate_suggestions_for_user(user1, max_suggestions=5)
+            if count > 0:
+                self.stdout.write(self.style.SUCCESS(f"  Generated {count} additional suggestions"))
+        except Exception as e:
+            self.stdout.write(self.style.WARNING(f"  Could not generate additional suggestions: {e}"))
+        
+        self.stdout.write(self.style.SUCCESS('\n[OK] Test users created successfully!'))
+        self.stdout.write(f"  Alice: {user1.email} / password: testpass123")
+        self.stdout.write(f"  Bob: {user2.email} / password: testpass123")
+        self.stdout.write("\n[INFO] Test instructions:")
+        self.stdout.write("  1. Login with Alice (alice@test.com)")
+        self.stdout.write("  2. Go to /communication/suggestions/")
+        self.stdout.write("  3. See the suggestion with compatibility score")
+        self.stdout.write("  4. Click on suggestion to see detailed breakdown")
+        self.stdout.write("  5. Accept the suggestion")
+        self.stdout.write("  6. Login with Bob to see the connection")
+
+    def _create_user(self, email, username, first_name, last_name, profession, passions, 
+                     objectifs_personnels, centres_interet=None, humeur_generale='heureux'):
+        """Crée un utilisateur de test avec profil complet"""
+        try:
+            # Default centres_interet if not provided
+            if centres_interet is None:
+                centres_interet = ['technologie', 'développement personnel']
+            
             user, created = User.objects.get_or_create(
                 email=email,
                 defaults={
@@ -67,7 +97,8 @@ class Command(BaseCommand):
                     'profession': profession,
                     'passions': passions,
                     'objectifs_personnels': objectifs_personnels,
-                    'humeur_generale': 'heureux',
+                    'centres_interet': centres_interet,
+                    'humeur_generale': humeur_generale,
                     'niveau_stress': 2,
                     'qualite_sommeil': 'bon',
                     'frequence_ecriture_souhaitee': 'soir',
@@ -75,7 +106,6 @@ class Command(BaseCommand):
                     'niveau_activite_physique': 'modere',
                     'habitudes_alimentaires': 'equilibree',
                     'heures_sommeil_par_nuit': 8.0,
-                    'centres_interet': ['technologie', 'développement personnel'],
                     'preferences_suivi': {'notifications': True, 'rapports_automatiques': True}
                 }
             )
@@ -83,55 +113,60 @@ class Command(BaseCommand):
             if created:
                 user.set_password('testpass123')
                 user.save()
-                self.stdout.write(self.style.SUCCESS(f'✅ Utilisateur {username} créé'))
+                self.stdout.write(self.style.SUCCESS(f'[OK] User {username} created'))
             else:
-                self.stdout.write(self.style.WARNING(f'⚠️ Utilisateur {username} existe déjà'))
+                # Update existing user with new profile data
+                user.objectifs_personnels = objectifs_personnels
+                user.centres_interet = centres_interet
+                user.humeur_generale = humeur_generale
+                user.passions = passions
+                user.profession = profession
+                user.save()
+                self.stdout.write(self.style.WARNING(f'[INFO] User {username} already exists, profile updated'))
             
             return user
             
         except Exception as e:
-            self.stdout.write(self.style.ERROR(f'❌ Erreur création utilisateur {username}: {e}'))
+            self.stdout.write(self.style.ERROR(f'[ERROR] Error creating user {username}: {e}'))
             return None
 
-    def _create_suggestions(self, user1, user2):
-        """Crée des suggestions de connexion entre les deux utilisateurs"""
+    def _create_suggestions(self, user1, user2, similarity_data):
+        """Crée des suggestions de connexion avec les scores réels calculés"""
         try:
-            # Suggestion de Alice vers Bob (proposée)
+            # Clean existing suggestions first
+            SuggestionConnexion.objects.filter(
+                utilisateur_source=user1,
+                utilisateur_cible=user2
+            ).delete()
+            SuggestionConnexion.objects.filter(
+                utilisateur_source=user2,
+                utilisateur_cible=user1
+            ).delete()
+            
+            # Suggestion de Alice vers Bob avec score réel
             suggestion1, created1 = SuggestionConnexion.objects.get_or_create(
                 utilisateur_source=user1,
                 utilisateur_cible=user2,
                 defaults={
-                    'score_similarite': 0.75,
-                    'type_suggestion': 'objectif_similaire',
+                    'score_similarite': similarity_data['overall_score'],
+                    'type_suggestion': similarity_data['type'],
                     'statut': 'proposee',
                     'date_suggestion': timezone.now() - timedelta(days=1)
                 }
             )
             
             if created1:
-                self.stdout.write(self.style.SUCCESS('✅ Suggestion Alice → Bob créée (proposée)'))
+                self.stdout.write(self.style.SUCCESS(f'[OK] Suggestion Alice -> Bob created'))
+                self.stdout.write(f'     Score: {suggestion1.score_similarite:.2%}, Type: {suggestion1.get_type_suggestion_display()}')
             else:
-                self.stdout.write(self.style.WARNING('⚠️ Suggestion Alice → Bob existe déjà'))
-            
-            # Suggestion de Bob vers Alice (proposée)
-            suggestion2, created2 = SuggestionConnexion.objects.get_or_create(
-                utilisateur_source=user2,
-                utilisateur_cible=user1,
-                defaults={
-                    'score_similarite': 0.68,
-                    'type_suggestion': 'interet_commun',
-                    'statut': 'proposee',
-                    'date_suggestion': timezone.now() - timedelta(hours=12)
-                }
-            )
-            
-            if created2:
-                self.stdout.write(self.style.SUCCESS('✅ Suggestion Bob → Alice créée (proposée)'))
-            else:
-                self.stdout.write(self.style.WARNING('⚠️ Suggestion Bob → Alice existe déjà'))
+                # Update with real scores
+                suggestion1.score_similarite = similarity_data['overall_score']
+                suggestion1.type_suggestion = similarity_data['type']
+                suggestion1.save()
+                self.stdout.write(self.style.SUCCESS(f'[OK] Suggestion Alice -> Bob updated with real score'))
                 
         except Exception as e:
-            self.stdout.write(self.style.ERROR(f'❌ Erreur création suggestions: {e}'))
+            self.stdout.write(self.style.ERROR(f'[ERROR] Error creating suggestions: {e}'))
 
     def _create_test_journals(self, user1, user2):
         """Crée des journaux de test pour les utilisateurs"""
@@ -176,9 +211,9 @@ class Command(BaseCommand):
                     date_creation=timezone.now() - timedelta(days=i+1)
                 )
             
-            self.stdout.write(self.style.SUCCESS('✅ Journaux de test créés pour Alice et Bob'))
+            self.stdout.write(self.style.SUCCESS('[OK] Test journals created for Alice and Bob'))
             
         except ImportError:
-            self.stdout.write(self.style.WARNING('⚠️ Modèle Journal non disponible'))
+            self.stdout.write(self.style.WARNING('[INFO] Journal model not available'))
         except Exception as e:
-            self.stdout.write(self.style.ERROR(f'❌ Erreur création journaux: {e}'))
+            self.stdout.write(self.style.ERROR(f'[ERROR] Error creating journals: {e}'))
