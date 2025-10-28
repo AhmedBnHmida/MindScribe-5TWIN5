@@ -13,8 +13,8 @@ from django.conf import settings
 # Configure logging
 logger = logging.getLogger(__name__)
 
-# OpenRouter API key
-OPENROUTER_API_KEY = "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"
+# OpenRouter API key from settings
+OPENROUTER_API_KEY = getattr(settings, 'OPENROUTER_API_KEY', '')
 
 # No need for load_all_models function since we're using OpenRouter API
 
@@ -100,12 +100,12 @@ INSTRUCTIONS CRITIQUES:
 """
     
     try:
-        # Call DeepSeek model via OpenRouter direct API - WAIT for the response
-        logger.info("Sending request to DeepSeek AI...")
+        # Call OpenRouter API to analyze content
+        logger.info("Sending request to OpenRouter AI...")
         
         # Prepare the request payload with a more detailed system prompt
         payload = {
-            "model": "deepseek/deepseek-chat-v3.1:free",
+            "model": "meta-llama/llama-3.1-8b-instruct",  # Modèle gratuit de Meta
             "messages": [
                 {"role": "system", "content": "Tu es un assistant d'analyse avancé spécialisé dans l'analyse de journaux personnels. Tu excelles dans l'analyse de texte, audio et images pour en extraire des insights profonds. Tu fournis toujours des analyses détaillées, empathiques et pertinentes en français. Tu réponds UNIQUEMENT avec du JSON valide, sans texte supplémentaire. Tes résumés sont toujours personnalisés, utilisant la forme 'tu', et offrent des perspectives significatives. IMPORTANT: N'utilise PAS de caractères spéciaux ou Unicode rares dans tes réponses - utilise uniquement des caractères ASCII standard et des caractères français courants pour éviter les problèmes d'encodage."},
                 {"role": "user", "content": prompt}
@@ -113,15 +113,24 @@ INSTRUCTIONS CRITIQUES:
         }
         
         # Make the API request using the exact format provided with proper encoding
+        # Ajout des paramètres requis par OpenRouter
+        if "max_tokens" not in payload:
+            payload["max_tokens"] = 1000
+        if "temperature" not in payload:
+            payload["temperature"] = 0.7
+            
+        # Log the payload for debugging
+        logger.info(f"Sending payload to OpenRouter: {json.dumps(payload, ensure_ascii=False)}")
+            
         response = requests.post(
             url="https://openrouter.ai/api/v1/chat/completions",
             headers={
                 "Authorization": f"Bearer {OPENROUTER_API_KEY}",
-                "Content-Type": "application/json; charset=utf-8",
-                "HTTP-Referer": "https://mindscribe-journal.com",
+                "Content-Type": "application/json",
+                "HTTP-Referer": "http://localhost:8000",
                 "X-Title": "MindScribe Journal"
             },
-            data=json.dumps(payload, ensure_ascii=False).encode('utf-8')
+            json=payload  # Using json parameter instead of data for proper JSON handling
         )
         
         # Check if the request was successful
@@ -130,8 +139,8 @@ INSTRUCTIONS CRITIQUES:
         # Parse the response
         response_data = response.json()
         ai_response = response_data["choices"][0]["message"]["content"]
-        logger.info(f"Received response from DeepSeek AI")
-        print(f"Raw response from DeepSeek AI: {ai_response}")
+        logger.info(f"Received response from OpenRouter AI")
+        print(f"Raw response from OpenRouter AI: {ai_response}")
         
         # Clean up the response - remove markdown code blocks if present
         if ai_response.startswith("```") and "```" in ai_response[3:]:
@@ -145,14 +154,14 @@ INSTRUCTIONS CRITIQUES:
         try:
             # First attempt to parse the JSON as is
             ai_results = json.loads(ai_response)
-            logger.info(f"Successfully parsed JSON from DeepSeek AI")
+            logger.info(f"Successfully parsed JSON from OpenRouter AI")
         except json.JSONDecodeError as e:
             logger.error(f"JSON parsing error: {e}")
             try:
                 # First level of cleaning - handle basic encoding issues
                 cleaned_response = ai_response.encode('utf-8', errors='ignore').decode('utf-8')
                 ai_results = json.loads(cleaned_response)
-                logger.info("Successfully parsed JSON after basic cleaning")
+                logger.info("Successfully parsed JSON after basic cleaning from OpenRouter AI")
             except json.JSONDecodeError:
                 try:
                     # Second level of cleaning - remove problematic characters
@@ -197,7 +206,7 @@ INSTRUCTIONS CRITIQUES:
         if missing_fields:
             raise Exception(f"Error in AI analysis: Missing required fields in AI response: {', '.join(missing_fields)}")
             
-        logger.info("Successfully analyzed content using DeepSeek AI")
+        logger.info("Successfully analyzed content using OpenRouter AI")
         
         # Define a recursive function to sanitize all strings in the results
         def sanitize_value(value):
@@ -221,7 +230,7 @@ INSTRUCTIONS CRITIQUES:
         return results
         
     except requests.exceptions.HTTPError as e:
-        logger.error(f"HTTP error using DeepSeek AI: {e}")
+        logger.error(f"HTTP error using OpenRouter AI: {e}")
         
         # Log specific error details based on status code
         if e.response.status_code == 401:
@@ -237,10 +246,13 @@ INSTRUCTIONS CRITIQUES:
         raise Exception(error_message)
     
     except Exception as e:
-        logger.error(f"Error using DeepSeek AI: {e}")
+        logger.error(f"Error using OpenRouter AI: {e}")
         error_message = f"Error in AI analysis: {str(e)}"
         logger.error(error_message)
         raise Exception(error_message)
+
+
+# Fonction de fallback supprimée pour utiliser uniquement l'API OpenRouter
 
 
 # No need to load models automatically since we're using OpenRouter API

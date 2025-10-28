@@ -49,7 +49,7 @@ INSTALLED_APPS = [
     'journal',
     'analysis',
     'dashboard',
-    'recommendations',
+    'recommendations.apps.RecommendationsConfig',
     'communication',
     'module2_analysis.apps.Module2AnalysisConfig',
 ]
@@ -185,11 +185,12 @@ EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 
 
 # OpenRouter Configuration
-OPENROUTER_API_KEY = os.environ.get('OPENROUTER_API_KEY', '')
+# Clé API OpenRouter de démonstration (pour tests)
+OPENROUTER_API_KEY = os.environ.get('OPENROUTER_API_KEY', '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')
 OPENROUTER_BASE_URL = "https://openrouter.ai/api/v1"
 
 # 🆓 MODÈLES 100% GRATUITS - TESTÉS ET FONCTIONNELS
-OPENROUTER_MODEL = "google/gemini-pro"  # 🎯 This one usually works well
+OPENROUTER_MODEL = "meta-llama/llama-3.1-8b-instruct"  # 🎯 Modèle gratuit de Meta
 
 OPENROUTER_MODELS = {
     'gemini': "google/gemini-pro",                    # 🥇 Usually reliable

@@ -15,6 +15,7 @@ class RecommandationAdmin(admin.ModelAdmin):
         ('Recommandation', {
             'fields': ('type', 'contenu', 'statut')
         }),
+
     )
 
 

@@ -49,6 +49,8 @@ class Recommandation(models.Model):
         verbose_name="Statut"
     )
     
+    # Champs supprimés : système de feedback
+    
     def __str__(self):
         return f"Recommandation {self.type} pour {self.utilisateur.username}"
     

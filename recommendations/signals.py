@@ -1,0 +1,116 @@
+"""
+Django signals for automatic recommendation generation.
+"""
+import logging
+from django.db.models.signals import post_save
+from django.dispatch import receiver
+from django.utils import timezone
+from datetime import timedelta
+from module2_analysis.models import JournalAnalysis
+from .models import Recommandation
+from .services import create_recommendations_for_user, get_user_analysis_summary
+
+logger = logging.getLogger(__name__)
+
+
+@receiver(post_save, sender=JournalAnalysis)
+def trigger_recommendations_on_journal_entry(sender, instance, created, **kwargs):
+    """
+    Automatically generate recommendations every 24 hours.
+    
+    Conditions for automatic generation:
+    1. User has at least 1 journal entry
+    2. User hasn't received recommendations in the last 24 hours
+    """
+    if not created:
+        return  # Only trigger on new entries
+    
+    try:
+        user = instance.user
+        
+        # Check if user has any entries
+        any_entries = JournalAnalysis.objects.filter(user=user).exists()
+        
+        if not any_entries:
+            logger.info(f"User {user.username} has no entries, skipping auto-recommendations")
+            return
+        
+        # Check if user already has recommendations from the last 24 hours
+        one_day_ago = timezone.now() - timedelta(days=1)
+        recent_recommendations = Recommandation.objects.filter(
+            utilisateur=user,
+            date_emission__gte=one_day_ago
+        ).exists()
+        
+        if recent_recommendations:
+            logger.info(f"User {user.username} already has recommendations from the last 24 hours, skipping")
+            return
+        
+        # Get user's analysis summary for the last 7 days
+        summary = get_user_analysis_summary(user, days=7)
+        
+        # Generate recommendations automatically every 24 hours
+        logger.info(f"Generating daily recommendations for {user.username}")
+        recommendations = create_recommendations_for_user(user)
+        logger.info(f"Auto-generated {len(recommendations)} recommendations for {user.username}")
+        
+    except Exception as e:
+        logger.error(f"Error in auto-recommendation signal: {e}", exc_info=True)
+
+
+@receiver(post_save, sender=Recommandation)
+def log_recommendation_creation(sender, instance, created, **kwargs):
+    """Log when a new recommendation is created."""
+    if created:
+        logger.info(f"New recommendation created: {instance.type} for {instance.utilisateur.username}")
+
+
+def check_user_goals_progress(user):
+    """
+    Check user's goals and generate motivational recommendations.
+    This function can be called by a scheduled task (Celery).
+    """
+    from .models import Objectif
+    
+    try:
+        active_goals = Objectif.objects.filter(
+            utilisateur=user,
+            date_fin__gte=timezone.now().date(),
+            progres__lt=100
+        )
+        
+        for goal in active_goals:
+            # Check if goal is nearing deadline with low progress
+            days_remaining = (goal.date_fin - timezone.now().date()).days
+            
+            if days_remaining <= 7 and goal.progres < 50:
+                # Create motivational recommendation
+                Recommandation.objects.create(
+                    utilisateur=user,
+                    type='productivite',
+                    contenu=f"Ton objectif '{goal.nom}' se termine dans {days_remaining} jours. Tu as fait {goal.progres:.0f}% du chemin. Continue, tu peux le faire ! 💪",
+                    statut='nouvelle'
+                )
+                logger.info(f"Created goal reminder for {user.username}: {goal.nom}")
+            
+            # Celebrate goals nearing completion
+            elif goal.progres >= 80 and goal.progres < 100:
+                # Check if we already sent a celebration message
+                recent_celebration = Recommandation.objects.filter(
+                    utilisateur=user,
+                    contenu__icontains=goal.nom,
+                    date_emission__gte=timezone.now() - timedelta(days=5)
+                ).exists()
+                
+                if not recent_celebration:
+                    Recommandation.objects.create(
+                        utilisateur=user,
+                        type='bien_etre',
+                        contenu=f"Bravo ! Tu es à {goal.progres:.0f}% de ton objectif '{goal.nom}'. Plus que quelques efforts ! 🎯",
+                        statut='nouvelle'
+                    )
+                    logger.info(f"Created celebration message for {user.username}: {goal.nom}")
+    
+    except Exception as e:
+        logger.error(f"Error checking goals progress: {e}", exc_info=True)
+

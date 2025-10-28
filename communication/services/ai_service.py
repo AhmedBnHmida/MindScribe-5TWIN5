@@ -24,14 +24,15 @@ class OpenRouterService:
         self._debug_configuration()
     
     def _debug_configuration(self):
-        print("🔧 ========== DEBUG CONFIGURATION ==========")
-        print(f"📋 OPENROUTER_API_KEY: '{self.api_key}'")
-        print(f"📋 OPENROUTER_API_KEY length: {len(self.api_key)}")
-        print(f"📋 OPENROUTER_BASE_URL: {self.base_url}")
-        print(f"📋 OPENROUTER_MODEL: {self.default_model}")
-        print(f"📋 OPENROUTER_MODELS: {self.fallback_models}")
-        print(f"📋 AI_CONFIG: {self.config}")
-        print("============================================")
+        print("=" * 50)
+        print("DEBUG CONFIGURATION")
+        print(f"OPENROUTER_API_KEY: '{self.api_key}'")
+        print(f"OPENROUTER_API_KEY length: {len(self.api_key)}")
+        print(f"OPENROUTER_BASE_URL: {self.base_url}")
+        print(f"OPENROUTER_MODEL: {self.default_model}")
+        print(f"OPENROUTER_MODELS: {self.fallback_models}")
+        print(f"AI_CONFIG: {self.config}")
+        print("=" * 50)
     
     def generer_reponse(self, prompt: str, model: str = None, **kwargs) -> Dict:
         if not self.api_key:

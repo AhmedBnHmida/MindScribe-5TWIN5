@@ -67,6 +67,33 @@
                     </ul>
                 </li>
 
+                <!-- Recommandations -->
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
+                        <i class="fas fa-magic me-2"></i>Recommandations
+                    </a>
+                    <ul class="dropdown-menu">
+                        <li>
+                            <a class="dropdown-item {% if request.resolver_match.url_name == 'dashboard' and request.resolver_match.namespace == 'recommendations' %}active{% endif %}" 
+                               href="{% url 'recommendations:dashboard' %}">
+                                ✨ Dashboard
+                            </a>
+                        </li>
+                        <li>
+                            <a class="dropdown-item {% if request.resolver_match.url_name == 'list' and request.resolver_match.namespace == 'recommendations' %}active{% endif %}" 
+                               href="{% url 'recommendations:list' %}">
+                                📋 Mes recommandations
+                            </a>
+                        </li>
+                        <li>
+                            <a class="dropdown-item {% if request.resolver_match.url_name == 'goals' %}active{% endif %}" 
+                               href="{% url 'recommendations:goals' %}">
+                                🎯 Mes objectifs
+                            </a>
+                        </li>
+                    </ul>
+                </li>
+
                 <!-- Suggestions connexions -->
                 <li class="nav-item dropdown">
                     <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">

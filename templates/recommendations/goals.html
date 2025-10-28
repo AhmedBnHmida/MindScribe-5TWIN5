@@ -1,0 +1,533 @@
+{% extends 'base.html' %}
+{% block title %}Mes Objectifs{% endblock %}
+
+{% block content %}
+<div class="content-wrapper">
+    <div class="container py-5">
+        <div class="row justify-content-center">
+            <div class="col-lg-10">
+                <!-- Header -->
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <div>
+                        <h2><i class="fas fa-bullseye me-2"></i>Mes Objectifs</h2>
+                        <p class="text-muted">Définis et suis tes objectifs personnels</p>
+                    </div>
+                    <div>
+                        <a href="{% url 'recommendations:dashboard' %}" class="btn btn-outline-secondary me-2">
+                            <i class="fas fa-arrow-left me-2"></i>Retour
+                        </a>
+                        <a href="{% url 'recommendations:create_goal' %}" class="btn btn-primary">
+                            <i class="fas fa-plus me-2"></i>Nouvel Objectif
+                        </a>
+                    </div>
+                </div>
+                
+                <!-- Active Goals -->
+                {% if active_goals %}
+                <div class="ultra-glass-card mb-4">
+                    <h4 class="mb-4"><i class="fas fa-fire text-warning me-2"></i>Objectifs Actifs</h4>
+                    <div class="row g-3">
+                        {% for goal in active_goals %}
+                        <div class="col-md-6">
+                            <div class="goal-card-detailed">
+                                <div class="goal-header">
+                                    <h5>
+                                        <a href="{% url 'recommendations:goal_detail' goal.id %}" class="text-decoration-none">
+                                            {{ goal.nom }}
+                                        </a>
+                                    </h5>
+                                    {% if goal.est_termine %}
+                                        <span class="badge bg-success">
+                                            <i class="fas fa-trophy"></i> Terminé
+                                        </span>
+                                    {% endif %}
+                                </div>
+                                
+                                {% if goal.description %}
+                                    <p class="goal-description">{{ goal.description }}</p>
+                                {% endif %}
+                                
+                                <div class="goal-progress mb-3">
+                                    <div class="d-flex justify-content-between mb-2">
+                                        <span class="small">Progrès</span>
+                                        <span class="small fw-bold">{{ goal.progres|floatformat:0 }}%</span>
+                                    </div>
+                                    <div class="progress" style="height: 12px;">
+                                        <div class="progress-bar bg-gradient-primary" 
+                                             style="width: {{ goal.progres }}%"
+                                             role="progressbar"></div>
+                                    </div>
+                                </div>
+                                
+                                <div class="goal-dates mb-3">
+                                    <div class="small text-muted">
+                                        <i class="far fa-calendar-check me-1"></i>
+                                        Du {{ goal.date_debut|date:"d/m/Y" }} au {{ goal.date_fin|date:"d/m/Y" }}
+                                    </div>
+                                </div>
+                                
+                                <div class="goal-actions d-flex gap-2 flex-wrap">
+                                    {% if not goal.est_termine %}
+                                        <button class="btn btn-sm btn-primary toggle-progress-btn" 
+                                                data-goal-id="{{ goal.id }}"
+                                                data-current-progress="{{ goal.progres }}">
+                                            <i class="fas fa-chart-line me-1"></i>Mettre à jour
+                                        </button>
+                                        <button class="btn btn-sm btn-success mark-done-btn" 
+                                                data-goal-id="{{ goal.id }}">
+                                            <i class="fas fa-check-circle me-1"></i>Terminé !
+                                        </button>
+                                    {% else %}
+                                        <span class="badge bg-success fs-6">
+                                            <i class="fas fa-trophy me-1"></i>Objectif accompli !
+                                        </span>
+                                    {% endif %}
+                                    <form method="POST" action="{% url 'recommendations:delete_goal' goal.id %}" 
+                                          class="d-inline"
+                                          onsubmit="return confirm('Êtes-vous sûr de vouloir supprimer cet objectif ?');">
+                                        {% csrf_token %}
+                                        <button type="submit" class="btn btn-sm btn-outline-danger">
+                                            <i class="fas fa-trash me-1"></i>Supprimer
+                                        </button>
+                                    </form>
+                                </div>
+                                
+                                <!-- Inline Progress Update Panel (Hidden by default) -->
+                                <div class="progress-update-panel" id="progress-panel-{{ goal.id }}" style="display: none;">
+                                    <div class="update-panel-header">
+                                        <h6><i class="fas fa-chart-line me-2"></i>Mettre à jour le progrès</h6>
+                                    </div>
+                                    <div class="update-panel-body">
+                                        <!-- Quick buttons -->
+                                        <div class="d-flex justify-content-center gap-2 mb-3">
+                                            <button type="button" class="btn btn-sm btn-outline-secondary quick-add" data-value="10">
+                                                +10%
+                                            </button>
+                                            <button type="button" class="btn btn-sm btn-outline-secondary quick-add" data-value="25">
+                                                +25%
+                                            </button>
+                                            <button type="button" class="btn btn-sm btn-outline-success set-complete">
+                                                100%
+                                            </button>
+                                        </div>
+                                        
+                                        <input type="range" class="form-range progress-slider" min="0" max="100" step="5" value="{{ goal.progres|floatformat:0 }}">
+                                        <div class="text-center mt-2 mb-3">
+                                            <span class="badge bg-primary fs-5 progress-display">{{ goal.progres|floatformat:0 }}%</span>
+                                        </div>
+                                        
+                                        <div class="d-flex gap-2 justify-content-end">
+                                            <button type="button" class="btn btn-sm btn-secondary cancel-update-btn">
+                                                <i class="fas fa-times me-1"></i>Annuler
+                                            </button>
+                                            <button type="button" class="btn btn-sm btn-primary save-progress-btn" 
+                                                    data-goal-id="{{ goal.id }}">
+                                                <i class="fas fa-save me-1"></i>Enregistrer
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% else %}
+                <div class="ultra-glass-card text-center py-5 mb-4">
+                    <i class="fas fa-target fs-1 text-muted mb-3"></i>
+                    <h5>Aucun objectif actif</h5>
+                    <p class="text-muted">Commence par définir ton premier objectif !</p>
+                    <a href="{% url 'recommendations:create_goal' %}" class="btn btn-primary mt-3">
+                        <i class="fas fa-plus me-2"></i>Créer mon premier objectif
+                    </a>
+                </div>
+                {% endif %}
+                
+                <!-- Completed Goals -->
+                {% if completed_goals %}
+                <div class="ultra-glass-card mb-4">
+                    <h4 class="mb-4"><i class="fas fa-trophy text-success me-2"></i>Objectifs Terminés</h4>
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Objectif</th>
+                                    <th>Date de fin</th>
+                                    <th>Progrès</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for goal in completed_goals %}
+                                <tr>
+                                    <td>
+                                        <i class="fas fa-check-circle text-success me-2"></i>
+                                        <strong>{{ goal.nom }}</strong>
+                                    </td>
+                                    <td>{{ goal.date_fin|date:"d/m/Y" }}</td>
+                                    <td>
+                                        <span class="badge bg-success">100%</span>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                {% endif %}
+                
+                <!-- Expired Goals -->
+                {% if expired_goals %}
+                <div class="ultra-glass-card">
+                    <h4 class="mb-4"><i class="fas fa-clock text-warning me-2"></i>Objectifs Expirés</h4>
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Objectif</th>
+                                    <th>Date de fin</th>
+                                    <th>Progrès final</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for goal in expired_goals %}
+                                <tr>
+                                    <td>{{ goal.nom }}</td>
+                                    <td>{{ goal.date_fin|date:"d/m/Y" }}</td>
+                                    <td>
+                                        <div class="progress" style="height: 8px; width: 100px;">
+                                            <div class="progress-bar bg-secondary" 
+                                                 style="width: {{ goal.progres }}%"></div>
+                                        </div>
+                                        <small class="text-muted">{{ goal.progres|floatformat:0 }}%</small>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.goal-card-detailed {
+    padding: 1.5rem;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 15px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    height: 100%;
+    transition: all 0.3s ease;
+}
+
+.goal-card-detailed:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 20px rgba(0,0,0,0.1);
+}
+
+.goal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items-start;
+    margin-bottom: 1rem;
+}
+
+.goal-header h5 {
+    margin: 0;
+    font-size: 1.1rem;
+    font-weight: 600;
+}
+
+.goal-description {
+    color: #6c757d;
+    font-size: 0.9rem;
+    margin-bottom: 1rem;
+}
+
+.bg-gradient-primary {
+    background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+}
+
+/* Inline Progress Update Panel */
+.progress-update-panel {
+    margin-top: 1rem;
+    padding: 1rem;
+    background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%);
+    border-radius: 10px;
+    border: 2px solid rgba(102, 126, 234, 0.3);
+    animation: slideDown 0.3s ease;
+}
+
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.update-panel-header {
+    margin-bottom: 1rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid rgba(102, 126, 234, 0.2);
+}
+
+.update-panel-header h6 {
+    margin: 0;
+    color: #667eea;
+    font-weight: 600;
+}
+
+.update-panel-body {
+    padding: 0.5rem 0;
+}
+
+.progress-slider {
+    cursor: pointer;
+}
+
+.progress-slider::-webkit-slider-thumb {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    cursor: pointer;
+}
+
+.progress-slider::-moz-range-thumb {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    cursor: pointer;
+}
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Toggle progress update panel
+    document.querySelectorAll('.toggle-progress-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const goalId = this.dataset.goalId;
+            const panel = document.getElementById(`progress-panel-${goalId}`);
+            
+            // Hide all other panels
+            document.querySelectorAll('.progress-update-panel').forEach(p => {
+                if (p.id !== `progress-panel-${goalId}`) {
+                    p.style.display = 'none';
+                }
+            });
+            
+            // Toggle this panel
+            if (panel.style.display === 'none') {
+                panel.style.display = 'block';
+            } else {
+                panel.style.display = 'none';
+            }
+        });
+    });
+    
+    // Cancel update button
+    document.querySelectorAll('.cancel-update-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            this.closest('.progress-update-panel').style.display = 'none';
+        });
+    });
+    
+    // Update progress value display when slider moves
+    document.querySelectorAll('.progress-slider').forEach(slider => {
+        slider.addEventListener('input', function() {
+            const panel = this.closest('.progress-update-panel');
+            const display = panel.querySelector('.progress-display');
+            display.textContent = this.value + '%';
+        });
+    });
+    
+    // Quick add buttons
+    document.querySelectorAll('.quick-add').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const panel = this.closest('.progress-update-panel');
+            const slider = panel.querySelector('.progress-slider');
+            const display = panel.querySelector('.progress-display');
+            const increment = parseInt(this.dataset.value);
+            const newValue = Math.min(100, parseInt(slider.value) + increment);
+            slider.value = newValue;
+            display.textContent = newValue + '%';
+        });
+    });
+    
+    // Set complete buttons
+    document.querySelectorAll('.set-complete').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const panel = this.closest('.progress-update-panel');
+            const slider = panel.querySelector('.progress-slider');
+            const display = panel.querySelector('.progress-display');
+            slider.value = 100;
+            display.textContent = '100%';
+        });
+    });
+    
+    // Save progress button
+    document.querySelectorAll('.save-progress-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const goalId = this.dataset.goalId;
+            const panel = this.closest('.progress-update-panel');
+            const slider = panel.querySelector('.progress-slider');
+            const newProgress = slider.value;
+            const csrftoken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+            
+            fetch(`/recommendations/goals/${goalId}/progress/`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                    'X-CSRFToken': csrftoken
+                },
+                body: `progress=${newProgress}`
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    if (data.is_completed) {
+                        showCelebration();
+                        setTimeout(() => location.reload(), 2000);
+                    } else {
+                        location.reload();
+                    }
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Erreur lors de la mise à jour');
+            });
+        });
+    });
+    
+    // Handle "Mark as Done" button clicks
+    document.querySelectorAll('.mark-done-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const goalId = this.dataset.goalId;
+            
+            if (confirm('🎉 Félicitations ! Marquer cet objectif comme terminé ?')) {
+                const csrftoken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+                
+                fetch(`/recommendations/goals/${goalId}/progress/`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                        'X-CSRFToken': csrftoken
+                    },
+                    body: 'progress=100'
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        showCelebration();
+                        setTimeout(() => location.reload(), 1500);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('Erreur lors de la mise à jour');
+                });
+            }
+        });
+    });
+    
+    // Celebration function
+    function showCelebration() {
+        const celebration = document.createElement('div');
+        celebration.className = 'celebration-overlay';
+        celebration.innerHTML = `
+            <div class="celebration-content">
+                <div class="celebration-icon">🎉</div>
+                <h2>Félicitations !</h2>
+                <p>Objectif accompli avec succès !</p>
+            </div>
+        `;
+        document.body.appendChild(celebration);
+        
+        // Confetti effect
+        for (let i = 0; i < 50; i++) {
+            setTimeout(() => createConfetti(), i * 30);
+        }
+        
+        setTimeout(() => {
+            celebration.remove();
+        }, 2000);
+    }
+    
+    function createConfetti() {
+        const confetti = document.createElement('div');
+        confetti.className = 'confetti';
+        confetti.style.left = Math.random() * 100 + 'vw';
+        confetti.style.animationDuration = (Math.random() * 3 + 2) + 's';
+        confetti.style.backgroundColor = ['#ff6b6b', '#4ecdc4', '#45b7d1', '#f7b731', '#5f27cd'][Math.floor(Math.random() * 5)];
+        document.body.appendChild(confetti);
+        
+        setTimeout(() => confetti.remove(), 5000);
+    }
+});
+</script>
+
+<style>
+.celebration-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.8);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+    animation: fadeIn 0.3s;
+}
+
+.celebration-content {
+    background: white;
+    padding: 3rem;
+    border-radius: 20px;
+    text-align: center;
+    animation: bounceIn 0.5s;
+}
+
+.celebration-icon {
+    font-size: 5rem;
+    animation: rotate 0.6s ease-in-out;
+}
+
+.confetti {
+    position: fixed;
+    width: 10px;
+    height: 10px;
+    top: -10px;
+    z-index: 10000;
+    animation: confettiFall linear forwards;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+@keyframes bounceIn {
+    0% { transform: scale(0.3); }
+    50% { transform: scale(1.05); }
+    100% { transform: scale(1); }
+}
+
+@keyframes rotate {
+    0% { transform: rotate(0deg) scale(0); }
+    50% { transform: rotate(180deg) scale(1.2); }
+    100% { transform: rotate(360deg) scale(1); }
+}
+
+@keyframes confettiFall {
+    to {
+        top: 100vh;
+        transform: translateX(calc(100vw * (random() - 0.5))) rotate(720deg);
+    }
+}
+</style>
+{% endblock %}
+

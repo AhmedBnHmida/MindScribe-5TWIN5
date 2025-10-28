@@ -1,0 +1,382 @@
+{% extends 'base.html' %}
+{% load recommendation_filters %}
+{% block title %}{{ goal.nom }} - Suivi{% endblock %}
+
+{% block content %}
+<div class="content-wrapper">
+    <div class="container py-5">
+        <div class="row justify-content-center">
+            <div class="col-lg-10">
+                <!-- Back button -->
+                <div class="mb-4">
+                    <a href="{% url 'recommendations:goals' %}" class="btn btn-outline-secondary">
+                        <i class="fas fa-arrow-left me-2"></i>Retour aux objectifs
+                    </a>
+                </div>
+                
+                <!-- Goal Header -->
+                <div class="ultra-glass-card mb-4">
+                    <div class="d-flex justify-content-between align-items-start mb-3">
+                        <div>
+                            <h2 class="mb-2">{{ goal.nom }}</h2>
+                            {% if goal.description %}
+                                <p class="text-muted mb-0">{{ goal.description }}</p>
+                            {% endif %}
+                        </div>
+                        {% if goal.est_termine %}
+                            <span class="badge bg-success fs-5 px-4 py-2">
+                                <i class="fas fa-trophy me-2"></i>Accompli !
+                            </span>
+                        {% elif is_overdue %}
+                            <span class="badge bg-danger fs-5 px-4 py-2">
+                                <i class="fas fa-clock me-2"></i>Expiré
+                            </span>
+                        {% else %}
+                            <span class="badge bg-primary fs-5 px-4 py-2">
+                                <i class="fas fa-fire me-2"></i>En cours
+                            </span>
+                        {% endif %}
+                    </div>
+                    
+                    <!-- Progress Circle -->
+                    <div class="text-center my-5">
+                        <div class="progress-circle-container">
+                            <svg class="progress-ring" width="200" height="200">
+                                <circle class="progress-ring-circle-bg" stroke="#e9ecef" stroke-width="15" fill="transparent" r="85" cx="100" cy="100"/>
+                                <circle class="progress-ring-circle" stroke="#667eea" stroke-width="15" fill="transparent" r="85" cx="100" cy="100"
+                                        style="stroke-dasharray: {{ 534|multiply:goal.progres|divide:100 }} 534; transition: stroke-dasharray 1s ease;"/>
+                            </svg>
+                            <div class="progress-percentage">
+                                <h1>{{ goal.progres|floatformat:0 }}%</h1>
+                                <p class="text-muted">Progression</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Stats Cards -->
+                <div class="row g-4 mb-4">
+                    <div class="col-md-4">
+                        <div class="ultra-glass-card text-center">
+                            <div class="stat-icon mb-3">
+                                <i class="fas fa-calendar-day fs-1 text-primary"></i>
+                            </div>
+                            <h3>{{ days_elapsed }}</h3>
+                            <p class="text-muted mb-0">Jours écoulés</p>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="ultra-glass-card text-center">
+                            <div class="stat-icon mb-3">
+                                <i class="fas fa-hourglass-half fs-1 text-warning"></i>
+                            </div>
+                            <h3>{{ days_remaining }}</h3>
+                            <p class="text-muted mb-0">Jours restants</p>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="ultra-glass-card text-center">
+                            <div class="stat-icon mb-3">
+                                <i class="fas fa-calendar-check fs-1 text-success"></i>
+                            </div>
+                            <h3>{{ total_days }}</h3>
+                            <p class="text-muted mb-0">Durée totale</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Timeline -->
+                <div class="ultra-glass-card mb-4">
+                    <h4 class="mb-4"><i class="fas fa-calendar-alt me-2"></i>Chronologie</h4>
+                    <div class="timeline-bar">
+                        <div class="timeline-progress" style="width: {{ days_elapsed|multiply:100|divide:total_days|floatformat:0 }}%"></div>
+                    </div>
+                    <div class="d-flex justify-content-between mt-2">
+                        <small><strong>Début:</strong> {{ goal.date_debut|date:"d/m/Y" }}</small>
+                        <small><strong>Fin:</strong> {{ goal.date_fin|date:"d/m/Y" }}</small>
+                    </div>
+                </div>
+                
+                <!-- Actions -->
+                <div class="ultra-glass-card">
+                    <h4 class="mb-4"><i class="fas fa-tools me-2"></i>Actions</h4>
+                    <div class="d-flex gap-3 flex-wrap mb-3">
+                        {% if not goal.est_termine %}
+                            <button class="btn btn-primary btn-lg" id="toggleProgressPanel">
+                                <i class="fas fa-chart-line me-2"></i>Mettre à jour le progrès
+                            </button>
+                            <button class="btn btn-success btn-lg" id="markDoneBtn">
+                                <i class="fas fa-check-circle me-2"></i>Marquer comme terminé
+                            </button>
+                        {% endif %}
+                        <form method="POST" action="{% url 'recommendations:delete_goal' goal.id %}" 
+                              class="d-inline"
+                              onsubmit="return confirm('Êtes-vous sûr de vouloir supprimer cet objectif ?');">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-outline-danger btn-lg">
+                                <i class="fas fa-trash me-2"></i>Supprimer
+                            </button>
+                        </form>
+                    </div>
+                    
+                    <!-- Inline Progress Update Panel -->
+                    {% if not goal.est_termine %}
+                    <div id="progressPanel" style="display: none; margin-top: 1.5rem; padding: 1.5rem; background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%); border-radius: 10px; border: 2px solid rgba(102, 126, 234, 0.3);">
+                        <h5 class="mb-3" style="color: #667eea;"><i class="fas fa-sliders-h me-2"></i>Ajuster le progrès</h5>
+                        
+                        <!-- Quick buttons -->
+                        <div class="d-flex justify-content-center gap-2 mb-3">
+                            <button type="button" class="btn btn-sm btn-outline-secondary" id="quickAdd10">
+                                +10%
+                            </button>
+                            <button type="button" class="btn btn-sm btn-outline-secondary" id="quickAdd25">
+                                +25%
+                            </button>
+                            <button type="button" class="btn btn-sm btn-outline-success" id="setComplete">
+                                100% Terminé
+                            </button>
+                        </div>
+                        
+                        <input type="range" class="form-range" id="progressRange" min="0" max="100" step="1" value="{{ goal.progres|floatformat:0 }}" style="cursor: pointer;">
+                        <div class="text-center mt-2 mb-3">
+                            <span id="progressValue" class="badge bg-primary fs-3 px-4 py-2">{{ goal.progres|floatformat:0 }}%</span>
+                        </div>
+                        
+                        <div class="d-flex gap-2 justify-content-end">
+                            <button type="button" class="btn btn-secondary" id="cancelUpdate">
+                                <i class="fas fa-times me-1"></i>Annuler
+                            </button>
+                            <button type="button" class="btn btn-primary" id="saveProgressBtn">
+                                <i class="fas fa-save me-1"></i>Enregistrer
+                            </button>
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.progress-circle-container {
+    position: relative;
+    display: inline-block;
+}
+
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.progress-ring {
+    transform: rotate(-90deg);
+}
+
+.progress-percentage {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    text-align: center;
+}
+
+.progress-percentage h1 {
+    font-size: 3rem;
+    font-weight: bold;
+    margin: 0;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+.timeline-bar {
+    height: 20px;
+    background: #e9ecef;
+    border-radius: 10px;
+    overflow: hidden;
+    position: relative;
+}
+
+.timeline-progress {
+    height: 100%;
+    background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+    transition: width 0.5s ease;
+}
+
+.stat-icon {
+    opacity: 0.7;
+}
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const progressPanel = document.getElementById('progressPanel');
+    const progressRange = document.getElementById('progressRange');
+    const progressValue = document.getElementById('progressValue');
+    const saveProgressBtn = document.getElementById('saveProgressBtn');
+    const toggleProgressPanel = document.getElementById('toggleProgressPanel');
+    const cancelUpdate = document.getElementById('cancelUpdate');
+    const markDoneBtn = document.getElementById('markDoneBtn');
+    
+    // Toggle progress panel
+    if (toggleProgressPanel) {
+        toggleProgressPanel.addEventListener('click', () => {
+            if (progressPanel.style.display === 'none') {
+                progressPanel.style.display = 'block';
+                progressPanel.style.animation = 'slideDown 0.3s ease';
+            } else {
+                progressPanel.style.display = 'none';
+            }
+        });
+    }
+    
+    // Cancel update
+    if (cancelUpdate) {
+        cancelUpdate.addEventListener('click', () => {
+            progressPanel.style.display = 'none';
+        });
+    }
+    
+    // Update progress value display
+    if (progressRange) {
+        progressRange.addEventListener('input', function() {
+            progressValue.textContent = this.value + '%';
+        });
+    }
+    
+    // Quick add buttons
+    const quickAdd10 = document.getElementById('quickAdd10');
+    const quickAdd25 = document.getElementById('quickAdd25');
+    
+    if (quickAdd10) {
+        quickAdd10.addEventListener('click', function() {
+            const newValue = Math.min(100, parseInt(progressRange.value) + 10);
+            progressRange.value = newValue;
+            progressValue.textContent = newValue + '%';
+        });
+    }
+    
+    if (quickAdd25) {
+        quickAdd25.addEventListener('click', function() {
+            const newValue = Math.min(100, parseInt(progressRange.value) + 25);
+            progressRange.value = newValue;
+            progressValue.textContent = newValue + '%';
+        });
+    }
+    
+    // Set complete button
+    const setComplete = document.getElementById('setComplete');
+    if (setComplete) {
+        setComplete.addEventListener('click', function() {
+            progressRange.value = 100;
+            progressValue.textContent = '100%';
+        });
+    }
+    
+    // Save progress
+    if (saveProgressBtn) {
+        saveProgressBtn.addEventListener('click', function() {
+            const newProgress = progressRange.value;
+            const csrftoken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+            
+            fetch('/recommendations/goals/{{ goal.id }}/progress/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                    'X-CSRFToken': csrftoken
+                },
+                body: `progress=${newProgress}`
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    if (data.is_completed) {
+                        showCelebration();
+                        setTimeout(() => location.reload(), 2000);
+                    } else {
+                        location.reload();
+                    }
+                }
+            });
+        });
+    }
+    
+    // Mark as done
+    if (markDoneBtn) {
+        markDoneBtn.addEventListener('click', function() {
+            if (confirm('🎉 Félicitations ! Marquer cet objectif comme terminé ?')) {
+                const csrftoken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+                
+                fetch('/recommendations/goals/{{ goal.id }}/progress/', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                        'X-CSRFToken': csrftoken
+                    },
+                    body: 'progress=100'
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        showCelebration();
+                        setTimeout(() => location.reload(), 2000);
+                    }
+                });
+            }
+        });
+    }
+    
+    // Celebration function
+    function showCelebration() {
+        const celebration = document.createElement('div');
+        celebration.style.cssText = `
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.8); display: flex; align-items: center;
+            justify-content: center; z-index: 9999;
+        `;
+        celebration.innerHTML = `
+            <div style="background: white; padding: 3rem; border-radius: 20px; text-align: center;">
+                <div style="font-size: 5rem;">🎉</div>
+                <h2>Félicitations !</h2>
+                <p>Objectif accompli avec succès !</p>
+            </div>
+        `;
+        document.body.appendChild(celebration);
+        
+        // Confetti
+        for (let i = 0; i < 50; i++) {
+            setTimeout(() => {
+                const confetti = document.createElement('div');
+                confetti.style.cssText = `
+                    position: fixed; width: 10px; height: 10px; top: -10px;
+                    left: ${Math.random() * 100}vw; z-index: 10000;
+                    background: ${['#ff6b6b', '#4ecdc4', '#45b7d1', '#f7b731'][Math.floor(Math.random() * 4)]};
+                    animation: confettiFall ${Math.random() * 3 + 2}s linear forwards;
+                `;
+                document.body.appendChild(confetti);
+                setTimeout(() => confetti.remove(), 5000);
+            }, i * 30);
+        }
+        
+        setTimeout(() => celebration.remove(), 2000);
+    }
+});
+</script>
+
+<style>
+@keyframes confettiFall {
+    to {
+        top: 100vh;
+        transform: translateX(calc(50vw * (random() - 0.5))) rotate(720deg);
+    }
+}
+</style>
+{% endblock %}
+
