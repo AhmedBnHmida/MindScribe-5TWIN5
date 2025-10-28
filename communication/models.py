@@ -346,6 +346,33 @@ class AssistantIA(models.Model):
         blank=True
     )
     
+    # Support multimodal - track content types being analyzed
+    type_contenu_journal = models.CharField(
+        max_length=10,
+        choices=[
+            ('texte', 'Texte'),
+            ('audio', 'Audio'),
+            ('image', 'Image'),
+            ('multimodal', 'Multimodal (texte+audio/image)'),
+        ],
+        null=True,
+        blank=True,
+        verbose_name="Type de contenu journal",
+        help_text="Type de contenu du journal analysé (si applicable)"
+    )
+    transcription_audio = models.TextField(
+        blank=True,
+        null=True,
+        verbose_name="Transcription audio",
+        help_text="Transcription du contenu audio si disponible"
+    )
+    description_image = models.TextField(
+        blank=True,
+        null=True,
+        verbose_name="Description image",
+        help_text="Description de l'image analysée si disponible"
+    )
+    
     # Timestamps
     date_creation = models.DateTimeField(auto_now_add=True)
     date_modification = models.DateTimeField(auto_now=True)
@@ -366,11 +393,29 @@ class AssistantIA(models.Model):
     def save(self, *args, **kwargs):
         # Auto-détection du type d'interaction
         if not self.type_interaction:
-            self.type_interaction = self._detecter_type_interaction()
+            try:
+                self.type_interaction = self._detecter_type_interaction()
+            except Exception as e:
+                logger.warning(f"Erreur détection type interaction: {e}")
+                self.type_interaction = 'question'
+        
+        # Détection et stockage du type de contenu journal si un journal est associé
+        if self.journal:
+            try:
+                if not self.type_contenu_journal:
+                    self.type_contenu_journal = self._detecter_type_contenu_journal()
+            except Exception as e:
+                logger.warning(f"Erreur détection type contenu: {e}")
+                # Fallback basé sur le type_entree du journal
+                self.type_contenu_journal = getattr(self.journal, 'type_entree', 'texte') or 'texte'
         
         # Extraction des mots-clés
         if self.message_utilisateur and not self.mots_cles:
-            self.mots_cles = self._extraire_mots_cles()
+            try:
+                self.mots_cles = self._extraire_mots_cles()
+            except Exception as e:
+                logger.warning(f"Erreur extraction mots-clés: {e}")
+                self.mots_cles = []
             
         super().save(*args, **kwargs)
     
@@ -378,14 +423,20 @@ class AssistantIA(models.Model):
         """Détecte automatiquement le type d'interaction"""
         message = self.message_utilisateur.lower()
         
-        mots_analyse = ['analyse', 'analyser', 'commente', 'pense', 'que dire']
+        mots_analyse = ['analyse', 'analyser', 'commente', 'pense', 'que dire', 'dis-moi', 'explique']
         mots_suggestion = ['suggère', 'suggestion', 'idée', 'exercice', 'écrire']
         mots_support = ['triste', 'heureux', 'stress', 'anxieux', 'émotion', 'sentiment']
         mots_reflexion = ['réfléchir', 'penser', 'philosophie', 'question existentielle']
         
-        if any(mot in message for mot in mots_analyse) and self.journal:
-            return 'analyse_journal'
-        elif any(mot in message for mot in mots_suggestion):
+        # Détection améliorée pour multimodal
+        if self.journal:
+            if any(mot in message for mot in mots_analyse):
+                return 'analyse_journal'
+            # Si un journal est référencé implicitement
+            if self.journal.type_entree in ['audio', 'image'] and not any(mot in message for mot in mots_analyse):
+                return 'analyse_journal'
+        
+        if any(mot in message for mot in mots_suggestion):
             return 'suggestion_ecriture'
         elif any(mot in message for mot in mots_support):
             return 'support_emotionnel'
@@ -393,6 +444,26 @@ class AssistantIA(models.Model):
             return 'reflexion_guidee'
         else:
             return 'question'
+    
+    def _detecter_type_contenu_journal(self):
+        """Détecte le type de contenu du journal (texte, audio, image, multimodal)"""
+        if not self.journal:
+            return None
+        
+        has_text = bool(self.journal.contenu_texte and self.journal.contenu_texte.strip())
+        has_audio = bool(self.journal.audio)
+        has_image = bool(self.journal.image)
+        
+        if has_text and (has_audio or has_image):
+            return 'multimodal'
+        elif has_audio:
+            return 'audio'
+        elif has_image:
+            return 'image'
+        elif has_text:
+            return 'texte'
+        else:
+            return self.journal.type_entree if self.journal.type_entree else 'texte'
     
     def _extraire_mots_cles(self):
         """Extrait les mots-clés du message utilisateur"""
@@ -415,6 +486,39 @@ class AssistantIA(models.Model):
             return f"{self.duree_generation:.2f}s"
         return "N/A"
     
+    @property
+    def contenu_journal_formate(self):
+        """Retourne le contenu du journal formaté selon son type"""
+        if not self.journal:
+            return None
+        
+        content_parts = []
+        
+        # Texte
+        if self.journal.contenu_texte and self.journal.contenu_texte.strip():
+            content_parts.append(f"TEXTE: {self.journal.contenu_texte}")
+        
+        # Audio
+        if self.journal.audio:
+            if self.transcription_audio:
+                content_parts.append(f"AUDIO (transcrit): {self.transcription_audio}")
+            else:
+                content_parts.append(f"AUDIO: Fichier disponible ({self.journal.audio.name}) - Transcription en attente")
+        
+        # Image
+        if self.journal.image:
+            if self.description_image:
+                content_parts.append(f"IMAGE (décrite): {self.description_image}")
+            else:
+                content_parts.append(f"IMAGE: Fichier disponible ({self.journal.image.name}) - Description en attente")
+        
+        return "\n\n".join(content_parts) if content_parts else "Contenu non disponible"
+    
+    @property
+    def supports_multimodal(self):
+        """Vérifie si cette conversation supporte le contenu multimodal"""
+        return self.journal and self.type_contenu_journal in ['audio', 'image', 'multimodal']
+    
     def get_conversation_session(self):
         """Retourne toute la conversation de la session"""
         return AssistantIA.objects.filter(
@@ -429,6 +533,38 @@ class AssistantIA(models.Model):
             'total_tokens': sum(conv.tokens_utilises for conv in conversations),
             'types_interactions': dict(conversations.values_list('type_interaction').annotate(count=Count('id')))
         }
+    
+    def get_journal_files_info(self):
+        """Retourne les informations sur les fichiers du journal"""
+        if not self.journal:
+            return {}
+        
+        info = {
+            'type_entree': self.journal.type_entree,
+            'type_contenu': self.type_contenu_journal,
+        }
+        
+        if self.journal.audio:
+            info['audio'] = {
+                'file': str(self.journal.audio.name),
+                'url': self.journal.audio.url if hasattr(self.journal.audio, 'url') else None,
+                'has_transcription': bool(self.transcription_audio),
+            }
+        
+        if self.journal.image:
+            info['image'] = {
+                'file': str(self.journal.image.name),
+                'url': self.journal.image.url if hasattr(self.journal.image, 'url') else None,
+                'has_description': bool(self.description_image),
+            }
+        
+        if self.journal.contenu_texte:
+            info['texte'] = {
+                'length': len(self.journal.contenu_texte),
+                'preview': self.journal.contenu_texte[:100] + '...' if len(self.journal.contenu_texte) > 100 else self.journal.contenu_texte,
+            }
+        
+        return info
     
 
 #############################################################################################################################
