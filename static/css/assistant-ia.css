@@ -212,8 +212,6 @@
 /* ===== MAIN ASSISTANT IA PAGE LAYOUT ===== */
 .content-wrapper {
     min-height: calc(100vh - 60px);
-    padding: 0;
-    margin: 0;
 }
 
 .content-wrapper .container {
