@@ -21,8 +21,13 @@ from django.conf.urls.static import static
 
 urlpatterns = [
     path('admin/', admin.site.urls),
+    path('communication/', include('communication.urls', namespace='communication')),
     path('', include('users.urls')),  # URLs des users
-    path('dashboard/', include('dashboard.urls')),  # Tes URLs dashboard
+    path('dashboard/', include('dashboard.urls')),  # URLs dashboard
+    path('', include('analysis.urls')),  # URLs d'analyse
+    path('journal/', include('journal.urls')),  # URLs du journal
+    path('', include('module2_analysis.urls')),  # Module 2 - Analyse intelligente & Résumé IA
+    path('recommendations/', include('recommendations.urls')),  # Module 4 - Recommandations personnalisées
 ]
 
 # Serve media files in development

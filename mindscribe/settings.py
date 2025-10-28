@@ -13,6 +13,9 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 from pathlib import Path
 import os
 from decouple import config
+from dotenv import load_dotenv
+
+load_dotenv()
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -39,13 +42,16 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    # Third-party apps
+    'rest_framework',
     # Custom apps
     'users',
     'journal',
     'analysis',
     'dashboard',
-    'recommendations',
+    'recommendations.apps.RecommendationsConfig',
     'communication',
+    'module2_analysis.apps.Module2AnalysisConfig',
 ]
 
 MIDDLEWARE = [
@@ -175,3 +181,25 @@ LOGIN_REDIRECT_URL = '/dashboard/'  # 👈 MODIFIE POUR REDIRIGER VERS TON DASHB
 LOGOUT_REDIRECT_URL = '/'
 # Email backend (for development)
 EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+
+
+
+# OpenRouter Configuration
+OPENROUTER_API_KEY = os.environ.get('OPENROUTER_API_KEY', '')
+OPENROUTER_BASE_URL = "https://openrouter.ai/api/v1"
+
+# 🆓 MODÈLES 100% GRATUITS - TESTÉS ET FONCTIONNELS
+OPENROUTER_MODEL = "google/gemini-pro"  # 🎯 This one usually works well
+
+OPENROUTER_MODELS = {
+    'gemini': "google/gemini-pro",                    # 🥇 Usually reliable
+    'claude': "anthropic/claude-3-haiku",            # 🥈 Good free tier
+    'llama': "meta-llama/llama-3.1-8b-instruct",     # 🥉 Remove :free suffix
+}
+
+# Configuration IA optimisée
+AI_CONFIG = {
+    'max_tokens': 800,      # Réduit pour les modèles gratuits
+    'temperature': 0.7,
+    'timeout': 60,          # Augmenté pour les modèles lents
+}

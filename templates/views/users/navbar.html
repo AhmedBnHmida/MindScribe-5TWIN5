@@ -13,18 +13,120 @@
         </div>
         
         <!-- Navigation Links -->
-        <div class="flex-grow-1 p-3">
-            <ul class="nav flex-column">
+        <div class="flex-grow-1 p-3 nav-scroll-container">
+            <ul class="nav flex-column nav-scroll">
                 <li class="nav-item mb-2">
-                    <a class="nav-link active bg-primary text-whitetext-dark rounded-3" 
-                     href="/dashboard/">
+                    <a class="nav-link {% if request.resolver_match.namespace == 'dashboard' and request.resolver_match.url_name == 'tableau_bord' or request.resolver_match.url_name == 'landing' %}active bg-primary text-white{% else %}text-dark{% endif %} rounded-3" 
+                     href="{% url 'dashboard:tableau_bord' %}">
                         <i class="fas fa-home me-2"></i>Tableau de bord
                     </a>
                 </li>
+
+                <!-- Rapports -->
+                <li class="nav-item mb-2">
+                    <a class="nav-link {% if request.resolver_match.namespace == 'communication' and request.resolver_match.url_name in 'dashboard,generer_rapport,liste_rapports' %}active bg-primary text-white{% else %}text-dark{% endif %} rounded-3" 
+                       href="#" onclick="toggleSubmenu('rapports')" style="cursor: pointer;">
+                        <i class="fas fa-chart-line me-2"></i>Rapports
+                        <i class="fas fa-chevron-down ms-auto {% if request.resolver_match.namespace == 'communication' and request.resolver_match.url_name in 'dashboard,generer_rapport,liste_rapports' %}rotated{% endif %}" id="rapports-chevron"></i>
+                    </a>
+                    <ul class="nav flex-column ms-3 mt-2" id="rapports-submenu" {% if request.resolver_match.namespace == 'communication' and request.resolver_match.url_name in 'dashboard,generer_rapport,liste_rapports' %}style="display: block;"{% else %}style="display: none;"{% endif %}>
+                        <li class="nav-item mb-1">
+                            <a class="nav-link {% if request.resolver_match.namespace == 'communication' and request.resolver_match.url_name == 'dashboard' %}active bg-primary text-white{% else %}text-dark{% endif %} rounded-3 py-2 px-3" 
+                               href="{% url 'communication:dashboard' %}">
+                                <i class="fas fa-tachometer-alt me-2 text-info"></i>Dashboard
+                            </a>
+                        </li>
+                        <li class="nav-item mb-1">
+                            <a class="nav-link {% if request.resolver_match.namespace == 'communication' and request.resolver_match.url_name == 'generer_rapport' %}active bg-primary text-white{% else %}text-dark{% endif %} rounded-3 py-2 px-3" 
+                               href="{% url 'communication:generer_rapport' %}">
+                                <i class="fas fa-rocket me-2 text-success"></i>Générer un rapport
+                            </a>
+                        </li>
+                        <li class="nav-item mb-1">
+                            <a class="nav-link {% if request.resolver_match.namespace == 'communication' and request.resolver_match.url_name == 'liste_rapports' %}active bg-primary text-white{% else %}text-dark{% endif %} rounded-3 py-2 px-3" 
+                               href="{% url 'communication:liste_rapports' %}">
+                                <i class="fas fa-file-alt me-2 text-warning"></i>Mes rapports
+                            </a>
+                        </li>
+                    </ul>
+                </li>
+
+                <!-- Assistant IA -->
+                <li class="nav-item mb-2">
+                    <a class="nav-link {% if request.resolver_match.namespace == 'communication' and request.resolver_match.url_name in 'assistant_ia,historique_conversations' %}active bg-primary text-white{% else %}text-dark{% endif %} rounded-3" 
+                       href="#" onclick="toggleSubmenu('assistant')" style="cursor: pointer;">
+                        <i class="fas fa-robot me-2"></i>Assistant IA
+                        <i class="fas fa-chevron-down ms-auto {% if request.resolver_match.namespace == 'communication' and request.resolver_match.url_name in 'assistant_ia,historique_conversations' %}rotated{% endif %}" id="assistant-chevron"></i>
+                    </a>
+                    <ul class="nav flex-column ms-3 mt-2" id="assistant-submenu" {% if request.resolver_match.namespace == 'communication' and request.resolver_match.url_name in 'assistant_ia,historique_conversations' %}style="display: block;"{% else %}style="display: none;"{% endif %}>
+                        <li class="nav-item mb-1">
+                            <a class="nav-link {% if request.resolver_match.namespace == 'communication' and request.resolver_match.url_name == 'assistant_ia' %}active bg-primary text-white{% else %}text-dark{% endif %} rounded-3 py-2 px-3" 
+                               href="{% url 'communication:assistant_ia' %}">
+                                <i class="fas fa-comments me-2 text-primary"></i>Assistant IA
+                            </a>
+                        </li>
+                        <li class="nav-item mb-1">
+                            <a class="nav-link {% if request.resolver_match.namespace == 'communication' and request.resolver_match.url_name == 'historique_conversations' %}active bg-primary text-white{% else %}text-dark{% endif %} rounded-3 py-2 px-3" 
+                               href="{% url 'communication:historique_conversations' %}">
+                                <i class="fas fa-history me-2 text-info"></i>Historique Conversations
+                            </a>
+                        </li>
+                    </ul>
+                </li>
+
+                <!-- Recommandations -->
+                <li class="nav-item mb-2">
+                    <a class="nav-link {% if request.resolver_match.namespace == 'recommendations' %}active bg-primary text-white{% else %}text-dark{% endif %} rounded-3" 
+                       href="#" onclick="toggleSubmenu('recommandations')" style="cursor: pointer;">
+                        <i class="fas fa-magic me-2"></i>Recommandations
+                        <i class="fas fa-chevron-down ms-auto {% if request.resolver_match.namespace == 'recommendations' %}rotated{% endif %}" id="recommandations-chevron"></i>
+                    </a>
+                    <ul class="nav flex-column ms-3 mt-2" id="recommandations-submenu" {% if request.resolver_match.namespace == 'recommendations' %}style="display: block;"{% else %}style="display: none;"{% endif %}>
+                        <li class="nav-item mb-1">
+                            <a class="nav-link {% if request.resolver_match.url_name == 'dashboard' and request.resolver_match.namespace == 'recommendations' %}active bg-primary text-white{% else %}text-dark{% endif %} rounded-3 py-2 px-3" 
+                               href="{% url 'recommendations:dashboard' %}">
+                                <i class="fas fa-tachometer-alt me-2 text-info"></i>Dashboard
+                            </a>
+                        </li>
+                        <li class="nav-item mb-1">
+                            <a class="nav-link {% if request.resolver_match.url_name == 'list' and request.resolver_match.namespace == 'recommendations' %}active bg-primary text-white{% else %}text-dark{% endif %} rounded-3 py-2 px-3" 
+                               href="{% url 'recommendations:list' %}">
+                                <i class="fas fa-list me-2 text-success"></i>Mes recommandations
+                            </a>
+                        </li>
+                        <li class="nav-item mb-1">
+                            <a class="nav-link {% if request.resolver_match.url_name == 'goals' %}active bg-primary text-white{% else %}text-dark{% endif %} rounded-3 py-2 px-3" 
+                               href="{% url 'recommendations:goals' %}">
+                                <i class="fas fa-bullseye me-2 text-warning"></i>Mes objectifs
+                            </a>
+                        </li>
+                    </ul>
+                </li>
+
+                <!-- Suggestions connexions -->
+                <li class="nav-item mb-2">
+                    <a class="nav-link {% if request.resolver_match.url_name == 'suggestions' %}active bg-primary text-white{% else %}text-dark{% endif %} rounded-3" 
+                       href="{% url 'communication:suggestions' %}">
+                        <i class="fas fa-bell me-2"></i>Suggestions connexions
+                    </a>
+                </li>
+                
                 <li class="nav-item mb-2">
                     <a class="nav-link {% if request.resolver_match.url_name == 'edit_profile' %}active bg-primary text-white{% else %}text-dark{% endif %} rounded-3" 
                        href="{% url 'users:edit_profile' %}">
                         <i class="fas fa-user-edit me-2"></i>Modifier le profil
+                    </a>
+                </li>
+                <li class="nav-item mb-2">
+                    <a class="nav-link {% if request.resolver_match.url_name == 'list' and request.resolver_match.namespace == 'journal' %}active bg-primary text-white{% else %}text-dark{% endif %} rounded-3" 
+                       href="{% url 'journal:list' %}">
+                        <i class="fas fa-book-open me-2"></i>Mon Journal
+                    </a>
+                </li>
+                <li class="nav-item mb-2">
+                    <a class="nav-link {% if request.resolver_match.url_name == 'create' and request.resolver_match.namespace == 'journal' %}active bg-primary text-white{% else %}text-dark{% endif %} rounded-3" 
+                       href="{% url 'journal:create' %}">
+                        <i class="fas fa-plus-circle me-2"></i>Nouvelle Entrée
                     </a>
                 </li>
                 <li class="nav-item mb-2">
@@ -47,14 +149,258 @@
             </ul>
         </div>
         
-        <!-- Logout Button -->
-        <div class="p-3 border-top">
+        <!-- Logout Button - Fixed at Bottom -->
+        <div class="logout-section mt-auto p-3 border-top">
             <form method="post" action="{% url 'users:logout' %}">
                 {% csrf_token %}
-                <button type="submit" class="btn btn-outline-danger btn-sm w-100">
+                <button type="submit" class="btn btn-outline-danger btn-sm w-100 logout-btn">
                     <i class="fas fa-sign-out-alt me-1"></i>Déconnexion
                 </button>
             </form>
         </div>
     </div>
 </div>
+
+<style>
+/* Enhanced Navbar Styles */
+.sidebar {
+    background: linear-gradient(180deg, #f8f9fa 0%, #e9ecef 100%);
+    border-right: 1px solid #dee2e6;
+    box-shadow: 2px 0 10px rgba(0,0,0,0.1);
+    overflow: hidden;
+}
+
+/* Scroll Container for Navigation */
+.nav-scroll-container {
+    overflow-y: auto;
+    overflow-x: hidden;
+    max-height: calc(100vh - 200px);
+    padding-right: 8px;
+}
+
+.nav-scroll {
+    padding-bottom: 20px;
+}
+
+/* Custom Scrollbar Styling */
+.nav-scroll-container::-webkit-scrollbar {
+    width: 6px;
+}
+
+.nav-scroll-container::-webkit-scrollbar-track {
+    background: rgba(0, 0, 0, 0.05);
+    border-radius: 10px;
+}
+
+.nav-scroll-container::-webkit-scrollbar-thumb {
+    background: linear-gradient(45deg, #667eea, #764ba2);
+    border-radius: 10px;
+    transition: all 0.3s ease;
+}
+
+.nav-scroll-container::-webkit-scrollbar-thumb:hover {
+    background: linear-gradient(45deg, #5a6fd8, #6a4190);
+    box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
+}
+
+/* Firefox Scrollbar */
+.nav-scroll-container {
+    scrollbar-width: thin;
+    scrollbar-color: #667eea rgba(0, 0, 0, 0.05);
+}
+
+.nav-link {
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+.nav-link:hover {
+    transform: translateX(5px);
+    background: rgba(102, 126, 234, 0.1) !important;
+}
+
+.nav-link.active {
+    background: linear-gradient(45deg, #667eea, #764ba2) !important;
+    color: white !important;
+    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+}
+
+.nav-link.active::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0;
+    height: 100%;
+    width: 4px;
+    background: #4CAF50;
+    border-radius: 0 2px 2px 0;
+}
+
+/* Submenu Styles */
+#rapports-submenu, #assistant-submenu, #recommandations-submenu {
+    background: rgba(102, 126, 234, 0.05);
+    border-radius: 8px;
+    border-left: 3px solid #667eea;
+    margin-left: 15px !important;
+    padding: 8px 0;
+    animation: slideDown 0.3s ease;
+}
+
+#rapports-submenu .nav-link, #assistant-submenu .nav-link, #recommandations-submenu .nav-link {
+    font-size: 0.9em;
+    margin: 2px 8px;
+    border-radius: 6px;
+}
+
+#rapports-submenu .nav-link:hover, #assistant-submenu .nav-link:hover, #recommandations-submenu .nav-link:hover {
+    background: rgba(102, 126, 234, 0.1) !important;
+    transform: translateX(3px);
+}
+
+#rapports-submenu .nav-link.active, #assistant-submenu .nav-link.active, #recommandations-submenu .nav-link.active {
+    background: linear-gradient(45deg, #667eea, #764ba2) !important;
+    color: white !important;
+    box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
+}
+
+/* Chevron Animation */
+.fa-chevron-down {
+    transition: transform 0.3s ease;
+}
+
+.fa-chevron-down.rotated {
+    transform: rotate(180deg);
+}
+
+/* Brand Enhancement */
+.navbar-brand {
+    background: linear-gradient(45deg, #667eea, #764ba2);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    font-weight: bold;
+    font-size: 1.3em;
+}
+
+/* User Info Enhancement */
+.text-center.p-4 {
+    background: rgba(102, 126, 234, 0.05);
+    border-radius: 12px;
+    margin: 10px;
+    border: 1px solid rgba(102, 126, 234, 0.1);
+}
+
+/* Logout Button Enhancement - Fixed at Bottom */
+.logout-section {
+    background: rgba(220, 53, 69, 0.05);
+    border-top: 2px solid rgba(220, 53, 69, 0.2) !important;
+    margin-top: auto;
+    position: sticky;
+    bottom: 0;
+    z-index: 10;
+}
+
+.logout-btn {
+    border-radius: 8px;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    border: 2px solid #dc3545;
+    background: rgba(255, 255, 255, 0.9);
+    backdrop-filter: blur(10px);
+}
+
+.logout-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(220, 53, 69, 0.4);
+    background: #dc3545;
+    color: white;
+    border-color: #dc3545;
+}
+
+.logout-btn:active {
+    transform: translateY(0);
+    box-shadow: 0 2px 8px rgba(220, 53, 69, 0.3);
+}
+
+/* Animations */
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Icon Colors */
+.text-info { color: #17a2b8 !important; }
+.text-success { color: #28a745 !important; }
+.text-warning { color: #ffc107 !important; }
+.text-primary { color: #007bff !important; }
+</style>
+
+<script>
+function toggleSubmenu(menuType) {
+    const submenu = document.getElementById(menuType + '-submenu');
+    const chevron = document.getElementById(menuType + '-chevron');
+    
+    if (submenu.style.display === 'none' || submenu.style.display === '') {
+        submenu.style.display = 'block';
+        chevron.classList.add('rotated');
+    } else {
+        submenu.style.display = 'none';
+        chevron.classList.remove('rotated');
+    }
+}
+
+// Auto-expand submenu if current page is in it
+function expandActiveSubmenu() {
+    const currentUrl = window.location.pathname;
+    
+    // Check if we're in rapports section (communication dashboard, not main dashboard)
+    if (currentUrl.includes('/communication/')) {
+        // Check for dashboard (but not the main dashboard which is at /dashboard/)
+        if (currentUrl === '/communication/' || currentUrl.match(/^\/communication\/$/)) {
+            toggleSubmenu('rapports');
+        }
+        // Check for generer_rapport: /communication/rapports/generer/
+        else if (currentUrl.includes('/rapports/generer') || currentUrl.includes('/rapports/') && !currentUrl.includes('/assistant')) {
+            toggleSubmenu('rapports');
+        }
+        
+        // Check if we're in assistant section: /communication/assistant-ia/
+        if (currentUrl.includes('/assistant-ia') || currentUrl.includes('/assistant')) {
+            toggleSubmenu('assistant');
+        }
+    }
+    
+    // Check if we're in recommandations section
+    if (currentUrl.includes('/recommendations/')) {
+        toggleSubmenu('recommandations');
+    }
+}
+
+// Run immediately and also on DOMContentLoaded for safety
+expandActiveSubmenu();
+document.addEventListener('DOMContentLoaded', expandActiveSubmenu);
+
+// Add smooth hover effects
+document.addEventListener('DOMContentLoaded', function() {
+    const navLinks = document.querySelectorAll('.nav-link');
+    
+    navLinks.forEach(link => {
+        link.addEventListener('mouseenter', function() {
+            this.style.transform = 'translateX(5px)';
+        });
+        
+        link.addEventListener('mouseleave', function() {
+            if (!this.classList.contains('active')) {
+                this.style.transform = 'translateX(0)';
+            }
+        });
+    });
+});
+</script>

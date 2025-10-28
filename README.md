@@ -33,8 +33,8 @@ Journal IA multimodal avec analyse émotionnelle et recommandations personnalis�
 ## 🚀 Démarrage Rapide
 
 ### Prérequis
-- Python 3.8+
-- PostgreSQL 12+
+- Python 3.9
+- MongoDB Atlas (Base de données cloud)
 - Git
 
 ### Installation
@@ -48,7 +48,7 @@ cd MindScribe-5TWIN5
 2. **Configuration l'environnement virtuel**
 ```bash
 # Créer l'environnement virtuel
-virtualenv env_mindscribe
+python -m venv env_mindscribe
 
 # Activer l'environnement
 # Windows
@@ -59,7 +59,7 @@ source env_mindscribe/bin/activate
 
 3. **Installer les dépendances**
 ```bash
-pip install Django==4.2
+pip install -r requirements.txt
 ```
 
 python setup_nltk.py
@@ -68,10 +68,8 @@ python setup_nltk.py
 
 4. **Configuration de la base de données**
 ```bash
-# Créer la base PostgreSQL
-createdb mindscribe_db
-
 # Appliquer les migrations
+python manage.py makemigrations
 python manage.py migrate
 ```
 
@@ -99,12 +97,13 @@ Le projet utilise PostgreSQL comme base de données principale. Configuration da
 ```bash
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.postgresql',
+        'ENGINE': 'djongo',
         'NAME': 'mindscribe_db',
-        'USER': 'postgres',
-        'PASSWORD': 'votre_mot_de_passe',
-        'HOST': 'localhost',
-        'PORT': '5432',
+        'CLIENT': {
+            'host': 'votre_uri_mongodb_atlas',
+            'username': 'votre_utilisateur',
+            'password': 'votre_mot_de_passe',
+        }
     }
 }
 ```
@@ -190,11 +189,7 @@ Créez un fichier .env à la racine :
 ```bash
 DEBUG=True
 SECRET_KEY=votre_secret_key
-DB_NAME=mindscribe_db
-DB_USER=postgres
-DB_PASSWORD=votre_mot_de_passe
-DB_HOST=localhost
-DB_PORT=5432
+MONGO_URI=votre_uri_mongodb_atlas_complete
 ```
 ### Applications Installées
 
@@ -205,6 +200,29 @@ DB_PORT=5432
 - **django.contrib.admin** - Interface d'administration
 
 - **django.contrib.auth** - Système d'authentification
+
+---
+
+## 🛠️ Dépendances Principales
+
+### Backend
+- **Django 3.2.21** - Framework web
+
+- **Djongo 1.3.6** - Connecteur MongoDB pour Django
+
+- **Pymongo 3.12.3** - Driver MongoDB Python
+
+- **Python-decouple** - Gestion des variables d'environnement
+
+### Sécurité
+- **Bcrypt** - Hashage des mots de passe
+
+- **Pillow** - Traitement d'images
+
+### Développement
+- **Pytest** - Tests automatisés
+
+- **Black & Flake8** - Formatage et linting
 
 ---
 

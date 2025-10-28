@@ -49,6 +49,11 @@ class Recommandation(models.Model):
         verbose_name="Statut"
     )
     
+    # Feedback system
+    utile = models.BooleanField(null=True, blank=True, verbose_name="Utile")
+    feedback_note = models.IntegerField(null=True, blank=True, verbose_name="Note (1-5)")
+    feedback_commentaire = models.TextField(blank=True, verbose_name="Commentaire")
+    
     def __str__(self):
         return f"Recommandation {self.type} pour {self.utilisateur.username}"
     

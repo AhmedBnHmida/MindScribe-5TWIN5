@@ -1,0 +1,206 @@
+{% extends 'base.html' %}
+{% block title %}Toutes mes Recommandations{% endblock %}
+
+{% block content %}
+<div class="content-wrapper">
+    <div class="container py-5">
+        <div class="row justify-content-center">
+            <div class="col-lg-10">
+                <!-- Header -->
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h2><i class="fas fa-list me-2"></i>Toutes mes Recommandations</h2>
+                    <a href="{% url 'recommendations:dashboard' %}" class="btn btn-outline-secondary">
+                        <i class="fas fa-arrow-left me-2"></i>Retour
+                    </a>
+                </div>
+                
+                <!-- Filters -->
+                <div class="ultra-glass-card mb-4">
+                    <form method="GET" class="row g-3">
+                        <div class="col-md-4">
+                            <label class="form-label">Type</label>
+                            <select name="type" class="form-select" onchange="this.form.submit()">
+                                <option value="all" {% if type_filter == 'all' %}selected{% endif %}>Tous les types</option>
+                                <option value="bien_etre" {% if type_filter == 'bien_etre' %}selected{% endif %}>Bien-être</option>
+                                <option value="productivite" {% if type_filter == 'productivite' %}selected{% endif %}>Productivité</option>
+                                <option value="sommeil" {% if type_filter == 'sommeil' %}selected{% endif %}>Sommeil</option>
+                                <option value="nutrition" {% if type_filter == 'nutrition' %}selected{% endif %}>Nutrition</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Statut</label>
+                            <select name="status" class="form-select" onchange="this.form.submit()">
+                                <option value="all" {% if status_filter == 'all' %}selected{% endif %}>Tous les statuts</option>
+                                <option value="nouvelle" {% if status_filter == 'nouvelle' %}selected{% endif %}>Nouvelles</option>
+                                <option value="suivie" {% if status_filter == 'suivie' %}selected{% endif %}>Suivies</option>
+                                <option value="ignoree" {% if status_filter == 'ignoree' %}selected{% endif %}>Ignorées</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">&nbsp;</label>
+                            <a href="{% url 'recommendations:list' %}" class="btn btn-outline-secondary w-100">
+                                <i class="fas fa-redo me-2"></i>Réinitialiser
+                            </a>
+                        </div>
+                    </form>
+                </div>
+                
+                <!-- Type Statistics -->
+                <div class="row g-3 mb-4">
+                    {% for type_key, type_data in type_stats.items %}
+                    <div class="col-md-3">
+                        <div class="stat-card">
+                            <h3>{{ type_data.count }}</h3>
+                            <p class="mb-0">{{ type_data.label }}</p>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                
+                <!-- Recommendations List -->
+                {% if recommendations %}
+                    <div class="recommendations-list">
+                        {% for recommendation in recommendations %}
+                        <div class="recommendation-item ultra-glass-card mb-3" data-recommendation-id="{{ recommendation.id }}">
+                            <div class="recommendation-header">
+                                <span class="recommendation-type-badge badge-{{ recommendation.type }}">
+                                    {% if recommendation.type == 'bien_etre' %}
+                                        <i class="fas fa-heart me-1"></i>Bien-être
+                                    {% elif recommendation.type == 'productivite' %}
+                                        <i class="fas fa-rocket me-1"></i>Productivité
+                                    {% elif recommendation.type == 'sommeil' %}
+                                        <i class="fas fa-moon me-1"></i>Sommeil
+                                    {% else %}
+                                        <i class="fas fa-utensils me-1"></i>Nutrition
+                                    {% endif %}
+                                </span>
+                                <span class="recommendation-date">
+                                    <i class="far fa-clock me-1"></i>{{ recommendation.date_emission|date:"d/m/Y à H:i" }}
+                                </span>
+                            </div>
+                            <div class="recommendation-content">
+                                <p>{{ recommendation.contenu }}</p>
+                            </div>
+                            <div class="recommendation-footer">
+                                <div class="recommendation-status">
+                                    {% if recommendation.statut == 'suivie' %}
+                                        <span class="badge bg-success">
+                                            <i class="fas fa-check-circle"></i> Suivi
+                                        </span>
+                                    {% elif recommendation.statut == 'ignoree' %}
+                                        <span class="badge bg-secondary">
+                                            <i class="fas fa-times-circle"></i> Ignoré
+                                        </span>
+                                    {% else %}
+                                        <span class="badge bg-primary">
+                                            <i class="fas fa-bell"></i> Nouvelle
+                                        </span>
+                                    {% endif %}
+                                </div>
+                                <div class="recommendation-actions">
+                                    {% if recommendation.statut == 'nouvelle' %}
+                                        <button class="btn btn-sm btn-success mark-followed" data-id="{{ recommendation.id }}">
+                                            <i class="fas fa-check me-1"></i>Suivre
+                                        </button>
+                                        <button class="btn btn-sm btn-outline-secondary mark-ignored" data-id="{{ recommendation.id }}">
+                                            <i class="fas fa-times me-1"></i>Ignorer
+                                        </button>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <div class="ultra-glass-card text-center py-5">
+                        <i class="fas fa-filter fs-1 text-muted mb-3"></i>
+                        <h5>Aucune recommandation trouvée</h5>
+                        <p class="text-muted">Essaie d'ajuster les filtres ou génère de nouvelles recommandations</p>
+                        <a href="{% url 'recommendations:dashboard' %}" class="btn btn-primary mt-3">
+                            <i class="fas fa-arrow-left me-2"></i>Retour au tableau de bord
+                        </a>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.stat-card {
+    padding: 1.5rem;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 10px;
+    text-align: center;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.stat-card h3 {
+    font-size: 2rem;
+    font-weight: bold;
+    margin-bottom: 0.5rem;
+}
+
+.recommendation-item {
+    padding: 1.5rem;
+    transition: all 0.3s ease;
+}
+
+.recommendation-item:hover {
+    transform: translateY(-2px);
+}
+
+.recommendation-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 1rem;
+    padding-top: 1rem;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.recommendation-actions {
+    display: flex;
+    gap: 0.5rem;
+}
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Handle recommendation status updates
+    document.querySelectorAll('.mark-followed, .mark-ignored').forEach(button => {
+        button.addEventListener('click', function() {
+            const recommendationId = this.dataset.id;
+            const status = this.classList.contains('mark-followed') ? 'suivie' : 'ignoree';
+            
+            updateRecommendationStatus(recommendationId, status);
+        });
+    });
+    
+    function updateRecommendationStatus(id, status) {
+        const card = document.querySelector(`[data-recommendation-id="${id}"]`);
+        const csrftoken = document.querySelector('[name=csrfmiddlewaretoken]').value || '{{ csrf_token }}';
+        
+        fetch(`/recommendations/${id}/status/`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+                'X-CSRFToken': csrftoken
+            },
+            body: `status=${status}`
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Reload to update the list
+                location.reload();
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+        });
+    }
+});
+</script>
+{% endblock %}
+

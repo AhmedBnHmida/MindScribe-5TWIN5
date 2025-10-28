@@ -1,0 +1,157 @@
+{% extends 'base.html' %}
+{% block title %}Nouvel Objectif{% endblock %}
+
+{% block content %}
+<div class="content-wrapper">
+    <div class="container py-5">
+        <div class="row justify-content-center">
+            <div class="col-lg-8">
+                <div class="mb-4">
+                    <a href="{% url 'recommendations:goals' %}" class="btn btn-outline-secondary">
+                        <i class="fas fa-arrow-left me-2"></i>Retour
+                    </a>
+                </div>
+                
+                <div class="ultra-glass-card">
+                    <h3 class="mb-4"><i class="fas fa-target me-2"></i>Créer un Nouvel Objectif</h3>
+                    
+                    <form method="POST">
+                        {% csrf_token %}
+                        
+                        <div class="mb-4">
+                            <label for="nom" class="form-label">Nom de l'objectif <span class="text-danger">*</span></label>
+                            <input type="text" 
+                                   class="form-control form-control-lg" 
+                                   id="nom" 
+                                   name="nom" 
+                                   required
+                                   placeholder="Ex: Méditer 10 minutes par jour">
+                        </div>
+                        
+                        <div class="mb-4">
+                            <label for="description" class="form-label">Description (optionnel)</label>
+                            <textarea class="form-control" 
+                                      id="description" 
+                                      name="description" 
+                                      rows="4"
+                                      placeholder="Décris ton objectif et pourquoi il est important pour toi..."></textarea>
+                        </div>
+                        
+                        <div class="row g-3 mb-4">
+                            <div class="col-md-6">
+                                <label for="date_debut" class="form-label">Date de début <span class="text-danger">*</span></label>
+                                <input type="date" 
+                                       class="form-control" 
+                                       id="date_debut" 
+                                       name="date_debut" 
+                                       required
+                                       value="{{ today|date:'Y-m-d' }}">
+                            </div>
+                            <div class="col-md-6">
+                                <label for="date_fin" class="form-label">Date de fin <span class="text-danger">*</span></label>
+                                <input type="date" 
+                                       class="form-control" 
+                                       id="date_fin" 
+                                       name="date_fin" 
+                                       required>
+                            </div>
+                        </div>
+                        
+                        <div class="alert alert-info">
+                            <i class="fas fa-lightbulb me-2"></i>
+                            <strong>Conseil:</strong> Définis des objectifs SMART (Spécifiques, Mesurables, Atteignables, Réalistes, Temporellement définis)
+                        </div>
+                        
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-end mt-4">
+                            <a href="{% url 'recommendations:goals' %}" class="btn btn-outline-secondary">
+                                Annuler
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save me-2"></i>Créer l'objectif
+                            </button>
+                        </div>
+                    </form>
+                </div>
+                
+                <!-- Suggestions -->
+                <div class="ultra-glass-card mt-4">
+                    <h5 class="mb-3"><i class="fas fa-lightbulb me-2"></i>Suggestions d'objectifs</h5>
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <div class="suggestion-card" onclick="fillGoal('Écrire dans mon journal quotidiennement', 'Prendre le temps chaque jour d\'écrire mes pensées et émotions')">
+                                <i class="fas fa-pen-alt text-primary me-2"></i>
+                                <strong>Écrire quotidiennement</strong>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="suggestion-card" onclick="fillGoal('Pratiquer la méditation', 'Méditer 10 minutes chaque matin pour commencer la journée sereinement')">
+                                <i class="fas fa-spa text-success me-2"></i>
+                                <strong>Pratiquer la méditation</strong>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="suggestion-card" onclick="fillGoal('Améliorer mon sommeil', 'Me coucher avant 23h et dormir au moins 7h par nuit')">
+                                <i class="fas fa-moon text-info me-2"></i>
+                                <strong>Améliorer mon sommeil</strong>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="suggestion-card" onclick="fillGoal('Faire de l\'exercice régulièrement', 'Pratiquer une activité physique au moins 3 fois par semaine')">
+                                <i class="fas fa-running text-warning me-2"></i>
+                                <strong>Faire de l'exercice</strong>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.suggestion-card {
+    padding: 1rem;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 10px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.suggestion-card:hover {
+    background: rgba(255, 255, 255, 0.1);
+    transform: translateY(-2px);
+}
+</style>
+
+<script>
+// Set minimum date for date_fin
+document.addEventListener('DOMContentLoaded', function() {
+    const dateDebut = document.getElementById('date_debut');
+    const dateFin = document.getElementById('date_fin');
+    
+    // Set today as minimum for both dates
+    const today = new Date().toISOString().split('T')[0];
+    dateDebut.setAttribute('min', today);
+    dateFin.setAttribute('min', today);
+    
+    // Update date_fin minimum when date_debut changes
+    dateDebut.addEventListener('change', function() {
+        dateFin.setAttribute('min', this.value);
+        if (dateFin.value && dateFin.value < this.value) {
+            dateFin.value = this.value;
+        }
+    });
+});
+
+function fillGoal(nom, description) {
+    document.getElementById('nom').value = nom;
+    document.getElementById('description').value = description;
+    
+    // Scroll to form
+    document.getElementById('nom').scrollIntoView({ behavior: 'smooth', block: 'center' });
+    document.getElementById('nom').focus();
+}
+</script>
+{% endblock %}
+

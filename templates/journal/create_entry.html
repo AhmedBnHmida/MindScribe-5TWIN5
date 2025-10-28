@@ -1,0 +1,1053 @@
+{% extends 'base.html' %}
+{% block title %}Nouvelle Entrée de Journal{% endblock %}
+
+{% block extra_css %}
+<style>
+    .journal-form {
+        background-color: rgba(255, 255, 255, 0.9);
+        border-radius: 15px;
+        box-shadow: 0 5px 20px rgba(0, 0, 0, 0.1);
+        padding: 2rem;
+        margin-bottom: 2rem;
+    }
+    
+    .tab-content {
+        padding: 1.5rem 0;
+    }
+    
+    .nav-tabs .nav-link {
+        font-weight: 500;
+        color: #5F74A9;
+        border: none;
+        padding: 0.75rem 1.5rem;
+        border-radius: 0;
+        position: relative;
+    }
+    
+    .nav-tabs .nav-link.active {
+        color: #3E4E88;
+        background-color: transparent;
+        font-weight: 600;
+    }
+    
+    .nav-tabs .nav-link.active::after {
+        content: '';
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        width: 100%;
+        height: 3px;
+        background-color: #5F74A9;
+        border-radius: 3px;
+    }
+    
+    .form-control {
+        border-radius: 8px;
+        padding: 0.75rem;
+        border: 1px solid #ced4da;
+    }
+    
+    .form-control:focus {
+        border-color: #5F74A9;
+        box-shadow: 0 0 0 0.2rem rgba(95, 116, 169, 0.25);
+    }
+    
+    textarea.form-control {
+        min-height: 150px;
+    }
+    
+    .custom-file-upload {
+        display: inline-block;
+        padding: 10px 15px;
+        cursor: pointer;
+        background-color: #f8f9fa;
+        border: 1px solid #ced4da;
+        border-radius: 8px;
+        transition: all 0.3s;
+    }
+    
+    .custom-file-upload:hover {
+        background-color: #e9ecef;
+    }
+    
+    .preview-container {
+        margin-top: 1rem;
+        text-align: center;
+    }
+    
+    .preview-container img {
+        max-width: 100%;
+        max-height: 300px;
+        border-radius: 8px;
+    }
+    
+    .preview-container audio {
+        width: 100%;
+    }
+    
+    #analysisResults {
+        display: none;
+        background-color: rgba(255, 255, 255, 0.9);
+        border-radius: 15px;
+        box-shadow: 0 5px 20px rgba(0, 0, 0, 0.1);
+        padding: 2rem;
+        margin-top: 2rem;
+    }
+    
+    .analysis-section {
+        margin-bottom: 1.5rem;
+    }
+    
+    .analysis-section h5 {
+        color: #3E4E88;
+        margin-bottom: 0.75rem;
+        font-weight: 600;
+    }
+    
+    .analysis-tag {
+        display: inline-block;
+        background-color: #e9ecef;
+        color: #495057;
+        padding: 0.3rem 0.75rem;
+        border-radius: 20px;
+        margin-right: 0.5rem;
+        margin-bottom: 0.5rem;
+        font-size: 0.9rem;
+    }
+    
+    .sentiment-positive {
+        background-color: rgba(58, 183, 149, 0.2);
+        color: #2a856c;
+    }
+    
+    .sentiment-neutral {
+        background-color: rgba(108, 117, 125, 0.2);
+        color: #495057;
+    }
+    
+    .sentiment-negative {
+        background-color: rgba(255, 125, 125, 0.2);
+        color: #dc3545;
+    }
+    
+    .loading-spinner {
+        display: none;
+        text-align: center;
+        margin: 2rem 0;
+    }
+    
+    .spinner-border {
+        width: 3rem;
+        height: 3rem;
+        color: #5F74A9;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="content-wrapper">
+    <div class="container py-5">
+        <div class="row justify-content-center">
+            <div class="col-lg-10">
+                <div class="ultra-results-header text-center ultra-fade-in">
+                    <h3>Nouvelle Entrée de Journal</h3>
+                    <p>Exprimez vos pensées, partagez vos moments et découvrez des insights avec l'analyse IA</p>
+                </div>
+                
+                <div class="ultra-glass-card ultra-slide-up">
+                    {% csrf_token %}
+                    <div class="ultra-tabs" id="journalTabsContainer">
+                        <div class="nav-indicator" id="navIndicator"></div>
+                        <button class="nav-link active" id="text-tab" data-bs-toggle="tab" data-bs-target="#text" role="tab">
+                            <i class="fas fa-pen-alt me-2"></i>Texte
+                        </button>
+                        <button class="nav-link" id="audio-tab" data-bs-toggle="tab" data-bs-target="#audio" role="tab">
+                            <i class="fas fa-microphone me-2"></i>Audio
+                        </button>
+                        <button class="nav-link" id="image-tab" data-bs-toggle="tab" data-bs-target="#image" role="tab">
+                            <i class="fas fa-image me-2"></i>Image
+                        </button>
+                    </div>
+                    
+                    <div class="tab-content" id="journalTabsContent">
+                        <div class="tab-pane fade show active" id="text" role="tabpanel">
+                            <div class="floating-input-group">
+                                <textarea class="floating-input" id="journalText" placeholder=" " rows="6"></textarea>
+                                <label class="floating-label">Comment vous sentez-vous aujourd'hui ?</label>
+                            </div>
+                        </div>
+                        
+                        <div class="tab-pane fade" id="audio" role="tabpanel">
+                            <div class="mb-4">
+                                <h5 class="mb-4">Enregistrez votre voix ou téléchargez un fichier audio</h5>
+                                
+                                <div class="d-flex flex-wrap gap-3 mb-4">
+                                    <button type="button" id="startRecording" class="btn-ultra-modern btn-ultra-primary">
+                                        <i class="fas fa-microphone me-2"></i> Commencer l'enregistrement
+                                    </button>
+                                    <button type="button" id="stopRecording" class="btn-ultra-modern btn-ultra-outline" disabled>
+                                        <i class="fas fa-stop-circle me-2"></i> Arrêter
+                                    </button>
+                                    <div id="recordingIndicator" class="recording-indicator" style="display: none;">
+                                        <i class="fas fa-circle"></i> Enregistrement en cours...
+                                    </div>
+                                </div>
+                                
+                                <div class="ultra-file-upload">
+                                    <i class="fas fa-cloud-upload-alt"></i>
+                                    <div class="upload-text">Télécharger un fichier audio</div>
+                                    <div class="upload-hint">MP3, WAV ou OGG</div>
+                                    <input type="file" id="audioFile" accept="audio/*">
+                                </div>
+                                
+                                <div class="ultra-preview" id="audioPreview"></div>
+                            </div>
+                        </div>
+                        
+                        <div class="tab-pane fade" id="image" role="tabpanel">
+                            <div class="mb-4">
+                                <h5 class="mb-4">Téléchargez une image pour l'analyser</h5>
+                                
+                                <div class="ultra-file-upload">
+                                    <i class="fas fa-cloud-upload-alt"></i>
+                                    <div class="upload-text">Glissez-déposez une image ici</div>
+                                    <div class="upload-hint">JPG, PNG ou GIF</div>
+                                    <input type="file" id="imageFile" accept="image/*">
+                                </div>
+                                
+                                <div class="ultra-preview" id="imagePreview"></div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="d-grid gap-2 mt-4">
+                        <button type="button" id="analyzeButton" class="btn-ultra-modern btn-ultra-secondary">
+                            <i class="fas fa-brain me-2"></i>Analyser avec IA
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- Ultra Loading Spinner -->
+                <div class="ultra-loading" id="loadingSpinner" style="display: none;">
+                    <div class="ultra-spinner"></div>
+                    <div class="ultra-loading-text">Analyse en cours</div>
+                    <div class="ultra-loading-subtext">Notre IA analyse votre contenu en profondeur...</div>
+                </div>
+                
+                <!-- Ultra Analysis Results -->
+                <div id="analysisResults" class="ultra-results" style="display: none;">
+                    <div class="ultra-results-header">
+                        <h3>Résultats de l'Analyse</h3>
+                        <p>Voici ce que notre IA a découvert dans votre contenu</p>
+                    </div>
+                    
+                    <div class="row g-4">
+                        <div class="col-md-6">
+                            <div class="ultra-section stagger-item">
+                                <div class="ultra-section-header">
+                                    <div class="ultra-section-icon">
+                                        <i class="fas fa-heart"></i>
+                                    </div>
+                                    <h5>Sentiment</h5>
+                                </div>
+                                <div id="sentimentResult" class="mb-3"></div>
+                                <div class="ultra-progress">
+                                    <div id="sentimentScore" class="ultra-progress-bar" style="width: 0%;"></div>
+                                </div>
+                            </div>
+                            
+                            <div class="ultra-section stagger-item">
+                                <div class="ultra-section-header">
+                                    <div class="ultra-section-icon">
+                                        <i class="fas fa-tags"></i>
+                                    </div>
+                                    <h5>Mots-clés</h5>
+                                </div>
+                                <div id="keywordsResult" class="mt-3"></div>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <div class="ultra-section stagger-item">
+                                <div class="ultra-section-header">
+                                    <div class="ultra-section-icon">
+                                        <i class="fas fa-layer-group"></i>
+                                    </div>
+                                    <h5>Thèmes</h5>
+                                </div>
+                                <div id="topicsResult" class="mt-3"></div>
+                            </div>
+                            
+                            <div class="ultra-section stagger-item" id="imageSection">
+                                <div class="ultra-section-header">
+                                    <div class="ultra-section-icon">
+                                        <i class="fas fa-image"></i>
+                                    </div>
+                                    <h5>Analyse d'Image</h5>
+                                </div>
+                                <div id="imageCaptionResult" class="mt-3 mb-2"></div>
+                                <div id="imageSceneResult"></div>
+                            </div>
+                            
+                            <div class="ultra-section stagger-item" id="audioSection">
+                                <div class="ultra-section-header">
+                                    <div class="ultra-section-icon">
+                                        <i class="fas fa-microphone"></i>
+                                    </div>
+                                    <h5>Transcription Audio</h5>
+                                </div>
+                                <div id="audioTranscriptionResult" class="mt-3"></div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Summary Section -->
+                    <div class="ultra-section stagger-item mt-4">
+                        <div class="ultra-section-header">
+                            <div class="ultra-section-icon">
+                                <i class="fas fa-file-alt"></i>
+                            </div>
+                            <h5>Résumé</h5>
+                        </div>
+                        <div id="summaryResult" class="mt-3 p-3 rounded" style="background: rgba(255,255,255,0.1);"></div>
+                    </div>
+                    
+                    <!-- Detailed Summary Section -->
+                    <div class="ultra-section stagger-item mt-4">
+                        <div class="ultra-section-header">
+                            <div class="ultra-section-icon">
+                                <i class="fas fa-book-open"></i>
+                            </div>
+                            <h5>Résumé Détaillé</h5>
+                        </div>
+                        <div id="detailedSummaryResult" class="mt-3 p-3 rounded" style="background: rgba(255,255,255,0.1);"></div>
+                    </div>
+                    
+                    <!-- Positive & Negative Aspects -->
+                    <div class="row g-4 mt-2">
+                        <div class="col-md-6">
+                            <div class="ultra-section stagger-item">
+                                <div class="ultra-section-header">
+                                    <div class="ultra-section-icon ultra-icon-success">
+                                        <i class="fas fa-plus-circle"></i>
+                                    </div>
+                                    <h5>Points Positifs</h5>
+                                </div>
+                                <div id="positiveAspectsResult" class="mt-3"></div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="ultra-section stagger-item">
+                                <div class="ultra-section-header">
+                                    <div class="ultra-section-icon ultra-icon-danger">
+                                        <i class="fas fa-minus-circle"></i>
+                                    </div>
+                                    <h5>Points à Améliorer</h5>
+                                </div>
+                                <div id="negativeAspectsResult" class="mt-3"></div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Action Items -->
+                    <div class="ultra-section stagger-item mt-4">
+                        <div class="ultra-section-header">
+                            <div class="ultra-section-icon ultra-icon-primary">
+                                <i class="fas fa-tasks"></i>
+                            </div>
+                            <h5>Actions Suggérées</h5>
+                        </div>
+                        <div id="actionItemsResult" class="mt-3"></div>
+                    </div>
+                    
+                    <!-- Mood Analysis -->
+                    <div class="ultra-section stagger-item mt-4">
+                        <div class="ultra-section-header">
+                            <div class="ultra-section-icon ultra-icon-warning">
+                                <i class="fas fa-smile-beam"></i>
+                            </div>
+                            <h5>Analyse d'Humeur</h5>
+                        </div>
+                        <div id="moodAnalysisResult" class="mt-3 p-3 rounded" style="background: rgba(255,255,255,0.1);"></div>
+                    </div>
+                    
+                    <div class="d-flex justify-content-center gap-3 mt-4">
+                        <button type="button" id="saveJournalButton" class="btn-ultra-modern btn-ultra-secondary">
+                            <i class="fas fa-save me-2"></i>Sauvegarder
+                        </button>
+                        <button type="button" id="newAnalysisButton" class="btn-ultra-modern btn-ultra-outline">
+                            <i class="fas fa-redo me-2"></i>Nouvelle analyse
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Variables for media recording and storage
+        let mediaRecorder;
+        let audioChunks = [];
+        let audioBlob = null;
+        let imageFile = null;
+        
+        // Initialize tab indicator
+        const tabsContainer = document.getElementById('journalTabsContainer');
+        const navIndicator = document.getElementById('navIndicator');
+        const tabs = tabsContainer.querySelectorAll('.nav-link');
+        
+        // Set initial position of indicator
+        function setIndicatorPosition(element) {
+            navIndicator.style.left = element.offsetLeft + 'px';
+            navIndicator.style.width = element.offsetWidth + 'px';
+        }
+        
+        // Initialize indicator position
+        setIndicatorPosition(document.querySelector('.nav-link.active'));
+        
+        // Update indicator on tab click
+        tabs.forEach(tab => {
+            tab.addEventListener('click', () => {
+                setIndicatorPosition(tab);
+                
+                // Remove active class from all tabs
+                tabs.forEach(t => t.classList.remove('active'));
+                
+                // Add active class to clicked tab
+                tab.classList.add('active');
+            });
+        });
+        
+        // DOM Elements
+        const startRecordingBtn = document.getElementById('startRecording');
+        const stopRecordingBtn = document.getElementById('stopRecording');
+        const audioFileInput = document.getElementById('audioFile');
+        const imageFileInput = document.getElementById('imageFile');
+        const audioPreview = document.getElementById('audioPreview');
+        const imagePreview = document.getElementById('imagePreview');
+        const analyzeButton = document.getElementById('analyzeButton');
+        const loadingSpinner = document.getElementById('loadingSpinner');
+        const analysisResults = document.getElementById('analysisResults');
+        const saveJournalButton = document.getElementById('saveJournalButton');
+        const newAnalysisButton = document.getElementById('newAnalysisButton');
+        
+        // Audio recording functionality with modern UI
+        const recordingIndicator = document.getElementById('recordingIndicator');
+        
+        startRecordingBtn.addEventListener('click', async () => {
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                mediaRecorder = new MediaRecorder(stream);
+                
+                mediaRecorder.ondataavailable = (event) => {
+                    audioChunks.push(event.data);
+                };
+                
+                mediaRecorder.onstop = () => {
+                    // Hide recording indicator
+                    recordingIndicator.style.display = 'none';
+                    
+                    audioBlob = new Blob(audioChunks, { type: 'audio/wav' });
+                    const audioUrl = URL.createObjectURL(audioBlob);
+                    
+                    // Clear previous preview
+                    audioPreview.innerHTML = '';
+                    
+                    // Create audio element with modern styling
+                    const audioContainer = document.createElement('div');
+                    audioContainer.className = 'mt-3 p-3 rounded';
+                    audioContainer.style.backgroundColor = 'var(--neutral-100)';
+                    
+                    const audioElement = document.createElement('audio');
+                    audioElement.controls = true;
+                    audioElement.className = 'w-100';
+                    audioElement.src = audioUrl;
+                    
+                    audioContainer.appendChild(audioElement);
+                    audioPreview.appendChild(audioContainer);
+                    
+                    // Add success message
+                    const successMessage = document.createElement('div');
+                    successMessage.className = 'mt-2 text-success';
+                    successMessage.innerHTML = '<i class="fas fa-check-circle me-2"></i>Enregistrement terminé avec succès';
+                    audioPreview.appendChild(successMessage);
+                    
+                    // Reset recording state
+                    startRecordingBtn.disabled = false;
+                    stopRecordingBtn.disabled = true;
+                    audioChunks = [];
+                };
+                
+                // Start recording
+                mediaRecorder.start();
+                startRecordingBtn.disabled = true;
+                stopRecordingBtn.disabled = false;
+                
+                // Show recording indicator
+                recordingIndicator.style.display = 'flex';
+                
+            } catch (error) {
+                console.error('Error accessing microphone:', error);
+                alert('Impossible d\'accéder au microphone. Veuillez vérifier les permissions.');
+            }
+        });
+        
+        stopRecordingBtn.addEventListener('click', () => {
+            if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+                mediaRecorder.stop();
+                mediaRecorder.stream.getTracks().forEach(track => track.stop());
+            }
+        });
+        
+        // Modern file upload handling
+        audioFileInput.addEventListener('change', (event) => {
+            const file = event.target.files[0];
+            if (file) {
+                audioBlob = file;
+                
+                // Clear previous preview
+                audioPreview.innerHTML = '';
+                
+                // Create audio element with modern styling
+                const audioContainer = document.createElement('div');
+                audioContainer.className = 'mt-3 p-3 rounded animate-fade-in';
+                audioContainer.style.backgroundColor = 'var(--neutral-100)';
+                
+                const fileInfo = document.createElement('div');
+                fileInfo.className = 'mb-2 d-flex align-items-center';
+                fileInfo.innerHTML = `
+                    <i class="fas fa-file-audio text-primary me-2"></i>
+                    <span>${file.name}</span>
+                    <span class="ms-2 badge bg-light text-dark">${(file.size / 1024).toFixed(1)} KB</span>
+                `;
+                
+                const audioElement = document.createElement('audio');
+                audioElement.controls = true;
+                audioElement.className = 'w-100';
+                audioElement.src = URL.createObjectURL(file);
+                
+                audioContainer.appendChild(fileInfo);
+                audioContainer.appendChild(audioElement);
+                audioPreview.appendChild(audioContainer);
+            }
+        });
+        
+        imageFileInput.addEventListener('change', (event) => {
+            const file = event.target.files[0];
+            if (file) {
+                imageFile = file;
+                
+                // Clear previous preview
+                imagePreview.innerHTML = '';
+                
+                // Create image card with modern styling
+                const imageCard = document.createElement('div');
+                imageCard.className = 'mt-3 card border-0 shadow-sm rounded overflow-hidden animate-fade-in';
+                
+                // Create card header with file info
+                const cardHeader = document.createElement('div');
+                cardHeader.className = 'card-header bg-light d-flex align-items-center';
+                cardHeader.innerHTML = `
+                    <i class="fas fa-file-image text-primary me-2"></i>
+                    <span>${file.name}</span>
+                    <span class="ms-2 badge bg-light text-dark">${(file.size / 1024).toFixed(1)} KB</span>
+                `;
+                
+                // Create image element
+                const img = document.createElement('img');
+                img.src = URL.createObjectURL(file);
+                img.alt = 'Image preview';
+                img.className = 'card-img-bottom';
+                img.style.maxHeight = '300px';
+                img.style.objectFit = 'cover';
+                
+                imageCard.appendChild(cardHeader);
+                imageCard.appendChild(img);
+                imagePreview.appendChild(imageCard);
+            }
+        });
+        
+        // Helper function to convert Blob/File to base64
+        function blobToBase64(blob) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onloadend = () => {
+                    // Remove the data URL prefix (e.g., "data:image/png;base64,")
+                    const base64 = reader.result.split(',')[1];
+                    resolve(base64);
+                };
+                reader.onerror = reject;
+                reader.readAsDataURL(blob);
+            });
+        }
+        
+        // Modern analysis functionality
+        analyzeButton.addEventListener('click', async () => {
+            const journalText = document.getElementById('journalText').value.trim();
+            
+            // Check if at least one input is provided
+            if (!journalText && !audioBlob && !imageFile) {
+                // Modern error notification
+                const notification = document.createElement('div');
+                notification.className = 'alert alert-danger animate-fade-in';
+                notification.innerHTML = '<i class="fas fa-exclamation-circle me-2"></i>Veuillez ajouter du texte, un enregistrement audio ou une image.';
+                notification.style.position = 'fixed';
+                notification.style.top = '20px';
+                notification.style.right = '20px';
+                notification.style.maxWidth = '400px';
+                notification.style.zIndex = '1050';
+                document.body.appendChild(notification);
+                
+                // Auto remove after 3 seconds
+                setTimeout(() => {
+                    notification.style.opacity = '0';
+                    notification.style.transition = 'opacity 0.5s ease-in-out';
+                    setTimeout(() => notification.remove(), 500);
+                }, 3000);
+                
+                return;
+            }
+            
+            // Disable analyze button and show loading spinner
+            analyzeButton.disabled = true;
+            analyzeButton.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>Analyse en cours...';
+            loadingSpinner.style.display = 'flex';
+            analysisResults.style.display = 'none';
+            
+            // Scroll to loading spinner
+            loadingSpinner.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            
+            // Create JSON payload with base64 encoded files
+            const payload = {};
+            
+            if (journalText) {
+                payload.text = journalText;
+            }
+            
+            // Convert audio to base64 if present
+            if (audioBlob) {
+                const audioBase64 = await blobToBase64(audioBlob);
+                payload.audio_data = audioBase64;
+                payload.audio_filename = audioBlob.name || 'recording.wav';
+            }
+            
+            // Convert image to base64 if present
+            if (imageFile) {
+                const imageBase64 = await blobToBase64(imageFile);
+                payload.image_data = imageBase64;
+                payload.image_filename = imageFile.name;
+            }
+            
+            // Add user ID if available
+            const userId = '{{ user.id }}';
+            if (userId && userId !== '') {
+                payload.user_id = userId;
+            }
+            
+            // Debug: Log what we're sending
+            console.log('JSON payload keys:', Object.keys(payload));
+            if (payload.text) console.log('  text:', payload.text.substring(0, 50) + '...');
+            if (payload.audio_data) console.log('  audio_data: <base64 data>');
+            if (payload.image_data) console.log('  image_data: <base64 data>');
+            
+            try {
+                // Get CSRF token
+                const csrftoken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+                
+                // Send request to API
+                const response = await fetch('/api/analyse/v2/', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': csrftoken
+                    },
+                    body: JSON.stringify(payload),
+                    credentials: 'same-origin'
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! Status: ${response.status}`);
+                }
+                
+                const analysisData = await response.json();
+                displayAnalysisResults(analysisData);
+                
+            } catch (error) {
+                console.error('Error during analysis:', error);
+                
+                // Modern error notification
+                const errorNotification = document.createElement('div');
+                errorNotification.className = 'alert alert-danger animate-fade-in';
+                errorNotification.innerHTML = '<i class="fas fa-exclamation-circle me-2"></i>Une erreur est survenue lors de l\'analyse. Veuillez réessayer.';
+                errorNotification.style.position = 'fixed';
+                errorNotification.style.top = '20px';
+                errorNotification.style.right = '20px';
+                errorNotification.style.maxWidth = '400px';
+                errorNotification.style.zIndex = '1050';
+                document.body.appendChild(errorNotification);
+                
+                // Auto remove after 5 seconds
+                setTimeout(() => {
+                    errorNotification.style.opacity = '0';
+                    errorNotification.style.transition = 'opacity 0.5s ease-in-out';
+                    setTimeout(() => errorNotification.remove(), 500);
+                }, 5000);
+                
+            } finally {
+                // Hide loading spinner and reset button
+                loadingSpinner.style.display = 'none';
+                analyzeButton.disabled = false;
+                analyzeButton.innerHTML = '<i class="fas fa-brain me-2"></i>Analyser';
+            }
+        });
+        
+        // Display analysis results with ultra-modern styling
+        function displayAnalysisResults(data) {
+            // Show results container
+            analysisResults.style.display = 'block';
+            
+            // Scroll to results with smooth animation
+            setTimeout(() => {
+                analysisResults.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }, 300);
+            
+            // Animate stagger items
+            const staggerItems = document.querySelectorAll('.stagger-item');
+            staggerItems.forEach((item, index) => {
+                setTimeout(() => {
+                    item.classList.add('animated');
+                }, 150 * index);
+            });
+            
+            // Sentiment and Emotions
+            const sentimentElement = document.getElementById('sentimentResult');
+            const sentimentScoreElement = document.getElementById('sentimentScore');
+            
+            let sentimentClass = '';
+            let sentimentIcon = '';
+            
+            switch (data.sentiment) {
+                case 'positif':
+                    sentimentClass = 'ultra-sentiment-positive';
+                    sentimentIcon = 'fa-face-smile';
+                    break;
+                case 'neutre':
+                    sentimentClass = 'ultra-sentiment-neutral';
+                    sentimentIcon = 'fa-face-meh';
+                    break;
+                case 'negatif':
+                    sentimentClass = 'ultra-sentiment-negative';
+                    sentimentIcon = 'fa-face-frown';
+                    break;
+            }
+            
+            // Display sentiment with emotions if available
+            let emotionsHtml = '';
+            if (data.emotions_detected && data.emotions_detected.length > 0) {
+                emotionsHtml = `<div class="mt-2">
+                    <small class="text-muted">Émotions détectées:</small>
+                    <div class="mt-1">
+                        ${data.emotions_detected.map(emotion => 
+                            `<span class="ultra-tag ultra-tag-light">${emotion}</span>`
+                        ).join('')}
+                    </div>
+                </div>`;
+            }
+            
+            sentimentElement.innerHTML = `<div class="ultra-sentiment ${sentimentClass}"><i class="far ${sentimentIcon}"></i> ${data.sentiment.charAt(0).toUpperCase() + data.sentiment.slice(1)}</div>${emotionsHtml}`;
+            
+            // Sentiment score with animation
+            const scorePercentage = Math.round(data.emotion_score * 100);
+            sentimentScoreElement.style.width = '0%';
+            setTimeout(() => {
+                sentimentScoreElement.style.transition = 'width 1.5s cubic-bezier(0.19, 1, 0.22, 1)';
+                sentimentScoreElement.style.width = `${scorePercentage}%`;
+            }, 500);
+            
+            // Keywords with staggered animation
+            const keywordsElement = document.getElementById('keywordsResult');
+            keywordsElement.innerHTML = '';
+            
+            if (data.keywords && data.keywords.length > 0) {
+                data.keywords.forEach((keyword, index) => {
+                    const tag = document.createElement('span');
+                    tag.className = 'ultra-tag ultra-tag-primary';
+                    tag.textContent = keyword;
+                    tag.style.opacity = '0';
+                    tag.style.transform = 'translateY(20px)';
+                    keywordsElement.appendChild(tag);
+                    
+                    // Staggered animation
+                    setTimeout(() => {
+                        tag.style.transition = 'all 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275)';
+                        tag.style.opacity = '1';
+                        tag.style.transform = 'translateY(0)';
+                    }, 150 * index + 300);
+                });
+            } else {
+                keywordsElement.textContent = 'Aucun mot-clé détecté';
+            }
+            
+            // Topics with staggered animation
+            const topicsElement = document.getElementById('topicsResult');
+            topicsElement.innerHTML = '';
+            
+            if (data.topics && data.topics.length > 0) {
+                data.topics.forEach((topic, index) => {
+                    const tag = document.createElement('span');
+                    tag.className = 'ultra-tag ultra-tag-success';
+                    tag.textContent = topic;
+                    tag.style.opacity = '0';
+                    tag.style.transform = 'translateY(20px)';
+                    topicsElement.appendChild(tag);
+                    
+                    // Staggered animation
+                    setTimeout(() => {
+                        tag.style.transition = 'all 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275)';
+                        tag.style.opacity = '1';
+                        tag.style.transform = 'translateY(0)';
+                    }, 150 * index + 500);
+                });
+            } else {
+                topicsElement.textContent = 'Aucun thème détecté';
+            }
+            
+            // Summary with fade-in animation
+            const summaryElement = document.getElementById('summaryResult');
+            summaryElement.textContent = data.summary || 'Aucun résumé disponible';
+            summaryElement.style.opacity = '0';
+            setTimeout(() => {
+                summaryElement.style.transition = 'opacity 0.8s ease-in-out';
+                summaryElement.style.opacity = '1';
+            }, 800);
+            
+            // Detailed Summary with fade-in animation
+            const detailedSummaryElement = document.getElementById('detailedSummaryResult');
+            detailedSummaryElement.textContent = data.detailed_summary || 'Aucun résumé détaillé disponible';
+            detailedSummaryElement.style.opacity = '0';
+            setTimeout(() => {
+                detailedSummaryElement.style.transition = 'opacity 0.8s ease-in-out';
+                detailedSummaryElement.style.opacity = '1';
+            }, 1000);
+            
+            // Positive Aspects
+            const positiveAspectsElement = document.getElementById('positiveAspectsResult');
+            positiveAspectsElement.innerHTML = '';
+            
+            if (data.positive_aspects && data.positive_aspects.length > 0) {
+                const list = document.createElement('ul');
+                list.className = 'list-group list-group-flush ultra-list';
+                
+                data.positive_aspects.forEach((aspect, index) => {
+                    const item = document.createElement('li');
+                    item.className = 'list-group-item border-0 bg-transparent ultra-list-item';
+                    item.innerHTML = `<i class="fas fa-check-circle text-success me-2"></i>${aspect}`;
+                    item.style.opacity = '0';
+                    item.style.transform = 'translateY(20px)';
+                    list.appendChild(item);
+                    
+                    // Staggered animation
+                    setTimeout(() => {
+                        item.style.transition = 'all 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275)';
+                        item.style.opacity = '1';
+                        item.style.transform = 'translateY(0)';
+                    }, 150 * index + 300);
+                });
+                
+                positiveAspectsElement.appendChild(list);
+            } else {
+                positiveAspectsElement.textContent = 'Aucun point positif identifié';
+            }
+            
+            // Negative Aspects
+            const negativeAspectsElement = document.getElementById('negativeAspectsResult');
+            negativeAspectsElement.innerHTML = '';
+            
+            if (data.negative_aspects && data.negative_aspects.length > 0) {
+                const list = document.createElement('ul');
+                list.className = 'list-group list-group-flush ultra-list';
+                
+                data.negative_aspects.forEach((aspect, index) => {
+                    const item = document.createElement('li');
+                    item.className = 'list-group-item border-0 bg-transparent ultra-list-item';
+                    item.innerHTML = `<i class="fas fa-exclamation-circle text-danger me-2"></i>${aspect}`;
+                    item.style.opacity = '0';
+                    item.style.transform = 'translateY(20px)';
+                    list.appendChild(item);
+                    
+                    // Staggered animation
+                    setTimeout(() => {
+                        item.style.transition = 'all 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275)';
+                        item.style.opacity = '1';
+                        item.style.transform = 'translateY(0)';
+                    }, 150 * index + 300);
+                });
+                
+                negativeAspectsElement.appendChild(list);
+            } else {
+                negativeAspectsElement.textContent = 'Aucun point négatif identifié';
+            }
+            
+            // Action Items
+            const actionItemsElement = document.getElementById('actionItemsResult');
+            actionItemsElement.innerHTML = '';
+            
+            if (data.action_items && data.action_items.length > 0) {
+                const list = document.createElement('div');
+                list.className = 'ultra-action-items';
+                
+                data.action_items.forEach((item, index) => {
+                    const actionItem = document.createElement('div');
+                    actionItem.className = 'ultra-action-item';
+                    actionItem.innerHTML = `
+                        <div class="ultra-action-number">${index + 1}</div>
+                        <div class="ultra-action-text">${item}</div>
+                    `;
+                    actionItem.style.opacity = '0';
+                    actionItem.style.transform = 'translateY(20px)';
+                    list.appendChild(actionItem);
+                    
+                    // Staggered animation
+                    setTimeout(() => {
+                        actionItem.style.transition = 'all 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275)';
+                        actionItem.style.opacity = '1';
+                        actionItem.style.transform = 'translateY(0)';
+                    }, 150 * index + 300);
+                });
+                
+                actionItemsElement.appendChild(list);
+            } else {
+                actionItemsElement.textContent = 'Aucune action suggérée';
+            }
+            
+            // Mood Analysis
+            const moodAnalysisElement = document.getElementById('moodAnalysisResult');
+            moodAnalysisElement.textContent = data.mood_analysis || 'Aucune analyse d\'humeur disponible';
+            moodAnalysisElement.style.opacity = '0';
+            setTimeout(() => {
+                moodAnalysisElement.style.transition = 'opacity 0.8s ease-in-out';
+                moodAnalysisElement.style.opacity = '1';
+            }, 1200);
+            
+            // Image analysis
+            const imageSection = document.getElementById('imageSection');
+            const imageCaptionElement = document.getElementById('imageCaptionResult');
+            const imageSceneElement = document.getElementById('imageSceneResult');
+            
+            if (data.image_caption || data.image_scene) {
+                imageSection.style.display = 'block';
+                imageCaptionElement.innerHTML = `<div class="p-3 rounded" style="background: rgba(255,255,255,0.1);">
+                    ${data.image_caption || 'Aucune description disponible'}
+                    ${data.image_analysis ? `<div class="mt-2 pt-2 border-top"><strong>Analyse:</strong> ${data.image_analysis}</div>` : ''}
+                </div>`;
+                
+                if (data.image_scene) {
+                    imageSceneElement.innerHTML = `<span class="ultra-tag ultra-tag-warning mt-2"><i class="fas fa-map-marker-alt me-2"></i> ${data.image_scene}</span>`;
+                } else {
+                    imageSceneElement.textContent = '';
+                }
+            } else {
+                imageSection.style.display = 'none';
+            }
+            
+            // Audio transcription
+            const audioSection = document.getElementById('audioSection');
+            const audioTranscriptionElement = document.getElementById('audioTranscriptionResult');
+            
+            if (data.audio_transcription) {
+                audioSection.style.display = 'block';
+                audioTranscriptionElement.innerHTML = `<div class="p-3 rounded" style="background: rgba(255,255,255,0.1);">${data.audio_transcription}</div>`;
+            } else {
+                audioSection.style.display = 'none';
+            }
+            
+            // Store analysis ID if available
+            if (data.analyse_id || data.analysis_id) {
+                saveJournalButton.dataset.analyseId = data.analyse_id || data.analysis_id;
+            }
+            
+            // Add confetti effect for a delightful touch
+            addConfettiEffect();
+        }
+        
+        // Confetti effect for results
+        function addConfettiEffect() {
+            const confettiCount = 100;
+            const colors = ['#6366f1', '#10b981', '#f59e0b', '#ef4444', '#3b82f6'];
+            
+            for (let i = 0; i < confettiCount; i++) {
+                const confetti = document.createElement('div');
+                confetti.style.position = 'absolute';
+                confetti.style.width = Math.random() * 10 + 5 + 'px';
+                confetti.style.height = Math.random() * 10 + 5 + 'px';
+                confetti.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+                confetti.style.borderRadius = '50%';
+                confetti.style.opacity = Math.random() * 0.5 + 0.5;
+                confetti.style.pointerEvents = 'none';
+                
+                // Position at top of results
+                const resultsRect = analysisResults.getBoundingClientRect();
+                confetti.style.left = resultsRect.left + Math.random() * resultsRect.width + 'px';
+                confetti.style.top = window.scrollY + resultsRect.top + 'px';
+                
+                // Add to DOM
+                document.body.appendChild(confetti);
+                
+                // Animate
+                const animation = confetti.animate([
+                    { transform: 'translate(0, 0)', opacity: 1 },
+                    { transform: `translate(${Math.random() * 100 - 50}px, ${Math.random() * 200 + 100}px)`, opacity: 0 }
+                ], {
+                    duration: Math.random() * 2000 + 1000,
+                    easing: 'cubic-bezier(0.175, 0.885, 0.32, 1.275)'
+                });
+                
+                // Remove after animation
+                animation.onfinish = () => {
+                    document.body.removeChild(confetti);
+                };
+            }
+        }
+        
+        // Save journal button (data is already saved after analysis)
+        saveJournalButton.addEventListener('click', () => {
+            // Show success notification
+            const notification = document.createElement('div');
+            notification.className = 'alert alert-success animate-fade-in';
+            notification.innerHTML = '<i class="fas fa-check-circle me-2"></i>Votre journal a déjà été enregistré lors de l\'analyse ! Redirection vers la liste...';
+            notification.style.position = 'fixed';
+            notification.style.top = '20px';
+            notification.style.right = '20px';
+            notification.style.maxWidth = '400px';
+            notification.style.zIndex = '1050';
+            document.body.appendChild(notification);
+            
+            // Redirect to journal list after 2 seconds
+            setTimeout(() => {
+                window.location.href = '/journal/';
+            }, 2000);
+        });
+        
+        // New analysis button
+        newAnalysisButton.addEventListener('click', () => {
+            // Reset form
+            document.getElementById('journalText').value = '';
+            audioPreview.innerHTML = '';
+            imagePreview.innerHTML = '';
+            audioBlob = null;
+            imageFile = null;
+            
+            // Hide results
+            analysisResults.style.display = 'none';
+            
+            // Switch to text tab
+            const textTab = document.getElementById('text-tab');
+            bootstrap.Tab.getOrCreateInstance(textTab).show();
+        });
+    });
+</script>
+{% endblock %}
