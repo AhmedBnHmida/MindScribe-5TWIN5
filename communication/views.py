@@ -914,15 +914,16 @@ class ListeConnexionsView(LoginRequiredMixin, View):
                 if reverse_exists and other_user.id not in connection_ids:
                     connection_ids.add(other_user.id)
                     
-                    # Get similarity data
+                    # Get similarity data - always calculate fresh for accurate scores
                     similarity_data = None
                     try:
                         similarity_data = SuggestionConnexionService.calculate_similarity(
                             request.user,
                             other_user
                         )
-                    except:
-                        pass
+                    except Exception as e:
+                        logger.warning(f"Error calculating similarity for {other_user.username}: {e}")
+                        similarity_data = None
                     
                     # Get recent journals
                     recent_journals = Journal.objects.filter(
@@ -957,6 +958,20 @@ class ListeConnexionsView(LoginRequiredMixin, View):
                             recent_journals = conn['recent_journals']
                             similarity_data = conn['similarity_data']
                             break
+                    
+                    # Always recalculate similarity for fresh/accurate data
+                    if selected_user and selected_user != request.user:
+                        try:
+                            similarity_data = SuggestionConnexionService.calculate_similarity(
+                                request.user,
+                                selected_user
+                            )
+                            # Update the selected_connection dict with fresh data
+                            if selected_connection:
+                                selected_connection['similarity_data'] = similarity_data
+                        except Exception as e:
+                            logger.error(f"Error recalculating similarity: {e}", exc_info=True)
+                            similarity_data = None
                     
                 except User.DoesNotExist:
                     pass

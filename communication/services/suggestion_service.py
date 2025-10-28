@@ -23,7 +23,7 @@ class SuggestionConnexionService:
     """
     
     # Configuration
-    MIN_SIMILARITY_SCORE = 0.35  # Minimum threshold to suggest a connection
+    MIN_SIMILARITY_SCORE = 0.25  # Minimum threshold to suggest a connection (lowered for better matching)
     MAX_SUGGESTIONS_PER_USER = 10  # Maximum suggestions to generate per call
     
     # Similarity weights (must sum to 1.0)
@@ -228,9 +228,21 @@ class SuggestionConnexionService:
         
         logger.info(f"🔍 Generating suggestions for user: {user.username}")
         
-        # Get all users and filter in Python (Djongo compatibility issue with exclude)
-        all_users = User.objects.filter(is_active=True)
-        all_other_users = [u for u in all_users if u.id != user.id]
+        # Get all users and filter in Python (Djongo compatibility issue with boolean filters + ordering)
+        # Fetch all users without filters/ordering first, then filter in Python
+        # This avoids Djongo's issue translating: WHERE is_active ORDER BY date_joined
+        try:
+            # First try: fetch with is_active filter but clear ordering
+            all_users_list = list(User.objects.filter(is_active=True).order_by())
+        except Exception as e:
+            # Fallback: fetch all users, filter is_active in Python
+            logger.warning(f"Query with is_active filter + order_by() failed: {e}. Using fallback.")
+            all_users_list = list(User.objects.all())
+            # Filter is_active in Python
+            all_users_list = [u for u in all_users_list if getattr(u, 'is_active', True) is True]
+        
+        # Filter out the current user (ensure is_active is still True as a double-check)
+        all_other_users = [u for u in all_users_list if u.id != user.id]
         
         # Get users who already have suggestions (convert to list for MongoDB compatibility)
         existing_suggestion_ids = list(SuggestionConnexion.objects.filter(

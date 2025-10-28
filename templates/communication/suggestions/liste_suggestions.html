@@ -428,7 +428,7 @@
                                     </div>
                                 </div>
                                 <div class="notification-score">
-                                    {{ suggestion.score_similarite|floatformat:1 }}%
+                                    {% widthratio suggestion.score_similarite 1 100 as score_percent_display %}{{ score_percent_display|floatformat:1 }}%
                                 </div>
                             </div>
                             
@@ -558,7 +558,7 @@
                                 <div class="info-item">
                                     <span class="info-label">Score global:</span>
                                     <span class="info-value" style="font-weight: bold; color: #667eea; font-size: 1.1em;">
-                                        {{ similarity_data.overall_score|floatformat:0 }}%
+                                        {% widthratio similarity_data.overall_score 1 100 as global_score_display %}{{ global_score_display|floatformat:0 }}%
                                     </span>
                                 </div>
                                 <div class="info-item">
@@ -590,7 +590,7 @@
                                                 {{ key|title }}
                                             {% endif %}
                                         </span>
-                                        <span style="font-weight: 600;">{{ value|floatformat:0 }}%</span>
+                                        <span style="font-weight: 600;">{% widthratio value 1 100 as detail_score %}{{ detail_score|floatformat:0 }}%</span>
                                     </div>
                                     {% endif %}
                                     {% endfor %}
