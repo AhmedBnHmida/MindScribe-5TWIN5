@@ -5,11 +5,12 @@
 
 {% block content %}
 <div class="content-wrapper">
-    <div class="content-wrapper">
-            <div class="container-fluid py-4">
+        <div class="container-fluid py-4">
+            <!-- Main Row with proper grid structure -->
+            <div class="row g-3">
                 <!-- Colonne des Journaux (gauche) -->
-                <div class="col-lg-3 col-xl-3 order-1">
-                    <div class="card">
+                <div class="col-lg-3 col-md-4 order-1">
+                    <div class="card h-100">
                         <div class="card-header d-flex justify-content-between align-items-center">
                             <h5 class="card-title mb-0">
                                 <i class="fas fa-book me-2"></i>Journaux
@@ -26,13 +27,13 @@
                             <div class="list-group list-group-flush" id="journals-list">
                                 {% for journal in journals %}
                                 <div class="list-group-item journal-item clickable-journal" 
-                                     tabindex="0"
-                                     data-journal-id="{{ journal.id }}"
-                                     data-journal-titre="{% if journal.contenu_texte %}{{ journal.contenu_texte|truncatechars:50 }}{% else %}Journal {{ journal.date_creation|date:'Y-m-d' }}{% endif %}"
-                                     data-journal-date="{{ journal.date_creation|date:'d/m/Y' }}"
-                                     data-journal-contenu="{% if journal.contenu_texte %}{{ journal.contenu_texte|escape }}{% else %}[{{ journal.type_entree }}: {{ journal.audio.name|default:journal.image.name|default:'Sans contenu' }}]{% endif %}"
-                                     data-journal-type="{{ journal.type_entree }}"
-                                     data-journal-categorie="{{ journal.categorie|default:'Non catégorisé' }}">
+                                    tabindex="0"
+                                    data-journal-id="{{ journal.id }}"
+                                    data-journal-titre="{% if journal.contenu_texte %}{{ journal.contenu_texte|truncatechars:50 }}{% else %}Journal {{ journal.date_creation|date:'Y-m-d' }}{% endif %}"
+                                    data-journal-date="{{ journal.date_creation|date:'d/m/Y' }}"
+                                    data-journal-contenu="{% if journal.contenu_texte %}{{ journal.contenu_texte|escape }}{% else %}[{{ journal.type_entree }}: {{ journal.audio.name|default:journal.image.name|default:'Sans contenu' }}]{% endif %}"
+                                    data-journal-type="{{ journal.type_entree }}"
+                                    data-journal-categorie="{{ journal.categorie|default:'Non catégorisé' }}">
                                     <div class="journal-content">
                                         <div class="d-flex w-100 justify-content-between mb-1">
                                             <h6 class="mb-0 small fw-semibold">{% if journal.contenu_texte %}{{ journal.contenu_texte|truncatechars:40 }}{% else %}Journal {{ journal.date_creation|date:'Y-m-d' }}{% endif %}</h6>
@@ -82,8 +83,8 @@
                 </div>
 
                 <!-- Zone principale Assistant IA (centre) -->
-                <div class="col-lg-5 col-xl-5 order-2">
-                    <div class="card">
+                <div class="col-lg-6 col-md-8 order-2">
+                    <div class="card h-100 d-flex flex-column">
                         <div class="card-header d-flex justify-content-between align-items-center">
                             <h4 class="mb-0">
                                 <i class="fas fa-robot me-2"></i>Assistant IA
@@ -98,9 +99,9 @@
                             </div>
                         </div>
                         
-                        <div class="card-body d-flex flex-column p-0">
-                            <div id="chat-messages" class="flex-grow-1 p-3 overflow-auto" style="max-height: 60vh; min-height: 400px;">
-                                <div class="text-center text-muted my-5">
+                        <div class="card-body d-flex flex-column p-0 flex-grow-1">
+                            <div id="chat-messages" class="flex-grow-1 p-3" style="overflow-y: auto; min-height: 400px;">
+                                <div class="text-center text-muted my-5" id="welcome-message">
                                     <i class="fas fa-robot fa-3x mb-3 text-primary"></i>
                                     <h5>Bonjour {{ user.first_name|default:user.username }} ! 👋</h5>
                                     <p class="mb-3">Je suis MindScribe, votre assistant pour l'écriture de journal.</p>
@@ -151,9 +152,9 @@
                                             <i class="fas fa-paperclip"></i>
                                         </button>
                                         <input type="text" id="message-input" 
-                                               class="form-control" 
-                                               placeholder="Posez votre question ou demandez une analyse..."
-                                               autocomplete="off">
+                                            class="form-control" 
+                                            placeholder="Posez votre question ou demandez une analyse..."
+                                            autocomplete="off">
                                         <button type="submit" class="btn btn-primary" id="send-btn">
                                             <i class="fas fa-paper-plane"></i>
                                         </button>
@@ -176,7 +177,7 @@
                 </div>
 
                 <!-- Colonne Stats & Historique (droite) -->
-                <div class="col-lg-3 col-xl-3 order-3">
+                <div class="col-lg-3 order-3">
                     <!-- Stats rapides -->
                     {% if stats %}
                     <div class="card mb-3 shadow-sm">
@@ -207,13 +208,13 @@
                     {% endif %}
 
                     <!-- Conversations récentes compact -->
-                    <div class="card" style="min-height: 300px;">
+                    <div class="card h-100">
                         <div class="card-header p-2 bg-light">
                             <h6 class="card-title mb-0 small fw-bold">
                                 <i class="fas fa-history me-1 text-primary"></i>Historique
                             </h6>
                         </div>
-                        <div class="card-body p-0" style="max-height: 60vh; min-height: 250px; overflow-y: auto;">
+                        <div class="card-body p-0" style="max-height: 300px; overflow-y: auto;">
                             <div class="list-group list-group-flush">
                                 {% for conv in conversations_recentes|slice:":8" %}
                                 <a href="{% url 'communication:historique_conversations' %}?session={{ conv.session_id }}" class="list-group-item p-2 conversation-item small border-bottom text-decoration-none" style="cursor: pointer; color: inherit;">
@@ -313,10 +314,12 @@
 {% endblock %}
 
 {% block extra_css %}
+{% load static %}
 <link rel="stylesheet" href="{% static 'css/assistant-ia.css' %}">
 {% endblock %}
 
 {% block extra_js %}
+{% load static %}
 <script src="{% static 'js/assistant-ia.js' %}"></script>
 <script>
     document.addEventListener('DOMContentLoaded', function() {
