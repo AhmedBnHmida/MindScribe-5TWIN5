@@ -12,6 +12,12 @@ from .views import (
     HistoriqueConversationsView,
     GetSessionView,
     RefreshJournalsView,
+    SuggestionsConnexionView,
+    AccepterSuggestionView,
+    IgnorerSuggestionView,
+    GenererSuggestionsView,
+    SupprimerConnexionView,
+    VoirProfilView,
 )
 
 app_name = 'communication'
@@ -40,5 +46,15 @@ urlpatterns = [
     path('assistant-ia/historique/', HistoriqueConversationsView.as_view(), name='historique_conversations'),
     path('assistant-ia/session/<str:session_id>/', GetSessionView.as_view(), name='session_history'),
     path('assistant-ia/refresh-journals/', RefreshJournalsView.as_view(), name='refresh_journals'),
+
+    # URLs Suggestions de Connexion
+    path('suggestions/', SuggestionsConnexionView.as_view(), name='suggestions'),
+    path('suggestions/<uuid:suggestion_id>/accepter/', AccepterSuggestionView.as_view(), name='accepter_suggestion'),
+    path('suggestions/<uuid:suggestion_id>/ignorer/', IgnorerSuggestionView.as_view(), name='ignorer_suggestion'),
+    path('suggestions/<uuid:suggestion_id>/supprimer/', SupprimerConnexionView.as_view(), name='supprimer_connexion'),
+    path('suggestions/generer/', GenererSuggestionsView.as_view(), name='generer_suggestions'),
+    
+    # URLs Profil utilisateur
+    path('profil/<int:user_id>/', VoirProfilView.as_view(), name='voir_profil'),
 ]
 

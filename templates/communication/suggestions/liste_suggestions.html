@@ -1,0 +1,619 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Notifications de Connexion - MindScribe{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/modern-styles.css' %}">
+<style>
+    .notification-container {
+        display: flex;
+        gap: 20px;
+        min-height: 80vh;
+    }
+    
+    .notification-sidebar {
+        flex: 1;
+        background: white;
+        border-radius: 15px;
+        padding: 20px;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+        max-height: 80vh;
+        overflow-y: auto;
+    }
+    
+    .profile-sidebar {
+        flex: 1;
+        background: white;
+        border-radius: 15px;
+        padding: 20px;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+        max-height: 80vh;
+        overflow-y: auto;
+    }
+    
+    .filter-tabs {
+        display: flex;
+        gap: 10px;
+        margin-bottom: 20px;
+        border-bottom: 2px solid #f0f0f0;
+        padding-bottom: 15px;
+    }
+    
+    .filter-tab {
+        padding: 10px 20px;
+        border: none;
+        background: transparent;
+        border-radius: 25px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        font-weight: 500;
+        position: relative;
+    }
+    
+    .filter-tab.active {
+        background: linear-gradient(45deg, #667eea, #764ba2);
+        color: white;
+    }
+    
+    .filter-tab:hover:not(.active) {
+        background: #f8f9fa;
+    }
+    
+    .notification-item {
+        background: #f8f9fa;
+        border-radius: 12px;
+        padding: 15px;
+        margin-bottom: 15px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        border-left: 4px solid transparent;
+    }
+    
+    .notification-item:hover {
+        background: #e9ecef;
+        transform: translateX(5px);
+    }
+    
+    .notification-item.selected {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border-left-color: #4CAF50;
+    }
+    
+    .notification-item.received {
+        border-left-color: #2196F3;
+    }
+    
+    .notification-item.sent {
+        border-left-color: #FF9800;
+    }
+    
+    .notification-item.accepted {
+        border-left-color: #4CAF50;
+    }
+    
+    .notification-item.ignored {
+        border-left-color: #f44336;
+    }
+    
+    .notification-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 8px;
+    }
+    
+    .notification-user {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+    
+    .user-avatar {
+        width: 40px;
+        height: 40px;
+        background: linear-gradient(45deg, #667eea, #764ba2);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-weight: bold;
+        font-size: 1.1em;
+    }
+    
+    .notification-info h4 {
+        margin: 0;
+        font-size: 1.1em;
+        font-weight: 600;
+    }
+    
+    .notification-info p {
+        margin: 0;
+        font-size: 0.9em;
+        opacity: 0.8;
+    }
+    
+    .notification-status {
+        padding: 4px 12px;
+        border-radius: 15px;
+        font-size: 0.8em;
+        font-weight: 600;
+    }
+    
+    .status-proposee {
+        background: rgba(33, 150, 243, 0.2);
+        color: #2196F3;
+    }
+    
+    .status-acceptee {
+        background: rgba(76, 175, 80, 0.2);
+        color: #4CAF50;
+    }
+    
+    .status-ignoree {
+        background: rgba(244, 67, 54, 0.2);
+        color: #f44336;
+    }
+    
+    .notification-score {
+        background: rgba(102, 126, 234, 0.1);
+        padding: 4px 8px;
+        border-radius: 10px;
+        font-size: 0.8em;
+        font-weight: 600;
+        color: #667eea;
+    }
+    
+    .notification-actions {
+        display: flex;
+        gap: 8px;
+        margin-top: 10px;
+    }
+    
+    .btn-action {
+        padding: 6px 12px;
+        border: none;
+        border-radius: 15px;
+        font-size: 0.8em;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        text-decoration: none;
+        display: inline-block;
+        text-align: center;
+    }
+    
+    .btn-accept {
+        background: #4CAF50;
+        color: white;
+    }
+    
+    .btn-accept:hover {
+        background: #45a049;
+        transform: scale(1.05);
+    }
+    
+    .btn-ignore {
+        background: #ff9800;
+        color: white;
+    }
+    
+    .btn-ignore:hover {
+        background: #f57c00;
+        transform: scale(1.05);
+    }
+    
+    .btn-remove {
+        background: #f44336;
+        color: white;
+    }
+    
+    .btn-remove:hover {
+        background: #d32f2f;
+        transform: scale(1.05);
+    }
+    
+    .empty-state {
+        text-align: center;
+        padding: 40px 20px;
+        color: #6c757d;
+    }
+    
+    .empty-state i {
+        font-size: 3em;
+        margin-bottom: 15px;
+        opacity: 0.5;
+    }
+    
+    .profile-header {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 20px;
+        border-radius: 15px;
+        margin-bottom: 20px;
+        text-align: center;
+    }
+    
+    .profile-avatar {
+        width: 80px;
+        height: 80px;
+        background: rgba(255,255,255,0.2);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 2em;
+        font-weight: bold;
+        margin: 0 auto 15px;
+        border: 3px solid rgba(255,255,255,0.3);
+    }
+    
+    .profile-info {
+        background: #f8f9fa;
+        border-radius: 12px;
+        padding: 15px;
+        margin-bottom: 15px;
+    }
+    
+    .info-section h5 {
+        color: #667eea;
+        margin-bottom: 10px;
+        font-weight: 600;
+        border-bottom: 2px solid #f0f0f0;
+        padding-bottom: 5px;
+    }
+    
+    .info-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 8px 0;
+        border-bottom: 1px solid #f8f9fa;
+    }
+    
+    .info-item:last-child {
+        border-bottom: none;
+    }
+    
+    .info-label {
+        font-weight: 600;
+        color: #495057;
+        font-size: 0.9em;
+    }
+    
+    .info-value {
+        color: #6c757d;
+        font-size: 0.9em;
+    }
+    
+    .tags {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+        margin-top: 8px;
+    }
+    
+    .tag {
+        background: linear-gradient(45deg, #667eea, #764ba2);
+        color: white;
+        padding: 4px 10px;
+        border-radius: 12px;
+        font-size: 0.8em;
+        font-weight: 500;
+    }
+    
+    .connection-status {
+        background: linear-gradient(45deg, #28a745, #20c997);
+        color: white;
+        padding: 8px 16px;
+        border-radius: 20px;
+        font-weight: 600;
+        margin-top: 15px;
+        display: inline-block;
+        font-size: 0.9em;
+    }
+    
+    .no-connection {
+        background: linear-gradient(45deg, #6c757d, #495057);
+    }
+    
+    .journal-entry {
+        background: white;
+        border-radius: 8px;
+        padding: 12px;
+        margin-bottom: 10px;
+        border-left: 3px solid #667eea;
+        font-size: 0.9em;
+    }
+    
+    .journal-date {
+        font-size: 0.8em;
+        color: #6c757d;
+        margin-bottom: 5px;
+    }
+    
+    .journal-content {
+        color: #495057;
+        line-height: 1.4;
+    }
+    
+    .generate-btn {
+        background: linear-gradient(45deg, #667eea, #764ba2);
+        color: white;
+        padding: 12px 20px;
+        border: none;
+        border-radius: 25px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        text-decoration: none;
+        display: inline-block;
+        margin-bottom: 20px;
+    }
+    
+    .generate-btn:hover {
+        background: linear-gradient(45deg, #764ba2, #667eea);
+        transform: scale(1.05);
+        text-decoration: none;
+        color: white;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <!-- Header -->
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2 class="mb-0">
+                    <i class="fas fa-bell"></i> Notifications de Connexion
+                </h2>
+                <form method="post" action="{% url 'communication:generer_suggestions' %}" style="display: inline;">
+                    {% csrf_token %}
+                    <button type="submit" class="generate-btn">
+                        <i class="fas fa-magic"></i> Générer de nouvelles suggestions
+                    </button>
+                </form>
+            </div>
+
+            <!-- Notification Container -->
+            <div class="notification-container">
+                <!-- Left Sidebar - Notifications -->
+                <div class="notification-sidebar">
+                    <!-- Filter Tabs -->
+                    <div class="filter-tabs">
+                        <button class="filter-tab {% if filter_type == 'all' %}active{% endif %}" 
+                                onclick="filterNotifications('all')">
+                            <i class="fas fa-list"></i> Toutes ({{ all_suggestions.count }})
+                        </button>
+                        <button class="filter-tab {% if filter_type == 'received' %}active{% endif %}" 
+                                onclick="filterNotifications('received')">
+                            <i class="fas fa-inbox"></i> Reçues ({{ all_suggestions|length|add:"-1" }})
+                        </button>
+                        <button class="filter-tab {% if filter_type == 'sent' %}active{% endif %}" 
+                                onclick="filterNotifications('sent')">
+                            <i class="fas fa-paper-plane"></i> Envoyées ({{ all_suggestions|length|add:"-1" }})
+                        </button>
+                        <button class="filter-tab {% if filter_type == 'accepted' %}active{% endif %}" 
+                                onclick="filterNotifications('accepted')">
+                            <i class="fas fa-check-circle"></i> Acceptées ({{ all_suggestions|length|add:"-1" }})
+                        </button>
+                        <button class="filter-tab {% if filter_type == 'ignored' %}active{% endif %}" 
+                                onclick="filterNotifications('ignored')">
+                            <i class="fas fa-times-circle"></i> Ignorées ({{ all_suggestions|length|add:"-1" }})
+                        </button>
+                    </div>
+
+                    <!-- Notifications List -->
+                    {% if suggestions %}
+                        {% for suggestion in suggestions %}
+                        <div class="notification-item 
+                                    {% if suggestion.utilisateur_cible == user %}received{% else %}sent{% endif %}
+                                    {% if suggestion.statut == 'acceptee' %}accepted{% elif suggestion.statut == 'ignoree' %}ignored{% endif %}
+                                    {% if selected_user and suggestion.utilisateur_source.id == selected_user.id or suggestion.utilisateur_cible.id == selected_user.id %}selected{% endif %}"
+                             onclick="selectNotification('{{ suggestion.id }}', '{{ suggestion.utilisateur_source.id }}', '{{ suggestion.utilisateur_cible.id }}')">
+                            
+                            <div class="notification-header">
+                                <div class="notification-user">
+                                    <div class="user-avatar">
+                                        {% if suggestion.utilisateur_cible == user %}
+                                            {{ suggestion.utilisateur_source.username|first|upper }}
+                                        {% else %}
+                                            {{ suggestion.utilisateur_cible.username|first|upper }}
+                                        {% endif %}
+                                    </div>
+                                    <div class="notification-info">
+                                        <h4>
+                                            {% if suggestion.utilisateur_cible == user %}
+                                                {{ suggestion.utilisateur_source.username }}
+                                            {% else %}
+                                                {{ suggestion.utilisateur_cible.username }}
+                                            {% endif %}
+                                        </h4>
+                                        <p>{{ suggestion.date_suggestion|date:"d/m/Y à H:i" }}</p>
+                                    </div>
+                                </div>
+                                <div class="notification-score">
+                                    {{ suggestion.score_similarite|floatformat:1 }}%
+                                </div>
+                            </div>
+                            
+                            <div class="d-flex justify-content-between align-items-center">
+                                <span class="notification-status status-{{ suggestion.statut }}">
+                                    {{ suggestion.get_statut_display }}
+                                </span>
+                                <small class="text-muted">{{ suggestion.get_type_suggestion_display }}</small>
+                            </div>
+                            
+                            {% if suggestion.statut == 'proposee' and suggestion.utilisateur_cible == user %}
+                            <div class="notification-actions">
+                                <form method="post" action="{% url 'communication:accepter_suggestion' suggestion.id %}" style="display: inline;">
+                                    {% csrf_token %}
+                                    <button type="submit" class="btn-action btn-accept">
+                                        <i class="fas fa-check"></i> Accepter
+                                    </button>
+                                </form>
+                                <form method="post" action="{% url 'communication:ignorer_suggestion' suggestion.id %}" style="display: inline;">
+                                    {% csrf_token %}
+                                    <button type="submit" class="btn-action btn-ignore">
+                                        <i class="fas fa-times"></i> Ignorer
+                                    </button>
+                                </form>
+                            </div>
+                            {% elif suggestion.statut == 'acceptee' %}
+                            <div class="notification-actions">
+                                <form method="post" action="{% url 'communication:supprimer_connexion' suggestion.id %}" style="display: inline;">
+                                    {% csrf_token %}
+                                    <button type="submit" class="btn-action btn-remove" 
+                                            onclick="return confirm('Êtes-vous sûr de vouloir supprimer cette connexion ?')">
+                                        <i class="fas fa-trash"></i> Supprimer
+                                    </button>
+                                </form>
+                            </div>
+                            {% endif %}
+                        </div>
+                        {% endfor %}
+                    {% else %}
+                        <div class="empty-state">
+                            <i class="fas fa-bell-slash"></i>
+                            <h4>Aucune notification</h4>
+                            <p>Aucune suggestion trouvée pour ce filtre.</p>
+                        </div>
+                    {% endif %}
+                </div>
+
+                <!-- Right Sidebar - Profile -->
+                <div class="profile-sidebar">
+                    {% if selected_user %}
+                        <!-- Profile Header -->
+                        <div class="profile-header">
+                            <div class="profile-avatar">
+                                {{ selected_user.username|first|upper }}
+                            </div>
+                            <h3>{{ selected_user.first_name }} {{ selected_user.last_name }}</h3>
+                            <p class="mb-0">@{{ selected_user.username }}</p>
+                            {% if connection_exists %}
+                                <div class="connection-status">
+                                    <i class="fas fa-check-circle"></i> Connecté
+                                </div>
+                            {% else %}
+                                <div class="connection-status no-connection">
+                                    <i class="fas fa-user-plus"></i> Non connecté
+                                </div>
+                            {% endif %}
+                        </div>
+                        
+                        <!-- Profile Information -->
+                        <div class="profile-info">
+                            <div class="info-section">
+                                <h5><i class="fas fa-user"></i> Informations</h5>
+                                <div class="info-item">
+                                    <span class="info-label">Email:</span>
+                                    <span class="info-value">{{ selected_user.email }}</span>
+                                </div>
+                                <div class="info-item">
+                                    <span class="info-label">Âge:</span>
+                                    <span class="info-value">{{ selected_user.age|default:"Non spécifié" }} ans</span>
+                                </div>
+                                <div class="info-item">
+                                    <span class="info-label">Profession:</span>
+                                    <span class="info-value">{{ selected_user.profession|default:"Non spécifié" }}</span>
+                                </div>
+                            </div>
+                            
+                            {% if selected_user.passions %}
+                            <div class="info-section">
+                                <h5><i class="fas fa-heart"></i> Passions</h5>
+                                <div class="tags">
+                                    {% for passion in selected_user.passions %}
+                                        <span class="tag">{{ passion }}</span>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                            {% endif %}
+                            
+                            {% if selected_user.objectifs_personnels %}
+                            <div class="info-section">
+                                <h5><i class="fas fa-target"></i> Objectifs</h5>
+                                <div class="tags">
+                                    {% for objectif in selected_user.objectifs_personnels %}
+                                        <span class="tag">{{ objectif }}</span>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                            {% endif %}
+                        </div>
+                        
+                        <!-- Recent Journals -->
+                        {% if recent_journals %}
+                        <div class="profile-info">
+                            <h5><i class="fas fa-book-open"></i> Entrées récentes</h5>
+                            {% for journal in recent_journals %}
+                            <div class="journal-entry">
+                                <div class="journal-date">
+                                    <i class="fas fa-calendar"></i> {{ journal.date_creation|date:"d/m/Y à H:i" }}
+                                </div>
+                                <div class="journal-content">
+                                    {{ journal.contenu_texte|truncatewords:15 }}
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+                    {% else %}
+                        <div class="empty-state">
+                            <i class="fas fa-user"></i>
+                            <h4>Sélectionnez une notification</h4>
+                            <p>Cliquez sur une notification pour voir le profil de l'utilisateur.</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function filterNotifications(filter) {
+    const url = new URL(window.location);
+    url.searchParams.set('filter', filter);
+    window.location.href = url.toString();
+}
+
+function selectNotification(suggestionId, userId1, userId2) {
+    const url = new URL(window.location);
+    // Determine which user to show profile for
+    const currentUserId = {{ user.id }};
+    const selectedUserId = (userId1 == currentUserId) ? userId2 : userId1;
+    url.searchParams.set('user_id', selectedUserId);
+    window.location.href = url.toString();
+}
+
+// Add click animations
+document.addEventListener('DOMContentLoaded', function() {
+    const notificationItems = document.querySelectorAll('.notification-item');
+    notificationItems.forEach(item => {
+        item.addEventListener('click', function() {
+            this.style.transform = 'scale(0.98)';
+            setTimeout(() => {
+                this.style.transform = '';
+            }, 150);
+        });
+    });
+    
+    const actionButtons = document.querySelectorAll('.btn-action');
+    actionButtons.forEach(button => {
+        button.addEventListener('click', function(e) {
+            e.stopPropagation(); // Prevent notification selection
+            this.style.transform = 'scale(0.95)';
+            setTimeout(() => {
+                this.style.transform = '';
+            }, 150);
+        });
+    });
+});
+</script>
+{% endblock %}

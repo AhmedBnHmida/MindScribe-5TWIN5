@@ -16,52 +16,59 @@
         <div class="flex-grow-1 p-3">
             <ul class="nav flex-column">
                 <li class="nav-item mb-2">
-                    <a class="nav-link active bg-primary text-whitetext-dark rounded-3" 
+                    <a class="nav-link {% if request.resolver_match.url_name == 'dashboard' or request.resolver_match.url_name == 'landing' %}active bg-primary text-white{% else %}text-dark{% endif %} rounded-3" 
                      href="/dashboard/">
                         <i class="fas fa-home me-2"></i>Tableau de bord
                     </a>
                 </li>
 
                 <!-- Rapports -->
-                <li class="nav-item dropdown">
-                    <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
+                <li class="nav-item mb-2">
+                    <a class="nav-link {% if request.resolver_match.namespace == 'communication' and request.resolver_match.url_name in 'dashboard,generer_rapport,liste_rapports' %}active bg-primary text-white{% else %}text-dark{% endif %} rounded-3" 
+                       href="#" onclick="toggleSubmenu('rapports')" style="cursor: pointer;">
                         <i class="fas fa-chart-line me-2"></i>Rapports
+                        <i class="fas fa-chevron-down ms-auto" id="rapports-chevron"></i>
                     </a>
-                    <ul class="dropdown-menu">
-                        <li>
-                            <a class="dropdown-item" href="{% url 'communication:dashboard' %}">
-                                📊 Dashboard
+                    <ul class="nav flex-column ms-3 mt-2" id="rapports-submenu" style="display: none;">
+                        <li class="nav-item mb-1">
+                            <a class="nav-link {% if request.resolver_match.url_name == 'dashboard' %}active bg-primary text-white{% else %}text-dark{% endif %} rounded-3 py-2 px-3" 
+                               href="{% url 'communication:dashboard' %}">
+                                <i class="fas fa-tachometer-alt me-2 text-info"></i>Dashboard
                             </a>
                         </li>
-                        <li>
-                            <a class="dropdown-item" href="{% url 'communication:generer_rapport' %}">
-                                🚀 Générer un rapport
+                        <li class="nav-item mb-1">
+                            <a class="nav-link {% if request.resolver_match.url_name == 'generer_rapport' %}active bg-primary text-white{% else %}text-dark{% endif %} rounded-3 py-2 px-3" 
+                               href="{% url 'communication:generer_rapport' %}">
+                                <i class="fas fa-rocket me-2 text-success"></i>Générer un rapport
                             </a>
                         </li>
-                        <li>
-                            <a class="dropdown-item" href="{% url 'communication:liste_rapports' %}">
-                                📋 Mes rapports
+                        <li class="nav-item mb-1">
+                            <a class="nav-link {% if request.resolver_match.url_name == 'liste_rapports' %}active bg-primary text-white{% else %}text-dark{% endif %} rounded-3 py-2 px-3" 
+                               href="{% url 'communication:liste_rapports' %}">
+                                <i class="fas fa-file-alt me-2 text-warning"></i>Mes rapports
                             </a>
                         </li>
                     </ul>
                 </li>
 
                 <!-- Assistant IA -->
-                <li class="nav-item dropdown">
-                    <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
+                <li class="nav-item mb-2">
+                    <a class="nav-link {% if request.resolver_match.namespace == 'communication' and request.resolver_match.url_name in 'assistant_ia,historique_conversations' %}active bg-primary text-white{% else %}text-dark{% endif %} rounded-3" 
+                       href="#" onclick="toggleSubmenu('assistant')" style="cursor: pointer;">
                         <i class="fas fa-robot me-2"></i>Assistant IA
+                        <i class="fas fa-chevron-down ms-auto" id="assistant-chevron"></i>
                     </a>
-                    <ul class="dropdown-menu">
-                        <li>
-                            <a class="dropdown-item {% if request.resolver_match.url_name == 'assistant_ia' %}active{% endif %}" 
-                                href="{% url 'communication:assistant_ia' %}">
-                                🤖 Assistant IA
+                    <ul class="nav flex-column ms-3 mt-2" id="assistant-submenu" style="display: none;">
+                        <li class="nav-item mb-1">
+                            <a class="nav-link {% if request.resolver_match.url_name == 'assistant_ia' %}active bg-primary text-white{% else %}text-dark{% endif %} rounded-3 py-2 px-3" 
+                               href="{% url 'communication:assistant_ia' %}">
+                                <i class="fas fa-comments me-2 text-primary"></i>Assistant IA
                             </a>
                         </li>
-                        <li>
-                            <a class="dropdown-item {% if request.resolver_match.url_name == 'historique_conversations' %}active{% endif %}" 
-                                href="{% url 'communication:historique_conversations' %}">
-                                📝 Historique Conversations
+                        <li class="nav-item mb-1">
+                            <a class="nav-link {% if request.resolver_match.url_name == 'historique_conversations' %}active bg-primary text-white{% else %}text-dark{% endif %} rounded-3 py-2 px-3" 
+                               href="{% url 'communication:historique_conversations' %}">
+                                <i class="fas fa-history me-2 text-info"></i>Historique Conversations
                             </a>
                         </li>
                     </ul>
@@ -99,13 +106,6 @@
                     <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
                         <i class="fas fa-link me-2"></i>Suggestions connexions
                     </a>
-                    <ul class="dropdown-menu">
-                        <li>
-                            <a class="dropdown-item" href="">
-                                👥 Suggestions connexions
-                            </a>
-                        </li>
-                    </ul>
                 </li>
                 
                 <li class="nav-item mb-2">
@@ -157,3 +157,173 @@
         </div>
     </div>
 </div>
+
+<style>
+/* Enhanced Navbar Styles */
+.sidebar {
+    background: linear-gradient(180deg, #f8f9fa 0%, #e9ecef 100%);
+    border-right: 1px solid #dee2e6;
+    box-shadow: 2px 0 10px rgba(0,0,0,0.1);
+}
+
+.nav-link {
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+.nav-link:hover {
+    transform: translateX(5px);
+    background: rgba(102, 126, 234, 0.1) !important;
+}
+
+.nav-link.active {
+    background: linear-gradient(45deg, #667eea, #764ba2) !important;
+    color: white !important;
+    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+}
+
+.nav-link.active::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0;
+    height: 100%;
+    width: 4px;
+    background: #4CAF50;
+    border-radius: 0 2px 2px 0;
+}
+
+/* Submenu Styles */
+#rapports-submenu, #assistant-submenu {
+    background: rgba(102, 126, 234, 0.05);
+    border-radius: 8px;
+    border-left: 3px solid #667eea;
+    margin-left: 15px !important;
+    padding: 8px 0;
+    animation: slideDown 0.3s ease;
+}
+
+#rapports-submenu .nav-link, #assistant-submenu .nav-link {
+    font-size: 0.9em;
+    margin: 2px 8px;
+    border-radius: 6px;
+}
+
+#rapports-submenu .nav-link:hover, #assistant-submenu .nav-link:hover {
+    background: rgba(102, 126, 234, 0.1) !important;
+    transform: translateX(3px);
+}
+
+#rapports-submenu .nav-link.active, #assistant-submenu .nav-link.active {
+    background: linear-gradient(45deg, #667eea, #764ba2) !important;
+    color: white !important;
+    box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
+}
+
+/* Chevron Animation */
+.fa-chevron-down {
+    transition: transform 0.3s ease;
+}
+
+.fa-chevron-down.rotated {
+    transform: rotate(180deg);
+}
+
+/* Brand Enhancement */
+.navbar-brand {
+    background: linear-gradient(45deg, #667eea, #764ba2);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    font-weight: bold;
+    font-size: 1.3em;
+}
+
+/* User Info Enhancement */
+.text-center.p-4 {
+    background: rgba(102, 126, 234, 0.05);
+    border-radius: 12px;
+    margin: 10px;
+    border: 1px solid rgba(102, 126, 234, 0.1);
+}
+
+/* Logout Button Enhancement */
+.btn-outline-danger {
+    border-radius: 8px;
+    font-weight: 600;
+    transition: all 0.3s ease;
+}
+
+.btn-outline-danger:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(220, 53, 69, 0.3);
+}
+
+/* Animations */
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Icon Colors */
+.text-info { color: #17a2b8 !important; }
+.text-success { color: #28a745 !important; }
+.text-warning { color: #ffc107 !important; }
+.text-primary { color: #007bff !important; }
+</style>
+
+<script>
+function toggleSubmenu(menuType) {
+    const submenu = document.getElementById(menuType + '-submenu');
+    const chevron = document.getElementById(menuType + '-chevron');
+    
+    if (submenu.style.display === 'none' || submenu.style.display === '') {
+        submenu.style.display = 'block';
+        chevron.classList.add('rotated');
+    } else {
+        submenu.style.display = 'none';
+        chevron.classList.remove('rotated');
+    }
+}
+
+// Auto-expand submenu if current page is in it
+document.addEventListener('DOMContentLoaded', function() {
+    // Check if we're in rapports section
+    const rapportsUrls = ['dashboard', 'generer_rapport', 'liste_rapports'];
+    const currentUrl = window.location.pathname;
+    
+    if (rapportsUrls.some(url => currentUrl.includes(url))) {
+        toggleSubmenu('rapports');
+    }
+    
+    // Check if we're in assistant section
+    const assistantUrls = ['assistant_ia', 'historique_conversations'];
+    if (assistantUrls.some(url => currentUrl.includes(url))) {
+        toggleSubmenu('assistant');
+    }
+});
+
+// Add smooth hover effects
+document.addEventListener('DOMContentLoaded', function() {
+    const navLinks = document.querySelectorAll('.nav-link');
+    
+    navLinks.forEach(link => {
+        link.addEventListener('mouseenter', function() {
+            this.style.transform = 'translateX(5px)';
+        });
+        
+        link.addEventListener('mouseleave', function() {
+            if (!this.classList.contains('active')) {
+                this.style.transform = 'translateX(0)';
+            }
+        });
+    });
+});
+</script>

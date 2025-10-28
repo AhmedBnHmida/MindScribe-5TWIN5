@@ -18,6 +18,7 @@ from .models import AssistantIA
 from .services.ai_service import ai_service
 
 from .models import RapportPDF, ModeleRapport, HistoriqueGeneration, AssistantIA, SuggestionConnexion
+from django.db.models import Q
 from .services.pdf_generator import PDFGenerationService
 from dashboard.models import Statistique
 from journal.models import Journal
@@ -462,6 +463,280 @@ class RefreshJournalsView(LoginRequiredMixin, View):
         except Exception as e:
             logger.error(f"Erreur récupération journaux: {str(e)}")
             return JsonResponse({'success': False, 'error': 'Erreur lors de la récupération des journaux'}, status=500)
+        
+
+#############################################################################################################################
+#############################################################################################################################
+# ... SuggestionConnexion Views ...
+
+class SuggestionsConnexionView(LoginRequiredMixin, View):
+    """View to display connection suggestions for the user with notification system"""
+    
+    def get(self, request):
+        try:
+            filter_type = request.GET.get('filter', 'all')
+            selected_user_id = request.GET.get('user_id')
+            
+            # Get all suggestions involving the user
+            all_suggestions = SuggestionConnexion.objects.filter(
+                Q(utilisateur_source=request.user) | Q(utilisateur_cible=request.user)
+            ).select_related('utilisateur_source', 'utilisateur_cible').order_by('-date_suggestion')
+            
+            # Filter based on type
+            if filter_type == 'received':
+                suggestions = all_suggestions.filter(utilisateur_cible=request.user)
+            elif filter_type == 'sent':
+                suggestions = all_suggestions.filter(utilisateur_source=request.user)
+            elif filter_type == 'accepted':
+                suggestions = all_suggestions.filter(statut='acceptee')
+            elif filter_type == 'ignored':
+                suggestions = all_suggestions.filter(statut='ignoree')
+            else:
+                suggestions = all_suggestions
+            
+            # Get selected user profile if user_id is provided
+            selected_user = None
+            if selected_user_id:
+                try:
+                    from django.contrib.auth import get_user_model
+                    User = get_user_model()
+                    selected_user = User.objects.get(id=selected_user_id)
+                except User.DoesNotExist:
+                    pass
+            
+            context = {
+                'suggestions': suggestions,
+                'all_suggestions': all_suggestions,
+                'filter_type': filter_type,
+                'selected_user': selected_user,
+                'active_tab': 'suggestions',
+                'types_suggestion': SuggestionConnexion.TYPE_SUGGESTION_CHOICES,
+            }
+            return render(request, 'communication/suggestions/liste_suggestions.html', context)
+            
+        except Exception as e:
+            logger.error(f"Erreur chargement suggestions: {str(e)}")
+            messages.error(request, "Erreur lors du chargement des suggestions")
+            return redirect('communication:dashboard')
+
+
+class AccepterSuggestionView(LoginRequiredMixin, View):
+    """View to accept a connection suggestion"""
+    
+    def post(self, request, suggestion_id):
+        try:
+            suggestion = get_object_or_404(
+                SuggestionConnexion,
+                id=suggestion_id,
+                utilisateur_cible=request.user,
+                statut='proposee'
+            )
+            
+            # Update suggestion status
+            suggestion.statut = 'acceptee'
+            suggestion.save()
+            
+            # Create reverse suggestion if it doesn't exist (but keep it as 'proposee')
+            reverse_suggestion, created = SuggestionConnexion.objects.get_or_create(
+                utilisateur_source=request.user,
+                utilisateur_cible=suggestion.utilisateur_source,
+                defaults={
+                    'score_similarite': suggestion.score_similarite,
+                    'type_suggestion': suggestion.type_suggestion,
+                    'statut': 'proposee'  # Keep as proposed, not auto-accepted
+                }
+            )
+            
+            # Don't auto-accept the reverse suggestion - let the other user decide
+            
+            messages.success(request, f"✅ Connexion acceptée avec {suggestion.utilisateur_source.username}!")
+            return redirect('communication:suggestions')
+            
+        except Exception as e:
+            logger.error(f"Erreur acceptation suggestion {suggestion_id}: {str(e)}")
+            messages.error(request, "Erreur lors de l'acceptation de la suggestion")
+            return redirect('communication:suggestions')
+
+
+class IgnorerSuggestionView(LoginRequiredMixin, View):
+    """View to ignore a connection suggestion"""
+    
+    def post(self, request, suggestion_id):
+        try:
+            suggestion = get_object_or_404(
+                SuggestionConnexion,
+                id=suggestion_id,
+                utilisateur_cible=request.user,
+                statut='proposee'
+            )
+            
+            suggestion.statut = 'ignoree'
+            suggestion.save()
+            
+            messages.info(request, f"Suggestion de {suggestion.utilisateur_source.username} ignorée")
+            return redirect('communication:suggestions')
+            
+        except Exception as e:
+            logger.error(f"Erreur ignore suggestion {suggestion_id}: {str(e)}")
+            messages.error(request, "Erreur lors de l'ignorance de la suggestion")
+            return redirect('communication:suggestions')
+
+
+class GenererSuggestionsView(LoginRequiredMixin, View):
+    """View to generate new connection suggestions"""
+    
+    def post(self, request):
+        try:
+            # This would typically call a service to generate suggestions
+            # For now, we'll create a simple implementation
+            
+            # Get user's recent journal entries for analysis
+            recent_journals = Journal.objects.filter(
+                utilisateur=request.user
+            ).order_by('-date_creation')[:10]
+            
+            if not recent_journals.exists():
+                messages.warning(request, "Vous devez avoir des entrées de journal pour générer des suggestions")
+                return redirect('communication:suggestions')
+            
+            # Simple suggestion logic (in a real app, this would use AI/ML)
+            suggestions_created = self._generer_suggestions_simples(request.user)
+            
+            if suggestions_created > 0:
+                messages.success(request, f"✅ {suggestions_created} nouvelle(s) suggestion(s) générée(s)!")
+            else:
+                messages.info(request, "Aucune nouvelle suggestion trouvée pour le moment")
+            
+            return redirect('communication:suggestions')
+            
+        except Exception as e:
+            logger.error(f"Erreur génération suggestions: {str(e)}")
+            messages.error(request, "Erreur lors de la génération des suggestions")
+            return redirect('communication:suggestions')
+    
+    def _generer_suggestions_simples(self, user):
+        """Simple suggestion generation logic"""
+        from django.contrib.auth import get_user_model
+        User = get_user_model()
+        
+        # Get other users who have journals
+        other_users = User.objects.exclude(id=user.id).filter(
+            journal__isnull=False
+        ).distinct()[:5]  # Limit to 5 suggestions
+        
+        suggestions_created = 0
+        
+        for other_user in other_users:
+            # Check if suggestion already exists
+            if SuggestionConnexion.objects.filter(
+                utilisateur_source=user,
+                utilisateur_cible=other_user
+            ).exists():
+                continue
+            
+            # Simple similarity score based on journal count
+            user_journal_count = Journal.objects.filter(utilisateur=user).count()
+            other_journal_count = Journal.objects.filter(utilisateur=other_user).count()
+            
+            # Calculate similarity score (simplified)
+            similarity_score = min(user_journal_count, other_journal_count) / max(user_journal_count, other_journal_count, 1)
+            
+            if similarity_score > 0.3:  # Only suggest if similarity > 30%
+                SuggestionConnexion.objects.create(
+                    utilisateur_source=user,
+                    utilisateur_cible=other_user,
+                    score_similarite=similarity_score,
+                    type_suggestion='objectif_similaire'
+                )
+                suggestions_created += 1
+        
+        return suggestions_created
+
+
+class SupprimerConnexionView(LoginRequiredMixin, View):
+    """View to remove an accepted connection"""
+    
+    def post(self, request, suggestion_id):
+        try:
+            suggestion = get_object_or_404(
+                SuggestionConnexion,
+                id=suggestion_id,
+                statut='acceptee'
+            )
+            
+            # Check if user is part of this connection
+            if suggestion.utilisateur_source != request.user and suggestion.utilisateur_cible != request.user:
+                messages.error(request, "Vous n'êtes pas autorisé à supprimer cette connexion")
+                return redirect('communication:suggestions')
+            
+            # Find and update both directions of the connection
+            SuggestionConnexion.objects.filter(
+                Q(utilisateur_source=suggestion.utilisateur_source, utilisateur_cible=suggestion.utilisateur_cible) |
+                Q(utilisateur_source=suggestion.utilisateur_cible, utilisateur_cible=suggestion.utilisateur_source),
+                statut='acceptee'
+            ).update(statut='ignoree')
+            
+            other_user = suggestion.utilisateur_cible if suggestion.utilisateur_source == request.user else suggestion.utilisateur_source
+            messages.success(request, f"Connexion avec {other_user.username} supprimée")
+            return redirect('communication:suggestions')
+            
+        except Exception as e:
+            logger.error(f"Erreur suppression connexion {suggestion_id}: {str(e)}")
+            messages.error(request, "Erreur lors de la suppression de la connexion")
+            return redirect('communication:suggestions')
+
+
+class VoirProfilView(LoginRequiredMixin, View):
+    """View to display user profile"""
+    
+    def get(self, request, user_id):
+        try:
+            from django.contrib.auth import get_user_model
+            User = get_user_model()
+            
+            # Get the user profile
+            profile_user = get_object_or_404(User, id=user_id)
+            
+            # Check if there's a connection between current user and profile user
+            connection_exists = SuggestionConnexion.objects.filter(
+                Q(utilisateur_source=request.user, utilisateur_cible=profile_user) |
+                Q(utilisateur_source=profile_user, utilisateur_cible=request.user),
+                statut='acceptee'
+            ).exists()
+            
+            # Get recent journal entries (if accessible)
+            recent_journals = []
+            try:
+                from journal.models import Journal
+                recent_journals = Journal.objects.filter(
+                    utilisateur=profile_user
+                ).order_by('-date_creation')[:5]
+            except ImportError:
+                pass
+            
+            # Get user statistics (if accessible)
+            user_stats = None
+            try:
+                from dashboard.models import Statistique
+                user_stats = Statistique.objects.filter(
+                    utilisateur=profile_user
+                ).order_by('-periode')[:3]
+            except ImportError:
+                pass
+            
+            context = {
+                'profile_user': profile_user,
+                'connection_exists': connection_exists,
+                'recent_journals': recent_journals,
+                'user_stats': user_stats,
+                'active_tab': 'profile',
+            }
+            return render(request, 'communication/profile/user_profile.html', context)
+            
+        except Exception as e:
+            logger.error(f"Erreur chargement profil {user_id}: {str(e)}")
+            messages.error(request, "Erreur lors du chargement du profil")
+            return redirect('communication:suggestions')
         
 
 
