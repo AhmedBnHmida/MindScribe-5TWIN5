@@ -50,9 +50,534 @@
     border-color: #28a745;
 }
 
+.journal-item.multimodal-journal {
+    border-left: 4px solid #ffc107;
+    background: linear-gradient(135deg, rgba(255, 193, 7, 0.1), rgba(255, 193, 7, 0.05));
+}
+
+.journal-item.multimodal-journal:hover {
+    border-left-color: #ff9800;
+    box-shadow: 0 4px 15px rgba(255, 193, 7, 0.3);
+}
+
+/* Selected Journal Indicator */
+#selected-journal-indicator {
+    animation: slideDown 0.3s ease;
+    border-radius: 8px;
+    border-left: 4px solid #667eea;
+}
+
+#selected-journal-indicator .btn-close {
+    padding: 0.25rem;
+    font-size: 0.875rem;
+}
+
+/* Character Counter */
+#char-count {
+    font-weight: 600;
+    transition: color 0.3s ease;
+}
+
+#char-count.text-danger {
+    animation: pulse 1s infinite;
+}
+
+@keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.7; }
+}
+
+/* Badge Enhancements */
+.badge {
+    font-size: 0.75rem;
+    padding: 0.35em 0.65em;
+    border-radius: 6px;
+    font-weight: 600;
+}
+
+.badge.bg-gradient {
+    background: linear-gradient(45deg, #667eea, #764ba2) !important;
+}
+
+/* Message Type Badge */
+.message-type-badge {
+    font-size: 0.7rem !important;
+    margin-right: 0.5rem;
+    border: none;
+}
+
+.bg-purple {
+    background-color: #6f42c1 !important;
+    color: white !important;
+}
+
+/* Message Journal Indicator */
+.message-journal-indicator {
+    margin-top: 0.5rem;
+    padding-top: 0.5rem;
+    border-top: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.user-message .message-journal-indicator {
+    border-top-color: rgba(255, 255, 255, 0.3);
+}
+
+.user-message .message-journal-indicator .badge {
+    background-color: rgba(255, 255, 255, 0.25) !important;
+    color: white !important;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
 .journal-item:focus {
     outline: 2px solid #667eea;
     outline-offset: 2px;
+}
+
+/* ===== CHAT MESSAGES CONTAINER FIX ===== */
+.card-body.d-flex.flex-column {
+    display: flex !important;
+    flex-direction: column !important;
+    flex: 1 !important;
+    min-height: 0 !important;
+    height: 100% !important;
+    position: relative;
+}
+
+#chat-messages {
+    scroll-behavior: smooth;
+    display: flex !important;
+    flex-direction: column;
+    flex: 1 1 auto !important;
+    min-height: 0 !important;
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+    background-color: #f8f9fa !important;
+    position: relative;
+    padding: 1.5rem !important;
+    /* Ensure scrollbar is always visible when content overflows */
+    -webkit-overflow-scrolling: touch;
+}
+
+#welcome-message {
+    display: block !important;
+    width: 100%;
+    min-height: 100%;
+    justify-content: center;
+    align-items: center;
+}
+
+#chat-messages::-webkit-scrollbar {
+    width: 8px;
+}
+
+#chat-messages::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 10px;
+}
+
+#chat-messages::-webkit-scrollbar-thumb {
+    background: #888;
+    border-radius: 10px;
+}
+
+#chat-messages::-webkit-scrollbar-thumb:hover {
+    background: #555;
+}
+
+/* Ensure card body takes full height */
+.card.h-100.d-flex.flex-column {
+    display: flex !important;
+    flex-direction: column !important;
+    height: 100% !important;
+}
+
+/* Card body is handled above */
+
+#message-input-area {
+    flex-shrink: 0 !important;
+    z-index: 10;
+    background: white !important;
+    position: relative;
+}
+
+.card.h-100.d-flex.flex-column {
+    display: flex !important;
+    flex-direction: column !important;
+    height: 100% !important;
+    min-height: 0;
+}
+
+.card-header.flex-shrink-0 {
+    flex-shrink: 0;
+}
+
+/* ===== MAIN ASSISTANT IA PAGE LAYOUT ===== */
+.content-wrapper {
+    min-height: calc(100vh - 60px);
+    padding: 0;
+    margin: 0;
+}
+
+.content-wrapper .container {
+    padding: 0;
+}
+
+.content-wrapper .container.h-100 {
+    min-height: 100%;
+}
+
+.container-fluid.py-3,
+.container-fluid.py-4 {
+    padding: 1rem !important;
+    box-sizing: border-box;
+    width: 100%;
+}
+
+.content-wrapper .container-fluid .row {
+    margin: 0;
+}
+
+/* Row containing assistant IA main area */
+.row.g-3 {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.75rem; /* Reduced gap to prevent overflow */
+    flex-wrap: nowrap; /* Prevent wrapping to maintain order */
+    margin-left: 0;
+    margin-right: 0;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.row.g-3 > [class*="col-"] {
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    box-sizing: border-box;
+}
+
+/* Adjust column widths to fit within 100% */
+.row.g-3 > .col-lg-3 {
+    flex: 0 0 25%;
+    max-width: 25%;
+}
+
+.row.g-3 > .col-lg-6 {
+    flex: 0 0 48.5%; /* Slightly less than 50% to account for gaps */
+    max-width: 48.5%;
+}
+
+@media (min-width: 1200px) {
+    .row.g-3 > .col-xl-3 {
+        flex: 0 0 25%;
+        max-width: 25%;
+    }
+    
+    .row.g-3 > .col-xl-6 {
+        flex: 0 0 48.5%;
+        max-width: 48.5%;
+    }
+}
+
+/* Ensure cards fill height in columns */
+.row.g-3 > [class*="col-"] > .card {
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    flex: 1;
+}
+
+/* Ensure columns are in correct order: 1=Journals (left), 2=Assistant IA (middle), 3=Stats&History (right) */
+.col-lg-3.order-1,
+.col-xl-3.order-1 {
+    order: 1 !important; /* Journals - Left */
+}
+
+.col-lg-6.order-2,
+.col-xl-6.order-2 {
+    order: 2 !important; /* Assistant IA - Middle */
+}
+
+.col-lg-3.order-3,
+.col-xl-3.order-3 {
+    order: 3 !important; /* Stats & History - Right */
+    display: flex !important;
+    flex-direction: column;
+    justify-content: flex-start;
+    gap: 1rem;
+}
+
+.col-lg-3.order-3 > .card,
+.col-xl-3.order-3 > .card {
+    width: 100%;
+    flex-shrink: 0;
+}
+
+/* Mobile: hide right column on small screens */
+@media (max-width: 991.98px) {
+    .col-lg-3.order-3,
+    .col-xl-3.order-3 {
+        display: none !important;
+    }
+    
+    .row.g-3 {
+        flex-wrap: wrap;
+    }
+}
+
+/* Desktop: ensure proper spacing and alignment */
+@media (min-width: 992px) {
+    .row.g-3 {
+        flex-wrap: nowrap;
+        justify-content: flex-start;
+    }
+}
+
+/* Custom scrollbar for journal list */
+#journals-list {
+    scrollbar-width: thin;
+    scrollbar-color: #cbd5e0 #f7fafc;
+}
+
+#journals-list::-webkit-scrollbar {
+    width: 8px;
+}
+
+#journals-list::-webkit-scrollbar-track {
+    background: #f7fafc;
+    border-radius: 10px;
+}
+
+#journals-list::-webkit-scrollbar-thumb {
+    background: #cbd5e0;
+    border-radius: 10px;
+}
+
+#journals-list::-webkit-scrollbar-thumb:hover {
+    background: #a0aec0;
+}
+
+/* Smooth scrolling for journal list container */
+.card-body.overflow-y-auto {
+    scroll-behavior: smooth;
+    -webkit-overflow-scrolling: touch;
+}
+
+/* ===== ASSISTANT IA LAYOUT FIXES ===== */
+.assistant-ia-wrapper {
+    display: flex;
+    flex-direction: column;
+    height: calc(100vh - 120px); /* Adjust based on navbar height */
+    min-height: 600px;
+}
+
+.assistant-ia-row {
+    display: flex;
+    height: 100%;
+    min-height: 0;
+    flex: 1;
+}
+
+.assistant-ia-sidebar {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    overflow-y: auto;
+    gap: 0.75rem;
+    padding-right: 0.5rem;
+}
+
+.assistant-ia-sidebar::-webkit-scrollbar {
+    width: 6px;
+}
+
+.assistant-ia-sidebar::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 10px;
+}
+
+.assistant-ia-sidebar::-webkit-scrollbar-thumb {
+    background: #888;
+    border-radius: 10px;
+}
+
+.assistant-ia-sidebar::-webkit-scrollbar-thumb:hover {
+    background: #555;
+}
+
+/* Sidebar Cards with Fixed Heights */
+.assistant-sidebar-card {
+    display: flex !important;
+    flex-direction: column !important;
+    flex-shrink: 0;
+    max-height: 100%;
+}
+
+.assistant-sidebar-card.journals-card {
+    flex: 1 1 45%;
+    min-height: 0;
+    max-height: 45%;
+}
+
+.assistant-sidebar-card.conversations-card {
+    flex: 1 1 30%;
+    min-height: 0;
+    max-height: 30%;
+}
+
+.assistant-sidebar-card.stats-card {
+    flex: 0 0 auto;
+    max-height: 25%;
+}
+
+.assistant-card-body-scroll {
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+    flex: 1 1 auto;
+    min-height: 0;
+    max-height: 100%;
+}
+
+.assistant-card-body-scroll::-webkit-scrollbar {
+    width: 6px;
+}
+
+.assistant-card-body-scroll::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 10px;
+}
+
+.assistant-card-body-scroll::-webkit-scrollbar-thumb {
+    background: #bbb;
+    border-radius: 10px;
+}
+
+.assistant-card-body-scroll::-webkit-scrollbar-thumb:hover {
+    background: #888;
+}
+
+/* Responsive adjustments for sidebar */
+@media (max-width: 768px) {
+    .assistant-ia-sidebar {
+        max-height: 50vh;
+        margin-bottom: 1rem;
+    }
+    
+    .assistant-sidebar-card.journals-card {
+        max-height: 100%;
+        flex: 1 1 50%;
+    }
+    
+    .assistant-sidebar-card.conversations-card {
+        max-height: 100%;
+        flex: 1 1 35%;
+    }
+    
+    .assistant-sidebar-card.stats-card {
+        max-height: 100%;
+        flex: 0 1 15%;
+    }
+}
+
+/* Ensure cards don't overflow */
+.assistant-sidebar-card .card-header {
+    flex-shrink: 0;
+}
+
+.assistant-sidebar-card .card-body {
+    flex: 1 1 auto;
+    min-height: 0;
+}
+
+/* ===== COLLAPSIBLE ITEMS ===== */
+.collapsible-item {
+    display: none !important;
+    opacity: 0;
+    transform: translateY(-10px);
+    transition: opacity 0.4s ease, transform 0.4s ease, display 0.4s ease;
+}
+
+.collapsible-item.show {
+    display: block !important;
+    opacity: 1;
+    transform: translateY(0);
+}
+
+/* Expand Toggle Button */
+.expand-toggle-container {
+    background: linear-gradient(to bottom, rgba(248, 249, 250, 0.95), rgba(248, 249, 250, 1)) !important;
+    backdrop-filter: blur(10px);
+    position: sticky;
+    bottom: 0;
+    z-index: 5;
+    border-top: 2px solid rgba(102, 126, 234, 0.1) !important;
+}
+
+.expand-toggle-btn {
+    position: relative;
+    overflow: hidden;
+    border: 2px solid #667eea;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white !important;
+    font-weight: 600;
+    border-radius: 8px;
+    padding: 0.5rem 0.75rem;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 8px rgba(102, 126, 234, 0.2);
+}
+
+.expand-toggle-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+    background: linear-gradient(135deg, #764ba2 0%, #667eea 100%);
+}
+
+.expand-toggle-btn:active {
+    transform: translateY(0);
+}
+
+.expand-toggle-btn i {
+    transition: transform 0.3s ease;
+}
+
+.expand-toggle-btn.expanded i.fa-chevron-down {
+    transform: rotate(180deg);
+}
+
+.expand-toggle-btn .show-more-text,
+.expand-toggle-btn .show-less-text {
+    display: inline-block;
+    transition: opacity 0.2s ease;
+}
+
+/* Smooth fade-in animation for expanding items */
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.collapsible-item.show {
+    animation: fadeInUp 0.4s ease forwards;
+}
+
+.assistant-ia-main {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    min-height: 0;
+}
+
+.assistant-ia-card {
+    display: flex !important;
+    flex-direction: column !important;
+    height: 100% !important;
+    min-height: 0 !important;
 }
 
 /* ===== DRAG & DROP STYLES ===== */
@@ -107,16 +632,42 @@
     padding: 2rem;
     transition: all 0.4s ease;
     backdrop-filter: blur(10px);
-    position: relative;
-    z-index: 999;
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 1000;
+    pointer-events: none;
+}
+
+.drop-zone.show {
+    display: flex !important;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    pointer-events: all;
 }
 
 .drop-zone-active {
     background: linear-gradient(135deg, #e3f2fd, #bbdefb) !important;
     border-color: #2196f3 !important;
-    border-style: solid;
+    border-style: solid !important;
+    border-width: 3px !important;
     transform: scale(1.02);
     box-shadow: 0 8px 25px rgba(33, 150, 243, 0.4);
+    animation: pulseDropZone 1s infinite;
+}
+
+@keyframes pulseDropZone {
+    0%, 100% {
+        opacity: 1;
+        transform: scale(1.02);
+    }
+    50% {
+        opacity: 0.95;
+        transform: scale(1.05);
+    }
 }
 
 .border-dashed {
@@ -371,6 +922,19 @@
     60% { transform: translateY(-3px); }
 }
 
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+        max-height: 0;
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+        max-height: 200px;
+    }
+}
+
 #drag-hint {
     font-size: 0.75rem;
     animation: bounce 2s infinite;
@@ -412,6 +976,27 @@
         min-width: 100px;
         padding: 0.5rem;
     }
+}
+
+/* ===== CONVERSATION ITEMS (HISTORY) ===== */
+.conversation-item {
+    transition: background-color 0.2s, transform 0.1s, border-color 0.2s;
+    border-left: 3px solid transparent !important;
+    display: block;
+}
+
+.conversation-item:hover {
+    background-color: #f0f7ff !important;
+    border-left-color: #0d6efd !important;
+    transform: translateX(3px);
+}
+
+.conversation-item .badge {
+    font-weight: 500;
+}
+
+.conversation-item:active {
+    transform: translateX(1px);
 }
 
 /* Selection animation */

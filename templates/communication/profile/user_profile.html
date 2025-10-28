@@ -1,0 +1,427 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ profile_user.username }} - Profil - MindScribe{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/modern-styles.css' %}">
+<style>
+    .profile-header {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 30px;
+        border-radius: 15px;
+        margin-bottom: 30px;
+        text-align: center;
+    }
+    
+    .profile-avatar {
+        width: 120px;
+        height: 120px;
+        background: rgba(255,255,255,0.2);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 3em;
+        font-weight: bold;
+        margin: 0 auto 20px;
+        border: 4px solid rgba(255,255,255,0.3);
+    }
+    
+    .profile-info {
+        background: white;
+        border-radius: 15px;
+        padding: 25px;
+        margin-bottom: 20px;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+    }
+    
+    .info-section {
+        margin-bottom: 25px;
+    }
+    
+    .info-section h4 {
+        color: #667eea;
+        margin-bottom: 15px;
+        font-weight: 600;
+        border-bottom: 2px solid #f0f0f0;
+        padding-bottom: 8px;
+    }
+    
+    .info-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 10px 0;
+        border-bottom: 1px solid #f8f9fa;
+    }
+    
+    .info-item:last-child {
+        border-bottom: none;
+    }
+    
+    .info-label {
+        font-weight: 600;
+        color: #495057;
+    }
+    
+    .info-value {
+        color: #6c757d;
+    }
+    
+    .tags {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-top: 10px;
+    }
+    
+    .tag {
+        background: linear-gradient(45deg, #667eea, #764ba2);
+        color: white;
+        padding: 5px 12px;
+        border-radius: 15px;
+        font-size: 0.85em;
+        font-weight: 500;
+    }
+    
+    .connection-status {
+        background: linear-gradient(45deg, #28a745, #20c997);
+        color: white;
+        padding: 10px 20px;
+        border-radius: 25px;
+        font-weight: 600;
+        margin-top: 20px;
+        display: inline-block;
+    }
+    
+    .no-connection {
+        background: linear-gradient(45deg, #6c757d, #495057);
+    }
+    
+    .journal-entry {
+        background: #f8f9fa;
+        border-radius: 10px;
+        padding: 15px;
+        margin-bottom: 15px;
+        border-left: 4px solid #667eea;
+    }
+    
+    .journal-date {
+        font-size: 0.85em;
+        color: #6c757d;
+        margin-bottom: 8px;
+    }
+    
+    .journal-content {
+        color: #495057;
+        line-height: 1.5;
+    }
+    
+    .stats-card {
+        background: white;
+        border-radius: 15px;
+        padding: 20px;
+        margin-bottom: 20px;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+        text-align: center;
+    }
+    
+    .stats-number {
+        font-size: 2em;
+        font-weight: bold;
+        color: #667eea;
+        margin-bottom: 5px;
+    }
+    
+    .stats-label {
+        color: #6c757d;
+        font-size: 0.9em;
+    }
+    
+    .back-button {
+        background: linear-gradient(45deg, #667eea, #764ba2);
+        color: white;
+        padding: 12px 25px;
+        border: none;
+        border-radius: 25px;
+        font-weight: 600;
+        text-decoration: none;
+        display: inline-block;
+        margin-bottom: 20px;
+        transition: all 0.3s ease;
+    }
+    
+    .back-button:hover {
+        background: linear-gradient(45deg, #764ba2, #667eea);
+        transform: scale(1.05);
+        text-decoration: none;
+        color: white;
+    }
+    
+    .empty-state {
+        text-align: center;
+        padding: 40px 20px;
+        color: #6c757d;
+    }
+    
+    .empty-state i {
+        font-size: 3em;
+        margin-bottom: 15px;
+        opacity: 0.5;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <!-- Back Button -->
+            <a href="{% url 'communication:suggestions' %}" class="back-button">
+                <i class="fas fa-arrow-left"></i> Retour aux suggestions
+            </a>
+            
+            <!-- Profile Header -->
+            <div class="profile-header">
+                <div class="profile-avatar">
+                    {{ profile_user.username|first|upper }}
+                </div>
+                <h2>{{ profile_user.first_name }} {{ profile_user.last_name }}</h2>
+                <p class="mb-0">@{{ profile_user.username }}</p>
+                {% if connection_exists %}
+                    <div class="connection-status">
+                        <i class="fas fa-check-circle"></i> Connecté
+                    </div>
+                {% else %}
+                    <div class="connection-status no-connection">
+                        <i class="fas fa-user-plus"></i> Non connecté
+                    </div>
+                {% endif %}
+                
+                <!-- Similarity Score Badge -->
+                {% if similarity_data and not connection_exists %}
+                <div style="margin-top: 15px; padding: 10px; background: rgba(255,255,255,0.2); border-radius: 10px;">
+                    <div style="font-size: 0.9em; margin-bottom: 5px;">Compatibilité</div>
+                    <div style="display: flex; align-items: center; justify-content: center; gap: 10px;">
+                        <div style="flex: 1; background: rgba(0,0,0,0.2); border-radius: 10px; height: 10px; overflow: hidden;">
+                            {% widthratio similarity_data.overall_score 1 100 as badge_bar_width %}
+                            <div style="height: 100%; background: white; width: {{ badge_bar_width }}%; transition: width 0.3s ease;"></div>
+                        </div>
+                        <span style="font-size: 1.3em; font-weight: bold;">{% widthratio similarity_data.overall_score 1 100 as badge_score_display %}{{ badge_score_display|floatformat:0 }}%</span>
+                    </div>
+                    <div style="font-size: 0.8em; margin-top: 5px; opacity: 0.9;">
+                        {% if similarity_data.type == 'objectif_similaire' %}
+                            <i class="fas fa-target"></i> Objectifs similaires
+                        {% elif similarity_data.type == 'humeur_proche' %}
+                            <i class="fas fa-smile"></i> Humeur proche
+                        {% else %}
+                            <i class="fas fa-star"></i> Intérêts communs
+                        {% endif %}
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+            
+            <!-- Similarity Breakdown (if available) -->
+            {% if similarity_data and not connection_exists %}
+            <div class="row mb-4">
+                <div class="col-12">
+                    <div class="profile-info" style="background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%); border-left: 4px solid #667eea;">
+                        <div class="info-section">
+                            <h4><i class="fas fa-chart-pie"></i> Analyse de Compatibilité Détaillée</h4>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="info-item">
+                                        <span class="info-label">Score global:</span>
+                                        <span class="info-value" style="font-weight: bold; color: #667eea; font-size: 1.2em;">
+                                            {% widthratio similarity_data.overall_score 1 100 as profile_global_score %}{{ profile_global_score|floatformat:0 }}%
+                                        </span>
+                                    </div>
+                                    <div class="info-item">
+                                        <span class="info-label">Raison principale:</span>
+                                        <span class="info-value">
+                                            {% if similarity_data.type == 'objectif_similaire' %}
+                                                <i class="fas fa-target"></i> Objectifs similaires
+                                            {% elif similarity_data.type == 'humeur_proche' %}
+                                                <i class="fas fa-smile"></i> Humeur proche
+                                            {% else %}
+                                                <i class="fas fa-star"></i> Intérêts communs
+                                            {% endif %}
+                                        </span>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    {% if similarity_data.detailed_scores %}
+                                    <div style="padding: 10px; background: white; border-radius: 8px;">
+                                        <strong style="display: block; margin-bottom: 8px; color: #667eea;">Détails des scores:</strong>
+                                        {% for key, value in similarity_data.detailed_scores.items %}
+                                        {% if value %}
+                                        <div style="display: flex; justify-content: space-between; padding: 5px 0; border-bottom: 1px solid #f0f0f0;">
+                                            <span>
+                                                {% if key == 'objectif_similaire' %}
+                                                    <i class="fas fa-target"></i> Objectifs (40%)
+                                                {% elif key == 'humeur_proche' %}
+                                                    <i class="fas fa-smile"></i> Humeur (15%)
+                                                {% elif key == 'interet_commun' %}
+                                                    <i class="fas fa-star"></i> Intérêts (35%)
+                                                {% else %}
+                                                    <i class="fas fa-info-circle"></i> {{ key|title }} (10%)
+                                                {% endif %}
+                                            </span>
+                                            <span style="font-weight: 600; color: #667eea;">{% widthratio value 1 100 as profile_detail_score %}{{ profile_detail_score|floatformat:0 }}%</span>
+                                        </div>
+                                        {% endif %}
+                                        {% endfor %}
+                                    </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+            
+            <div class="row">
+                <!-- Profile Information -->
+                <div class="col-md-6">
+                    <div class="profile-info">
+                        <div class="info-section">
+                            <h4><i class="fas fa-user"></i> Informations personnelles</h4>
+                            <div class="info-item">
+                                <span class="info-label">Email:</span>
+                                <span class="info-value">{{ profile_user.email }}</span>
+                            </div>
+                            <div class="info-item">
+                                <span class="info-label">Âge:</span>
+                                <span class="info-value">{{ profile_user.age|default:"Non spécifié" }} ans</span>
+                            </div>
+                            <div class="info-item">
+                                <span class="info-label">Profession:</span>
+                                <span class="info-value">{{ profile_user.profession|default:"Non spécifié" }}</span>
+                            </div>
+                            {% if profile_user.humeur_generale %}
+                            <div class="info-item">
+                                <span class="info-label">Humeur générale:</span>
+                                <span class="info-value">
+                                    <i class="fas fa-smile"></i> {{ profile_user.get_humeur_generale_display }}
+                                </span>
+                            </div>
+                            {% endif %}
+                        </div>
+                        
+                        {% if profile_user.centres_interet %}
+                        <div class="info-section">
+                            <h4><i class="fas fa-star"></i> Centres d'intérêt</h4>
+                            <div class="tags">
+                                {% for interet in profile_user.centres_interet %}
+                                    <span class="tag">{{ interet }}</span>
+                                {% endfor %}
+                            </div>
+                            <small style="color: #6c757d; display: block; margin-top: 5px;">
+                                <i class="fas fa-info-circle"></i> Utilisé pour calculer la compatibilité (35% du score)
+                            </small>
+                        </div>
+                        {% endif %}
+                        
+                        {% if profile_user.passions %}
+                        <div class="info-section">
+                            <h4><i class="fas fa-heart"></i> Passions</h4>
+                            <div class="tags">
+                                {% for passion in profile_user.passions %}
+                                    <span class="tag">{{ passion }}</span>
+                                {% endfor %}
+                            </div>
+                        </div>
+                        {% endif %}
+                        
+                        {% if profile_user.objectifs_personnels %}
+                        <div class="info-section">
+                            <h4><i class="fas fa-target"></i> Objectifs personnels</h4>
+                            <div class="tags">
+                                {% for objectif in profile_user.objectifs_personnels %}
+                                    <span class="tag">{{ objectif }}</span>
+                                {% endfor %}
+                            </div>
+                            <small style="color: #6c757d; display: block; margin-top: 5px;">
+                                <i class="fas fa-info-circle"></i> Utilisé pour calculer la compatibilité (40% du score)
+                            </small>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+                
+                <!-- Statistics and Recent Activity -->
+                <div class="col-md-6">
+                    {% if user_stats %}
+                    <div class="stats-card">
+                        <h4><i class="fas fa-chart-line"></i> Statistiques récentes</h4>
+                        {% for stat in user_stats %}
+                        <div class="info-item">
+                            <span class="info-label">{{ stat.periode }}:</span>
+                            <span class="info-value">{{ stat.frequence_ecriture }} entrées, Humeur: {{ stat.score_humeur|floatformat:1 }}</span>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+                    
+                    {% if recent_journals %}
+                    <div class="profile-info">
+                        <h4><i class="fas fa-book-open"></i> Entrées récentes</h4>
+                        {% for journal in recent_journals %}
+                        <div class="journal-entry">
+                            <div class="journal-date">
+                                <i class="fas fa-calendar"></i> {{ journal.date_creation|date:"d/m/Y à H:i" }}
+                            </div>
+                            <div class="journal-content">
+                                {{ journal.contenu_texte|truncatewords:20 }}
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <div class="profile-info">
+                        <div class="empty-state">
+                            <i class="fas fa-book-open"></i>
+                            <h5>Aucune entrée récente</h5>
+                            <p>Cet utilisateur n'a pas encore d'entrées de journal visibles.</p>
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Add hover effects to profile cards
+    const cards = document.querySelectorAll('.profile-info, .stats-card');
+    cards.forEach(card => {
+        card.addEventListener('mouseenter', function() {
+            this.style.transform = 'translateY(-2px)';
+            this.style.boxShadow = '0 8px 30px rgba(0,0,0,0.15)';
+        });
+        
+        card.addEventListener('mouseleave', function() {
+            this.style.transform = 'translateY(0)';
+            this.style.boxShadow = '0 4px 20px rgba(0,0,0,0.1)';
+        });
+    });
+    
+    // Add click animation to back button
+    const backButton = document.querySelector('.back-button');
+    if (backButton) {
+        backButton.addEventListener('click', function() {
+            this.style.transform = 'scale(0.95)';
+            setTimeout(() => {
+                this.style.transform = '';
+            }, 150);
+        });
+    }
+});
+</script>
+{% endblock %}

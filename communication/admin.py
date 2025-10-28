@@ -112,6 +112,8 @@ class SuggestionConnexionAdmin(admin.ModelAdmin):
     list_filter = ['type_suggestion', 'statut', 'date_suggestion']
     search_fields = ['utilisateur_source__username', 'utilisateur_cible__username']
     readonly_fields = ['id', 'date_suggestion']
+    list_editable = ['statut']
+    actions = ['mark_as_accepted', 'mark_as_ignored', 'mark_as_proposed']
     
     fieldsets = (
         ('Informations générales', {
@@ -124,3 +126,21 @@ class SuggestionConnexionAdmin(admin.ModelAdmin):
             'fields': ('type_suggestion', 'score_similarite', 'statut')
         }),
     )
+    
+    def mark_as_accepted(self, request, queryset):
+        """Action to mark suggestions as accepted"""
+        updated = queryset.update(statut='acceptee')
+        self.message_user(request, f"{updated} suggestion(s) marquée(s) comme acceptée(s).")
+    mark_as_accepted.short_description = "Marquer comme acceptées"
+    
+    def mark_as_ignored(self, request, queryset):
+        """Action to mark suggestions as ignored"""
+        updated = queryset.update(statut='ignoree')
+        self.message_user(request, f"{updated} suggestion(s) marquée(s) comme ignorée(s).")
+    mark_as_ignored.short_description = "Marquer comme ignorées"
+    
+    def mark_as_proposed(self, request, queryset):
+        """Action to mark suggestions as proposed"""
+        updated = queryset.update(statut='proposee')
+        self.message_user(request, f"{updated} suggestion(s) marquée(s) comme proposée(s).")
+    mark_as_proposed.short_description = "Marquer comme proposées"

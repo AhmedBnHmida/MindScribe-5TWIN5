@@ -189,7 +189,61 @@ class AIServiceManager:
         
         try:
             type_interaction = self._detecter_type_interaction(message, journal)
-            prompt = self._construire_prompt_complet(utilisateur, message, journal, session_id, type_interaction, contexte)
+            
+            # Get multimodal content info from journal's AnalyseIA if available
+            transcription_audio = None
+            description_image = None
+            if journal:
+                try:
+                    from analysis.models import AnalyseIA
+                    analyse = getattr(journal, 'analyse', None)
+                    if analyse:
+                        # Try to extract transcription/description from AnalyseIA
+                        # AnalyseIA might have this in resume_journee or we can infer from analysis
+                        resume = analyse.resume_journee or ""
+                        
+                        # If journal is audio and has analysis, use resume as potential transcription
+                        if journal.type_entree == 'audio' and resume:
+                            # Check if resume contains transcription-like content
+                            if len(resume) > 50:  # Likely contains meaningful transcription
+                                transcription_audio = resume
+                                logger.info(f"Using AnalyseIA resume as audio transcription for journal {journal.id}")
+                        
+                        # If journal is image and has analysis, use resume as description
+                        if journal.type_entree == 'image' and resume:
+                            description_image = resume
+                            logger.info(f"Using AnalyseIA resume as image description for journal {journal.id}")
+                            
+                        # Also check if there's an existing AssistantIA with transcription/description
+                        if not transcription_audio and journal.type_entree == 'audio':
+                            existing_conv = AssistantIA.objects.filter(
+                                journal=journal,
+                                utilisateur=utilisateur
+                            ).exclude(
+                                transcription_audio__in=[None, '']
+                            ).first()
+                            if existing_conv and existing_conv.transcription_audio:
+                                transcription_audio = existing_conv.transcription_audio
+                                logger.info(f"Using existing transcription from previous conversation")
+                        
+                        if not description_image and journal.type_entree == 'image':
+                            existing_conv = AssistantIA.objects.filter(
+                                journal=journal,
+                                utilisateur=utilisateur
+                            ).exclude(
+                                description_image__in=[None, '']
+                            ).first()
+                            if existing_conv and existing_conv.description_image:
+                                description_image = existing_conv.description_image
+                                logger.info(f"Using existing description from previous conversation")
+                except Exception as e:
+                    logger.warning(f"Error getting AnalyseIA for journal: {e}")
+            
+            # Build prompt with multimodal support
+            prompt = self._construire_prompt_complet(
+                utilisateur, message, journal, session_id, type_interaction, contexte,
+                transcription_audio=transcription_audio, description_image=description_image
+            )
             resultat = self.openrouter.generer_reponse(prompt)
             
             # Handle both direct response and fallback response
@@ -220,6 +274,8 @@ class AIServiceManager:
                 score_confiance=score_confiance,
                 mots_cles=mots_cles,
                 sentiment_utilisateur=sentiment,
+                transcription_audio=transcription_audio,
+                description_image=description_image,
             )
             
             return {
@@ -270,22 +326,50 @@ class AIServiceManager:
         else:
             return 'question'
     
-    def _construire_prompt_complet(self, utilisateur, message: str, journal=None, session_id=None, type_interaction: str = None, contexte: Dict = None) -> str:
+    def _construire_prompt_complet(self, utilisateur, message: str, journal=None, session_id=None, type_interaction: str = None, contexte: Dict = None, transcription_audio: str = None, description_image: str = None) -> str:
         prenom = utilisateur.first_name or utilisateur.username
         contexte_journal = ""
         if journal:
-            contenu = journal.contenu_texte
-            if journal.type_entree == 'audio' and journal.audio:
-                contenu = f"[Audio: {journal.audio.name}]"
-            elif journal.type_entree == 'image' and journal.image:
-                contenu = f"[Image: {journal.image.name}]"
-            contenu_limite = contenu[:800] + "..." if len(contenu) > 800 else contenu
+            # Build multimodal content description
+            content_parts = []
+            content_type_info = []
+            
+            # Text content
+            if journal.contenu_texte and journal.contenu_texte.strip():
+                texte_content = journal.contenu_texte[:1000] + "..." if len(journal.contenu_texte) > 1000 else journal.contenu_texte
+                content_parts.append(f"CONTENU TEXTE:\n{texte_content}")
+                content_type_info.append("texte")
+            
+            # Audio content - use transcription if available
+            if journal.audio:
+                if transcription_audio:
+                    audio_content = transcription_audio[:800] + "..." if len(transcription_audio) > 800 else transcription_audio
+                    content_parts.append(f"CONTENU AUDIO (transcrit):\n{audio_content}")
+                else:
+                    content_parts.append(f"CONTENU AUDIO:\n[Fichier audio disponible: {journal.audio.name} - Note: Transcription non disponible, analyse uniquement basée sur les métadonnées]")
+                content_type_info.append("audio")
+            
+            # Image content - use description if available
+            if journal.image:
+                if description_image:
+                    image_content = description_image[:800] + "..." if len(description_image) > 800 else description_image
+                    content_parts.append(f"CONTENU IMAGE (décrit):\n{image_content}")
+                else:
+                    content_parts.append(f"CONTENU IMAGE:\n[Fichier image disponible: {journal.image.name} - Note: Description non disponible]")
+                content_type_info.append("image")
+            
+            contenu_combine = "\n\n".join(content_parts) if content_parts else "Aucun contenu disponible"
+            type_contenu_str = " + ".join(content_type_info) if content_type_info else journal.type_entree
+            
             contexte_journal = f"""
 JOURNAL À ANALYSER:
 - Date: {journal.date_creation.strftime('%d/%m/%Y')}
-- Type: {journal.type_entree}
+- Type d'entrée: {type_contenu_str}
 - Catégorie: {journal.categorie or 'Non catégorisé'}
-- Contenu: {contenu_limite}
+
+{contenu_combine}
+
+NOTE: Ce journal contient du contenu multimodal. Analyse le contenu dans son ensemble, en tenant compte de tous les types de médias présents.
 """
         
         historique = ""

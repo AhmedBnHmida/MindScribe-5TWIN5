@@ -25,4 +25,28 @@ path('bilan-mensuel/', views.bilan_mensuel, name='bilan_mensuel'),
     path('bilan-mensuel/<int:annee>/<int:mois>/', views.bilan_mensuel, name='bilan_mensuel_detail'),
     path('api/generer-bilan/', views.generer_bilan_api, name='generer_bilan_api'),
 
+
+
+
+
+
+
+
+
+      # Analyse rapide
+    path('analyse-rapide/', views.analyse_rapide, name='analyse_rapide'),
+   
+  # API d'analyse rapide
+    path('api/analyser-rapide/', views.analyser_texte_rapide, name='analyser_texte_rapide'),
+    path('api/sauvegarder-analyse/', views.sauvegarder_analyse_rapide, name='sauvegarder_analyse_rapide'),
+
+
+
+
+
+
+   
+    path('api/analyse-details/<uuid:analysis_id>/', views.analyse_details, name='analyse_details'),
+
+
 ]

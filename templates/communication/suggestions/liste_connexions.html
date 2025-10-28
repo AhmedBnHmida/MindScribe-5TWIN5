@@ -1,0 +1,317 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Mes Connexions - MindScribe{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/modern-styles.css' %}">
+<style>
+    .connection-container {
+        display: flex;
+        gap: 20px;
+        min-height: 80vh;
+    }
+    
+    .connection-sidebar {
+        flex: 1;
+        background: white;
+        border-radius: 15px;
+        padding: 20px;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+        max-height: 80vh;
+        overflow-y: auto;
+    }
+    
+    .profile-sidebar {
+        flex: 1;
+        background: white;
+        border-radius: 15px;
+        padding: 20px;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+        max-height: 80vh;
+        overflow-y: auto;
+    }
+    
+    .connection-card {
+        background: white;
+        border: 2px solid #f0f0f0;
+        border-radius: 15px;
+        padding: 20px;
+        margin-bottom: 15px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        display: flex;
+        align-items: center;
+        gap: 15px;
+    }
+    
+    .connection-card:hover {
+        border-color: #667eea;
+        box-shadow: 0 4px 15px rgba(102, 126, 234, 0.2);
+        transform: translateY(-2px);
+    }
+    
+    .connection-card.active {
+        border-color: #667eea;
+        background: linear-gradient(135deg, rgba(102, 126, 234, 0.05), rgba(118, 75, 162, 0.05));
+    }
+    
+    .connection-avatar {
+        width: 60px;
+        height: 60px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, #667eea, #764ba2);
+        color: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 24px;
+        font-weight: bold;
+        flex-shrink: 0;
+    }
+    
+    .connection-info {
+        flex: 1;
+    }
+    
+    .connection-name {
+        font-size: 18px;
+        font-weight: 600;
+        color: #333;
+        margin-bottom: 5px;
+    }
+    
+    .connection-username {
+        color: #666;
+        font-size: 14px;
+        margin-bottom: 5px;
+    }
+    
+    .connection-date {
+        font-size: 12px;
+        color: #999;
+    }
+    
+    .btn-remove {
+        background: #dc3545;
+        color: white;
+        border: none;
+        padding: 8px 15px;
+        border-radius: 8px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        font-size: 14px;
+    }
+    
+    .btn-remove:hover {
+        background: #c82333;
+        transform: scale(1.05);
+    }
+    
+    .empty-state {
+        text-align: center;
+        padding: 60px 20px;
+        color: #999;
+    }
+    
+    .empty-state i {
+        font-size: 64px;
+        margin-bottom: 20px;
+        opacity: 0.5;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <!-- Header -->
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2 class="mb-0">
+                    <i class="fas fa-users"></i> Mes Connexions
+                    <span class="badge bg-primary ms-2">{{ connection_count }}</span>
+                </h2>
+                <div>
+                    <a href="{% url 'communication:suggestions' %}" class="btn btn-outline-primary">
+                        <i class="fas fa-bell"></i> Suggestions
+                    </a>
+                    <a href="{% url 'communication:generer_suggestions' %}" class="btn btn-primary ms-2">
+                        <i class="fas fa-magic"></i> Générer suggestions
+                    </a>
+                </div>
+            </div>
+
+            <!-- Connection Container -->
+            <div class="connection-container">
+                <!-- Left Sidebar - Connections List -->
+                <div class="connection-sidebar">
+                    {% if connections %}
+                        {% for conn in connections %}
+                        <div class="connection-card {% if selected_user and selected_user.id == conn.user.id %}active{% endif %}"
+                             onclick="window.location.href='?user_id={{ conn.user.id }}'">
+                            <div class="connection-avatar">
+                                {{ conn.user.username|first|upper }}
+                            </div>
+                            <div class="connection-info">
+                                <div class="connection-name">
+                                    {{ conn.user.first_name }} {{ conn.user.last_name }}
+                                </div>
+                                <div class="connection-username">
+                                    @{{ conn.user.username }}
+                                </div>
+                                <div class="connection-date">
+                                    <i class="fas fa-calendar"></i> Connecté depuis {{ conn.connection_date|date:"d M Y" }}
+                                </div>
+                                {% if conn.similarity_data %}
+                                <div style="margin-top: 5px;">
+                                    <small style="color: #667eea; font-weight: 600;">
+                                        <i class="fas fa-heart"></i> {% widthratio conn.similarity_data.overall_score 1 100 as score_percent %}{{ score_percent|floatformat:0 }}% compatible
+                                    </small>
+                                </div>
+                                {% endif %}
+                            </div>
+                            <div>
+                                <form method="post" action="{% url 'communication:supprimer_connexion' conn.suggestion.id %}" 
+                                      onclick="event.stopPropagation(); return confirm('Êtes-vous sûr de vouloir supprimer cette connexion ?');">
+                                    {% csrf_token %}
+                                    <button type="submit" class="btn-remove">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    {% else %}
+                        <div class="empty-state">
+                            <i class="fas fa-user-friends"></i>
+                            <h4>Aucune connexion</h4>
+                            <p>Vous n'avez pas encore de connexions établies.</p>
+                            <a href="{% url 'communication:suggestions' %}" class="btn btn-primary mt-3">
+                                <i class="fas fa-bell"></i> Voir les suggestions
+                            </a>
+                        </div>
+                    {% endif %}
+                </div>
+
+                <!-- Right Sidebar - Profile -->
+                <div class="profile-sidebar">
+                    {% if selected_user and selected_connection %}
+                        <!-- Profile Header -->
+                        <div class="profile-header" style="text-align: center; padding: 20px; border-bottom: 2px solid #f0f0f0; margin-bottom: 20px;">
+                            <div style="width: 100px; height: 100px; border-radius: 50%; background: linear-gradient(135deg, #667eea, #764ba2); color: white; display: flex; align-items: center; justify-content: center; font-size: 40px; font-weight: bold; margin: 0 auto 15px;">
+                                {{ selected_user.username|first|upper }}
+                            </div>
+                            <h3>{{ selected_user.first_name }} {{ selected_user.last_name }}</h3>
+                            <p class="text-muted mb-0">@{{ selected_user.username }}</p>
+                            {% if selected_connection.similarity_data %}
+                            <div style="margin-top: 15px;">
+                                <span class="badge" style="background: linear-gradient(135deg, #667eea, #764ba2); padding: 8px 15px; font-size: 14px;">
+                                    <i class="fas fa-heart"></i> {% widthratio selected_connection.similarity_data.overall_score 1 100 as badge_score %}{{ badge_score|floatformat:0 }}% Compatible
+                                </span>
+                            </div>
+                            {% endif %}
+                        </div>
+                        
+                        <!-- Compatibility Analysis -->
+                        {% if similarity_data %}
+                        <div style="background: linear-gradient(135deg, rgba(102, 126, 234, 0.1), rgba(118, 75, 162, 0.1)); padding: 20px; border-radius: 15px; margin-bottom: 20px;">
+                            <h5 style="color: #667eea; margin-bottom: 15px;">
+                                <i class="fas fa-chart-line"></i> Analyse de Compatibilité
+                            </h5>
+                            <div style="display: flex; align-items: center; gap: 15px; margin-bottom: 15px;">
+                                <div style="flex: 1; background: white; border-radius: 10px; padding: 10px;">
+                                    <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
+                                        <span style="font-weight: 600;">Score global</span>
+                                        <span style="font-weight: bold; color: #667eea;">{% widthratio similarity_data.overall_score 1 100 as global_score %}{{ global_score|floatformat:0 }}%</span>
+                                    </div>
+                                    <div style="height: 10px; background: #f0f0f0; border-radius: 5px; overflow: hidden;">
+                                        {% widthratio similarity_data.overall_score 1 100 as bar_width %}
+                                        <div style="height: 100%; background: linear-gradient(90deg, #667eea, #764ba2); width: {{ bar_width }}%;"></div>
+                                    </div>
+                                </div>
+                            </div>
+                            {% if similarity_data.detailed_scores %}
+                            <div style="margin-top: 15px;">
+                                <strong style="display: block; margin-bottom: 10px; color: #667eea;">Détails:</strong>
+                                {% for key, value in similarity_data.detailed_scores.items %}
+                                {% if value %}
+                                <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid rgba(0,0,0,0.1);">
+                                    <span>
+                                        {% if key == 'objectif_similaire' %}
+                                            <i class="fas fa-target"></i> Objectifs (40%)
+                                        {% elif key == 'humeur_proche' %}
+                                            <i class="fas fa-smile"></i> Humeur (15%)
+                                        {% elif key == 'interet_commun' %}
+                                            <i class="fas fa-star"></i> Intérêts (35%)
+                                        {% else %}
+                                            <i class="fas fa-info-circle"></i> {{ key|title }} (10%)
+                                        {% endif %}
+                                    </span>
+                                    <span style="font-weight: 600; color: #667eea;">{% widthratio value 1 100 as detail_score %}{{ detail_score|floatformat:0 }}%</span>
+                                </div>
+                                {% endif %}
+                                {% endfor %}
+                            </div>
+                            {% endif %}
+                        </div>
+                        {% endif %}
+                        
+                        <!-- User Info -->
+                        <div style="margin-bottom: 20px;">
+                            <h5 style="color: #667eea; margin-bottom: 15px;">
+                                <i class="fas fa-info-circle"></i> Informations
+                            </h5>
+                            {% if selected_user.profession %}
+                            <div style="margin-bottom: 10px;">
+                                <strong>Profession:</strong> {{ selected_user.profession }}
+                            </div>
+                            {% endif %}
+                            {% if selected_user.objectifs_personnels %}
+                            <div style="margin-bottom: 10px;">
+                                <strong>Objectifs:</strong>
+                                {% for obj in selected_user.objectifs_personnels %}
+                                <span class="badge bg-primary me-1">{{ obj }}</span>
+                                {% endfor %}
+                            </div>
+                            {% endif %}
+                            {% if selected_user.centres_interet %}
+                            <div style="margin-bottom: 10px;">
+                                <strong>Intérêts:</strong>
+                                {% for interet in selected_user.centres_interet %}
+                                <span class="badge bg-info me-1">{{ interet }}</span>
+                                {% endfor %}
+                            </div>
+                            {% endif %}
+                        </div>
+                        
+                        <!-- Recent Journals -->
+                        {% if recent_journals %}
+                        <div>
+                            <h5 style="color: #667eea; margin-bottom: 15px;">
+                                <i class="fas fa-book"></i> Journaux récents
+                            </h5>
+                            {% for journal in recent_journals %}
+                            <div style="background: #f8f9fa; padding: 15px; border-radius: 10px; margin-bottom: 10px;">
+                                <div style="font-size: 12px; color: #999; margin-bottom: 8px;">{{ journal.date_creation|date:"d M Y" }}</div>
+                                <div style="font-size: 14px; color: #666; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;">
+                                    {{ journal.contenu_texte|truncatewords:20|default:"Journal sans texte" }}
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+                    {% else %}
+                        <div class="empty-state">
+                            <i class="fas fa-user-circle"></i>
+                            <h4>Sélectionnez une connexion</h4>
+                            <p>Cliquez sur une connexion pour voir les détails</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
