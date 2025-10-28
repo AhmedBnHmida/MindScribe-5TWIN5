@@ -49,7 +49,7 @@ INSTALLED_APPS = [
     'journal',
     'analysis',
     'dashboard',
-    'recommendations',
+    'recommendations.apps.RecommendationsConfig',
     'communication',
     'module2_analysis.apps.Module2AnalysisConfig',
 ]

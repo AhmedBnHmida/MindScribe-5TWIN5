@@ -1,0 +1,408 @@
+{% extends 'base.html' %}
+{% load recommendation_filters %}
+{% block title %}Mes Recommandations{% endblock %}
+
+{% block content %}
+<div class="content-wrapper">
+    <div class="container py-5">
+        <div class="row justify-content-center">
+            <div class="col-lg-11">
+                <!-- Header -->
+                <div class="ultra-results-header text-center ultra-fade-in mb-5">
+                    <h2><i class="fas fa-magic me-2"></i>Recommandations Personnalisées</h2>
+                    <p>Des conseils sur-mesure basés sur ton journal et tes émotions</p>
+                </div>
+                
+                <!-- Quick Stats -->
+                <div class="row g-4 mb-5">
+                    <div class="col-md-3">
+                        <div class="ultra-glass-card text-center">
+                            <div class="ultra-stat-icon bg-primary">
+                                <i class="fas fa-lightbulb"></i>
+                            </div>
+                            <h3 class="mt-3">{{ total_recommendations }}</h3>
+                            <p class="text-muted mb-0">Total conseils</p>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="ultra-glass-card text-center">
+                            <div class="ultra-stat-icon bg-success">
+                                <i class="fas fa-check-circle"></i>
+                            </div>
+                            <h3 class="mt-3">{{ followed_count }}</h3>
+                            <p class="text-muted mb-0">Suivis</p>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="ultra-glass-card text-center">
+                            <div class="ultra-stat-icon bg-warning">
+                                <i class="fas fa-star"></i>
+                            </div>
+                            <h3 class="mt-3">{{ follow_rate|floatformat:0 }}%</h3>
+                            <p class="text-muted mb-0">Taux suivi</p>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="ultra-glass-card text-center">
+                            <div class="ultra-stat-icon bg-info">
+                                <i class="fas fa-target"></i>
+                            </div>
+                            <h3 class="mt-3">{{ active_goals.count }}</h3>
+                            <p class="text-muted mb-0">Objectifs actifs</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="row g-4">
+                    <!-- Left Column - Recommendations -->
+                    <div class="col-lg-7">
+                        <!-- Actions Bar -->
+                        <div class="d-flex justify-content-between align-items-center mb-4">
+                            <h4><i class="fas fa-sparkles me-2"></i>Mes Recommandations</h4>
+                            <form method="POST" action="{% url 'recommendations:generate' %}">
+                                {% csrf_token %}
+                                <button type="submit" class="btn-ultra-modern btn-ultra-primary">
+                                    <i class="fas fa-wand-magic-sparkles me-2"></i>Générer Nouvelles
+                                </button>
+                            </form>
+                        </div>
+                        
+                        {% if new_recommendations_count > 0 %}
+                        <div class="alert alert-info d-flex align-items-center mb-4">
+                            <i class="fas fa-bell me-3 fs-4"></i>
+                            <div>
+                                <strong>{{ new_recommendations_count }}</strong> nouvelle{{ new_recommendations_count|pluralize }} recommandation{{ new_recommendations_count|pluralize }} pour toi !
+                            </div>
+                        </div>
+                        {% endif %}
+                        
+                        <!-- Recommendations List -->
+                        <div class="recommendations-container">
+                            {% if recommendations %}
+                                {% for recommendation in recommendations %}
+                                <div class="recommendation-card ultra-glass-card mb-3" data-recommendation-id="{{ recommendation.id }}">
+                                    <div class="recommendation-header">
+                                        <span class="recommendation-type-badge badge-{{ recommendation.type }}">
+                                            {% if recommendation.type == 'bien_etre' %}
+                                                <i class="fas fa-heart me-1"></i>Bien-être
+                                            {% elif recommendation.type == 'productivite' %}
+                                                <i class="fas fa-rocket me-1"></i>Productivité
+                                            {% elif recommendation.type == 'sommeil' %}
+                                                <i class="fas fa-moon me-1"></i>Sommeil
+                                            {% else %}
+                                                <i class="fas fa-utensils me-1"></i>Nutrition
+                                            {% endif %}
+                                        </span>
+                                        <span class="recommendation-date">
+                                            <i class="far fa-clock me-1"></i>{{ recommendation.date_emission|date:"d/m/Y" }}
+                                        </span>
+                                    </div>
+                                    <div class="recommendation-content">
+                                        <p>{{ recommendation.contenu }}</p>
+                                    </div>
+                                    <div class="recommendation-actions">
+                                        {% if recommendation.statut == 'nouvelle' %}
+                                            <button class="btn btn-sm btn-success mark-followed" data-id="{{ recommendation.id }}">
+                                                <i class="fas fa-check me-1"></i>Je suis ce conseil
+                                            </button>
+                                            <button class="btn btn-sm btn-outline-secondary mark-ignored" data-id="{{ recommendation.id }}">
+                                                <i class="fas fa-times me-1"></i>Pas pour moi
+                                            </button>
+                                        {% elif recommendation.statut == 'suivie' %}
+                                            <span class="badge bg-success">
+                                                <i class="fas fa-check-circle me-1"></i>Suivi
+                                            </span>
+                                        {% else %}
+                                            <span class="badge bg-secondary">
+                                                <i class="fas fa-minus-circle me-1"></i>Ignoré
+                                            </span>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                                {% endfor %}
+                                
+                                <div class="text-center mt-4">
+                                    <a href="{% url 'recommendations:list' %}" class="btn btn-outline-primary">
+                                        <i class="fas fa-list me-2"></i>Voir toutes les recommandations
+                                    </a>
+                                </div>
+                            {% else %}
+                                <div class="empty-state text-center py-5">
+                                    <i class="fas fa-magic fs-1 text-muted mb-3"></i>
+                                    <h5>Aucune recommandation pour le moment</h5>
+                                    <p class="text-muted">Continue à écrire dans ton journal pour recevoir des conseils personnalisés !</p>
+                                    <form method="POST" action="{% url 'recommendations:generate' %}" class="mt-3">
+                                        {% csrf_token %}
+                                        <button type="submit" class="btn btn-primary">
+                                            <i class="fas fa-wand-magic-sparkles me-2"></i>Générer mes premières recommandations
+                                        </button>
+                                    </form>
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <!-- Right Column - Goals & Summary -->
+                    <div class="col-lg-5">
+                        <!-- Analysis Summary -->
+                        <div class="ultra-glass-card mb-4">
+                            <h5 class="mb-3"><i class="fas fa-chart-line me-2"></i>Aperçu des 7 derniers jours</h5>
+                            
+                            {% if summary.total_entries > 0 %}
+                                <div class="summary-stat mb-3">
+                                    <div class="d-flex justify-content-between align-items-center mb-2">
+                                        <span><i class="fas fa-pen-alt me-2"></i>Entrées de journal</span>
+                                        <strong>{{ summary.total_entries }}</strong>
+                                    </div>
+                                </div>
+                                
+                                <div class="summary-stat mb-3">
+                                    <div class="mb-2"><i class="fas fa-smile me-2"></i>Sentiments</div>
+                                    <div class="sentiment-bars">
+                                        {% for sentiment, count in summary.sentiment_distribution.items %}
+                                        <div class="sentiment-bar-container mb-2">
+                                            <div class="d-flex justify-content-between mb-1">
+                                                <small>{{ sentiment|capfirst }}</small>
+                                                <small>{{ count }}</small>
+                                            </div>
+                                            <div class="progress" style="height: 8px;">
+                                                <div class="progress-bar bg-{{ sentiment }}" 
+                                                     style="width: {{ count|multiply:100|divide:summary.total_entries }}%"></div>
+                                            </div>
+                                        </div>
+                                        {% endfor %}
+                                    </div>
+                                </div>
+                                
+                                {% if summary.common_emotions %}
+                                <div class="summary-stat mb-3">
+                                    <div class="mb-2"><i class="fas fa-heart me-2"></i>Émotions fréquentes</div>
+                                    <div>
+                                        {% for emotion in summary.common_emotions %}
+                                            <span class="badge bg-light text-dark me-1 mb-1">{{ emotion }}</span>
+                                        {% endfor %}
+                                    </div>
+                                </div>
+                                {% endif %}
+                            {% else %}
+                                <div class="text-center text-muted py-3">
+                                    <i class="fas fa-info-circle me-2"></i>
+                                    Pas encore d'entrées de journal
+                                </div>
+                            {% endif %}
+                        </div>
+                        
+                        <!-- Active Goals -->
+                        <div class="ultra-glass-card">
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <h5 class="mb-0"><i class="fas fa-bullseye me-2"></i>Mes Objectifs</h5>
+                                <a href="{% url 'recommendations:goals' %}" class="btn btn-sm btn-outline-primary">
+                                    <i class="fas fa-cog me-1"></i>Gérer
+                                </a>
+                            </div>
+                            
+                            {% if active_goals %}
+                                {% for goal in active_goals %}
+                                <div class="goal-card mb-3">
+                                    <div class="d-flex justify-content-between align-items-start mb-2">
+                                        <strong>{{ goal.nom }}</strong>
+                                        {% if goal.est_termine %}
+                                            <span class="badge bg-success">
+                                                <i class="fas fa-check"></i>
+                                            </span>
+                                        {% endif %}
+                                    </div>
+                                    {% if goal.description %}
+                                        <p class="small text-muted mb-2">{{ goal.description|truncatewords:15 }}</p>
+                                    {% endif %}
+                                    <div class="progress mb-2" style="height: 10px;">
+                                        <div class="progress-bar" 
+                                             style="width: {{ goal.progres }}%"
+                                             role="progressbar"></div>
+                                    </div>
+                                    <div class="d-flex justify-content-between small text-muted">
+                                        <span>Progrès: {{ goal.progres|floatformat:0 }}%</span>
+                                        <span><i class="far fa-calendar me-1"></i>{{ goal.date_fin|date:"d/m/Y" }}</span>
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            {% else %}
+                                <div class="text-center text-muted py-3">
+                                    <i class="fas fa-target me-2"></i>
+                                    Aucun objectif actif
+                                </div>
+                            {% endif %}
+                            
+                            <div class="text-center mt-3">
+                                <a href="{% url 'recommendations:create_goal' %}" class="btn btn-sm btn-primary">
+                                    <i class="fas fa-plus me-1"></i>Nouvel objectif
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.ultra-stat-icon {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto;
+        color: white;
+    font-size: 24px;
+    }
+    
+    .recommendation-card {
+        padding: 1.5rem;
+    transition: all 0.3s ease;
+    }
+    
+    .recommendation-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(0,0,0,0.1);
+    }
+    
+    .recommendation-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1rem;
+    }
+    
+.recommendation-type-badge {
+    padding: 0.5rem 1rem;
+    border-radius: 20px;
+    font-weight: 500;
+    font-size: 0.85rem;
+}
+
+.badge-bien_etre {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+}
+
+.badge-productivite {
+    background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+    color: white;
+}
+
+.badge-sommeil {
+    background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+    color: white;
+}
+
+.badge-nutrition {
+    background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
+    color: white;
+}
+
+.recommendation-date {
+    color: #6c757d;
+    font-size: 0.85rem;
+}
+
+.recommendation-content p {
+    margin-bottom: 1rem;
+    line-height: 1.6;
+        font-size: 1.05rem;
+    }
+    
+    .recommendation-actions {
+        display: flex;
+        gap: 0.5rem;
+        flex-wrap: wrap;
+    }
+    
+.goal-card {
+    padding: 1rem;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 10px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.sentiment-bar-container {
+    margin-bottom: 0.5rem;
+}
+
+.progress-bar.bg-positif {
+    background: linear-gradient(90deg, #43e97b 0%, #38f9d7 100%);
+}
+
+.progress-bar.bg-neutre {
+    background: linear-gradient(90deg, #a8b8d8 0%, #8b9dc3 100%);
+}
+
+.progress-bar.bg-negatif {
+    background: linear-gradient(90deg, #fa709a 0%, #fee140 100%);
+    }
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Handle recommendation status updates
+    document.querySelectorAll('.mark-followed, .mark-ignored').forEach(button => {
+        button.addEventListener('click', function() {
+            const recommendationId = this.dataset.id;
+            const status = this.classList.contains('mark-followed') ? 'suivie' : 'ignoree';
+            
+            updateRecommendationStatus(recommendationId, status);
+        });
+    });
+    
+    function updateRecommendationStatus(id, status) {
+        const card = document.querySelector(`[data-recommendation-id="${id}"]`);
+        const csrftoken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+        
+        fetch(`/recommendations/${id}/status/`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+                'X-CSRFToken': csrftoken
+        },
+            body: `status=${status}`
+    })
+    .then(response => response.json())
+    .then(data => {
+            if (data.success) {
+                // Update UI
+                const actionsDiv = card.querySelector('.recommendation-actions');
+                if (status === 'suivie') {
+                    actionsDiv.innerHTML = '<span class="badge bg-success"><i class="fas fa-check-circle me-1"></i>Suivi</span>';
+                } else {
+                    actionsDiv.innerHTML = '<span class="badge bg-secondary"><i class="fas fa-minus-circle me-1"></i>Ignoré</span>';
+                }
+                
+            // Show success message
+                showNotification(data.message, 'success');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+            showNotification('Erreur lors de la mise à jour', 'error');
+        });
+    }
+    
+    function showNotification(message, type) {
+        const notification = document.createElement('div');
+        notification.className = `alert alert-${type === 'success' ? 'success' : 'danger'} position-fixed`;
+        notification.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px;';
+        notification.innerHTML = `<i class="fas fa-${type === 'success' ? 'check' : 'exclamation'}-circle me-2"></i>${message}`;
+        document.body.appendChild(notification);
+        
+        setTimeout(() => {
+            notification.style.opacity = '0';
+            notification.style.transition = 'opacity 0.5s';
+            setTimeout(() => notification.remove(), 500);
+        }, 3000);
+    }
+});
+</script>
+{% endblock %}
+
