@@ -64,41 +64,6 @@
                         </div>
                     </div>
                 </div>
-
-                <!-- Filtres -->
-                <div class="card mt-3">
-                    <div class="card-header">
-                        <h6 class="card-title mb-0">
-                            <i class="fas fa-filter me-2"></i>Filtres
-                        </h6>
-                    </div>
-                    <div class="card-body">
-                        <div class="mb-3">
-                            <label class="form-label small">Type d'interaction</label>
-                            <select class="form-select form-select-sm" id="filter-type">
-                                <option value="">Tous les types</option>
-                                <option value="analyse_journal">📊 Analyse Journal</option>
-                                <option value="suggestion_ecriture">✍️ Suggestion Écriture</option>
-                                <option value="support_emotionnel">💖 Support Émotionnel</option>
-                                <option value="reflexion_guidee">🧠 Réflexion Guidée</option>
-                                <option value="accompagnement_pratique">🔧 Accompagnement</option>
-                                <option value="conversation_naturelle">💬 Conversation</option>
-                            </select>
-                        </div>
-                        <div class="mb-3">
-                            <label class="form-label small">Date</label>
-                            <select class="form-select form-select-sm" id="filter-date">
-                                <option value="">Toutes les dates</option>
-                                <option value="today">Aujourd'hui</option>
-                                <option value="week">Cette semaine</option>
-                                <option value="month">Ce mois</option>
-                            </select>
-                        </div>
-                        <button class="btn btn-outline-secondary btn-sm w-100" id="clear-filters">
-                            <i class="fas fa-times me-1"></i>Effacer les filtres
-                        </button>
-                    </div>
-                </div>
             </div>
 
             <!-- Zone de détail de la conversation -->
@@ -165,11 +130,25 @@
 {% endblock %}
 
 {% block extra_js %}
+<!-- Sessions data for JavaScript -->
+<script id="sessions-data" type="application/json">{{ sessions_json|safe }}</script>
+
 <script>
 class ConversationHistory {
     constructor() {
         this.currentSessionId = null;
-        this.sessionsData = {{ sessions_json|safe }};
+        // Parse sessions data from script tag
+        try {
+            const sessionsDataScript = document.getElementById('sessions-data');
+            if (sessionsDataScript && sessionsDataScript.textContent) {
+                this.sessionsData = JSON.parse(sessionsDataScript.textContent);
+            } else {
+                this.sessionsData = {};
+            }
+        } catch (e) {
+            console.error('Error parsing sessions data:', e);
+            this.sessionsData = {};
+        }
         this.initializeEventListeners();
     }
     
@@ -181,23 +160,13 @@ class ConversationHistory {
             });
         });
         
-        // Filtres
-        document.getElementById('filter-type').addEventListener('change', () => {
-            this.applyFilters();
-        });
-        
-        document.getElementById('filter-date').addEventListener('change', () => {
-            this.applyFilters();
-        });
-        
-        document.getElementById('clear-filters').addEventListener('click', () => {
-            this.clearFilters();
-        });
-        
         // Export
-        document.getElementById('export-conversation').addEventListener('click', () => {
-            this.exportConversation();
-        });
+        const exportBtn = document.getElementById('export-conversation');
+        if (exportBtn) {
+            exportBtn.addEventListener('click', () => {
+                this.exportConversation();
+            });
+        }
     }
     
     selectSession(sessionElement) {
@@ -358,53 +327,6 @@ class ConversationHistory {
         return date.toLocaleTimeString('fr-FR', {
             hour: '2-digit',
             minute: '2-digit'
-        });
-    }
-    
-    applyFilters() {
-        const typeFilter = document.getElementById('filter-type').value;
-        const dateFilter = document.getElementById('filter-date').value;
-        
-        document.querySelectorAll('.session-item').forEach(item => {
-            let show = true;
-            
-            // Filtre par type
-            if (typeFilter) {
-                const lastType = item.querySelector('.badge').textContent.toLowerCase();
-                if (!lastType.includes(typeFilter.replace('_', ' '))) {
-                    show = false;
-                }
-            }
-            
-            // Filtre par date
-            if (dateFilter && show) {
-                const sessionDate = new Date(item.dataset.sessionDate);
-                const now = new Date();
-                
-                switch(dateFilter) {
-                    case 'today':
-                        show = sessionDate.toDateString() === now.toDateString();
-                        break;
-                    case 'week':
-                        const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
-                        show = sessionDate >= weekAgo;
-                        break;
-                    case 'month':
-                        const monthAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
-                        show = sessionDate >= monthAgo;
-                        break;
-                }
-            }
-            
-            item.style.display = show ? 'block' : 'none';
-        });
-    }
-    
-    clearFilters() {
-        document.getElementById('filter-type').value = '';
-        document.getElementById('filter-date').value = '';
-        document.querySelectorAll('.session-item').forEach(item => {
-            item.style.display = 'block';
         });
     }
     

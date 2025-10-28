@@ -7,13 +7,8 @@ class AssistantIAChat {
         this.isProcessing = false;
         this.modal = new bootstrap.Modal(document.getElementById('journalModal'));
         this.detailsModal = new bootstrap.Modal(document.getElementById('journalDetailsModal'));
-        this.isDragging = false;
-        this.draggedJournal = null;
-        this.touchStartX = 0;
-        this.touchStartY = 0;
 
         this.initializeEventListeners();
-        this.initializeDragAndDrop();
         this.loadSessionHistory();
     }
 
@@ -55,7 +50,7 @@ class AssistantIAChat {
 
         document.getElementById('journals-list').addEventListener('click', (e) => {
             const journalItem = e.target.closest('.journal-item');
-            if (journalItem && !e.target.closest('.drag-handle') && !this.isDragging) {
+            if (journalItem) {
                 this.handleJournalClick(journalItem);
             }
         });
@@ -87,88 +82,6 @@ class AssistantIAChat {
 
     }
 
-    initializeDragAndDrop() {
-        const journalsList = document.getElementById('journals-list');
-        const inputArea = document.getElementById('message-input-area');
-        const dropZone = document.getElementById('drop-zone');
-        const mobileDropZone = document.getElementById('mobile-drop-zone');
-
-        journalsList.style.touchAction = 'none';
-
-        journalsList.addEventListener('dragstart', (e) => {
-            const journal = e.target.closest('.draggable-journal');
-            if (journal) {
-                this.handleDragStart(e, journal);
-            }
-        });
-
-        journalsList.addEventListener('dragend', (e) => {
-            const journal = e.target.closest('.draggable-journal');
-            if (journal) {
-                this.handleDragEnd(e);
-            }
-        });
-
-        journalsList.addEventListener('touchstart', (e) => {
-            const journal = e.target.closest('.draggable-journal');
-            if (journal && !e.target.closest('.drag-handle')) {
-                this.handleDragStart(e, journal);
-                journal.classList.add('dragging');
-                this.touchStartX = e.touches[0].clientX;
-                this.touchStartY = e.touches[0].clientY;
-            }
-        }, { passive: false });
-
-        journalsList.addEventListener('touchmove', (e) => {
-            e.preventDefault();
-            const touch = e.touches[0];
-            const journal = this.draggedJournal;
-            if (journal) {
-                journal.style.position = 'absolute';
-                journal.style.left = `${touch.clientX - 50}px`;
-                journal.style.top = `${touch.clientY - 50}px`;
-                if (this.isElementInInputArea(touch) || this.isElementInMobileDropZone(touch)) {
-                    inputArea.classList.add('drop-zone-active');
-                    mobileDropZone.classList.add('drop-zone-active');
-                    this.showDropZone();
-                } else {
-                    inputArea.classList.remove('drop-zone-active');
-                    mobileDropZone.classList.remove('drop-zone-active');
-                }
-            }
-        }, { passive: false });
-
-        journalsList.addEventListener('touchend', (e) => {
-            const touch = e.changedTouches[0];
-            const journal = this.draggedJournal;
-            if (journal) {
-                journal.style.position = '';
-                journal.style.left = '';
-                journal.style.top = '';
-                journal.classList.remove('dragging');
-                if (this.isElementInInputArea(touch) || this.isElementInMobileDropZone(touch)) {
-                    this.selectJournalFromDrag(journal);
-                }
-                this.handleDragEnd(e);
-            }
-        });
-
-        if (inputArea) {
-            inputArea.addEventListener('dragover', (e) => this.handleDragOver(e));
-            inputArea.addEventListener('dragenter', (e) => this.handleDragEnter(e));
-            inputArea.addEventListener('dragleave', (e) => this.handleDragLeave(e));
-            inputArea.addEventListener('drop', (e) => this.handleDrop(e));
-        }
-
-        if (mobileDropZone) {
-            mobileDropZone.addEventListener('touchend', (e) => {
-                if (this.draggedJournal) {
-                    this.selectJournalFromDrag(this.draggedJournal);
-                    this.handleDragEnd(e);
-                }
-            });
-        }
-    }
 
     async refreshJournals() {
         try {
@@ -218,9 +131,8 @@ class AssistantIAChat {
 
         journals.forEach(journal => {
             const journalElement = document.createElement('div');
-            journalElement.className = 'list-group-item journal-item draggable-journal border-0';
+            journalElement.className = 'list-group-item journal-item clickable-journal border-0';
             journalElement.tabIndex = 0;
-            journalElement.draggable = true;
             journalElement.dataset.journalId = journal.id;
             journalElement.dataset.journalTitre = journal.titre;
             journalElement.dataset.journalDate = journal.date_creation;
@@ -242,9 +154,6 @@ class AssistantIAChat {
                         ${journal.categorie !== 'Non catégorisé' ? `<span class="badge bg-success bg-opacity-10 text-success border-0 px-2 py-1">${journal.categorie}</span>` : ''}
                     </div>
                 </div>
-                <div class="drag-handle">
-                    <i class="fas fa-grip-vertical text-muted"></i>
-                </div>
             `;
 
             journalsList.appendChild(journalElement);
@@ -254,7 +163,6 @@ class AssistantIAChat {
     }
 
     handleJournalClick(journalElement) {
-        if (this.isDragging) return;
         journalElement.classList.add('selecting');
         setTimeout(() => {
             journalElement.classList.remove('selecting');
@@ -369,147 +277,7 @@ class AssistantIAChat {
         }
     }
 
-    handleDragStart(e, journal) {
-        console.log('Drag start:', journal.dataset.journalId);
-        this.isDragging = true;
-        this.draggedJournal = journal;
-
-        if (e.dataTransfer) {
-            e.dataTransfer.setData('text/plain', journal.dataset.journalId);
-            e.dataTransfer.setData('application/json', JSON.stringify({
-                id: journal.dataset.journalId,
-                titre: journal.dataset.journalTitre,
-                date: journal.dataset.journalDate,
-                contenu: journal.dataset.journalContenu,
-                type: journal.dataset.journalType,
-                categorie: journal.dataset.journalCategorie
-            }));
-            e.dataTransfer.effectAllowed = 'move';
-        }
-
-        journal.classList.add('dragging');
-        this.showDropZone();
-    }
-
-    handleDragEnd(e) {
-        console.log('Drag end');
-        this.isDragging = false;
-        if (this.draggedJournal) {
-            this.draggedJournal.classList.remove('dragging');
-            this.draggedJournal.style.position = '';
-            this.draggedJournal.style.left = '';
-            this.draggedJournal.style.top = '';
-            this.draggedJournal = null;
-        }
-        document.getElementById('message-input-area').classList.remove('drop-zone-active');
-        document.getElementById('mobile-drop-zone').classList.remove('drop-zone-active');
-        this.hideDropZone();
-    }
-
-    handleDragOver(e) {
-        e.preventDefault();
-        e.dataTransfer.dropEffect = 'move';
-    }
-
-    handleDragEnter(e) {
-        e.preventDefault();
-        const inputArea = document.getElementById('message-input-area');
-        if (inputArea && this.isElementInInputArea(e)) {
-            inputArea.classList.add('drop-zone-active');
-            this.showDropZone();
-        }
-    }
-
-    handleDragLeave(e) {
-        const inputArea = document.getElementById('message-input-area');
-        if (inputArea && !this.isElementInInputArea(e)) {
-            inputArea.classList.remove('drop-zone-active');
-        }
-    }
-
-    handleDrop(e) {
-        console.log('Drop:', e.dataTransfer.getData('text/plain'));
-        e.preventDefault();
-        const inputArea = document.getElementById('message-input-area');
-        if (inputArea) {
-            inputArea.classList.remove('drop-zone-active');
-        }
-        const journalId = e.dataTransfer.getData('text/plain');
-        const journal = document.querySelector(`.draggable-journal[data-journal-id="${journalId}"]`);
-        if (journal) {
-            this.selectJournalFromDrag(journal);
-        } else {
-            console.error('Journal not found for ID:', journalId);
-        }
-        this.hideDropZone();
-    }
-
-    selectJournalFromDrag(journalElement) {
-        this.selectedJournalData = {
-            id: journalElement.dataset.journalId,
-            titre: journalElement.dataset.journalTitre,
-            date: journalElement.dataset.journalDate,
-            contenu: journalElement.dataset.journalContenu,
-            type: journalElement.dataset.journalType,
-            categorie: journalElement.dataset.journalCategorie
-        };
-
-        this.selectedJournalId = this.selectedJournalData.id;
-        document.getElementById('selected-journal').value = this.selectedJournalId;
-
-        this.showJournalInInputArea();
-        this.updateJournalListState();
-        this.addSystemMessage(`🎯 Journal "${this.selectedJournalData.titre}" ajouté par glisser-déposer`);
-    }
-
-    isElementInInputArea(e) {
-        const inputArea = document.getElementById('message-input-area');
-        if (!inputArea) return false;
-
-        const rect = inputArea.getBoundingClientRect();
-        const clientX = e.clientX || (e.touches && e.touches[0]?.clientX) || (e.changedTouches && e.changedTouches[0]?.clientX);
-        const clientY = e.clientY || (e.touches && e.touches[0]?.clientY) || (e.changedTouches && e.changedTouches[0]?.clientY);
-
-        const padding = 10;
-        return (
-            clientX >= rect.left - padding &&
-            clientX <= rect.right + padding &&
-            clientY >= rect.top - padding &&
-            clientY <= rect.bottom + padding
-        );
-    }
-
-    isElementInMobileDropZone(e) {
-        const mobileDropZone = document.getElementById('mobile-drop-zone');
-        if (!mobileDropZone) return false;
-
-        const rect = mobileDropZone.getBoundingClientRect();
-        const clientX = e.clientX || (e.touches && e.touches[0]?.clientX) || (e.changedTouches && e.changedTouches[0]?.clientX);
-        const clientY = e.clientY || (e.touches && e.touches[0]?.clientY) || (e.changedTouches && e.changedTouches[0]?.clientY);
-
-        const padding = 10;
-        return (
-            clientX >= rect.left - padding &&
-            clientX <= rect.right + padding &&
-            clientY >= rect.top - padding &&
-            clientY <= rect.bottom + padding
-        );
-    }
-
-    showDropZone() {
-        const dropZone = document.getElementById('drop-zone');
-        if (dropZone) {
-            dropZone.style.display = 'block';
-        }
-    }
-
-    hideDropZone() {
-        const dropZone = document.getElementById('drop-zone');
-        if (dropZone) {
-            dropZone.style.display = 'none';
-            dropZone.classList.remove('drop-zone-active');
-        }
-    }
+    // Drag and drop functionality removed - only click functionality remains
 
     showJournalModal(journalElement) {
         this.selectedJournalData = {

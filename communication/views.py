@@ -300,26 +300,47 @@ class SupprimerRapportView(LoginRequiredMixin, View):
 class AssistantIAView(LoginRequiredMixin, View):
     def get(self, request):
         try:
-            journals = Journal.objects.filter(utilisateur=request.user).order_by('-date_creation')[:10]
+            # Get journals with multimodal support info
+            journals = Journal.objects.filter(
+                utilisateur=request.user
+            ).order_by('-date_creation')[:15].select_related('analyse')
+            
+            # Get recent conversations with journal info
             conversations_recentes = AssistantIA.objects.filter(
                 utilisateur=request.user
             ).select_related('journal').order_by('-date_creation')[:5]
             
+            # Get statistics
             stats = ai_service.get_statistiques_utilisateur(request.user)
             
+            # Prepare journal data with multimodal indicators
+            journals_with_info = []
+            for journal in journals:
+                journal_info = {
+                    'journal': journal,
+                    'has_audio': bool(journal.audio),
+                    'has_image': bool(journal.image),
+                    'has_text': bool(journal.contenu_texte and journal.contenu_texte.strip()),
+                    'is_multimodal': (bool(journal.audio) or bool(journal.image)) and bool(journal.contenu_texte and journal.contenu_texte.strip()),
+                    'has_analysis': hasattr(journal, 'analyse') and journal.analyse is not None,
+                }
+                journals_with_info.append(journal_info)
+            
             context = {
-                'journals': journals,
+                'journals': [j['journal'] for j in journals_with_info],
+                'journals_with_info': journals_with_info,
                 'conversations_recentes': conversations_recentes,
                 'session_id': str(uuid.uuid4()),
                 'stats': stats,
                 'active_tab': 'assistant_ia',
+                'total_journals': Journal.objects.filter(utilisateur=request.user).count(),
             }
             return render(request, 'communication/assistant_ia/assistant.html', context)
             
         except Exception as e:
-            logger.error(f"Erreur chargement assistant IA: {str(e)}")
-            messages.error(request, "Erreur lors du chargement de l'assistant IA")
-            return redirect('users:home')
+            logger.error(f"Erreur chargement assistant IA: {str(e)}", exc_info=True)
+            messages.error(request, f"Erreur lors du chargement de l'assistant IA: {str(e)}")
+            return redirect('communication:dashboard')
 
 @method_decorator(ensure_csrf_cookie, name='dispatch')
 class EnvoyerMessageView(LoginRequiredMixin, View):
@@ -330,28 +351,50 @@ class EnvoyerMessageView(LoginRequiredMixin, View):
             journal_id = data.get('journal_id')
             session_id = data.get('session_id')
             
+            # Validation
             if not message:
                 return JsonResponse({'success': False, 'error': 'Message vide'}, status=400)
             
-            if len(message) > 1000:
-                return JsonResponse({'success': False, 'error': 'Message trop long (max 1000 caractères)'}, status=400)
+            if len(message) > 2000:
+                return JsonResponse({'success': False, 'error': 'Message trop long (max 2000 caractères)'}, status=400)
             
             if not session_id:
                 return JsonResponse({'success': False, 'error': 'Session ID manquant'}, status=400)
             
+            # Get journal with multimodal info
             journal = None
+            journal_info = {}
             if journal_id:
                 try:
                     journal_uuid = uuid.UUID(journal_id)
-                    journal = Journal.objects.get(id=journal_uuid, utilisateur=request.user)
-                except (ValueError, Journal.DoesNotExist):
+                    journal = Journal.objects.select_related('analyse').get(
+                        id=journal_uuid, 
+                        utilisateur=request.user
+                    )
+                    
+                    # Prepare multimodal info
+                    journal_info = {
+                        'has_audio': bool(journal.audio),
+                        'has_image': bool(journal.image),
+                        'has_text': bool(journal.contenu_texte and journal.contenu_texte.strip()),
+                        'type_entree': journal.type_entree,
+                        'has_analysis': hasattr(journal, 'analyse') and journal.analyse is not None,
+                    }
+                    
+                    logger.info(f"Journal sélectionné: {journal.id}, Type: {journal.type_entree}, Multimodal: {journal_info['has_audio'] or journal_info['has_image']}")
+                    
+                except (ValueError, Journal.DoesNotExist) as e:
+                    logger.warning(f"Journal non trouvé: {journal_id}, Error: {e}")
                     return JsonResponse({'success': False, 'error': 'Journal non trouvé ou non autorisé'}, status=404)
             
+            # Context for AI service
             contexte = {
                 'user_agent': request.META.get('HTTP_USER_AGENT', ''),
-                'ip_address': self._get_client_ip(request)
+                'ip_address': self._get_client_ip(request),
+                'journal_info': journal_info,
             }
             
+            # Process interaction
             resultat = ai_service.traiter_interaction(
                 utilisateur=request.user,
                 message=message,
@@ -360,25 +403,38 @@ class EnvoyerMessageView(LoginRequiredMixin, View):
                 contexte=contexte
             )
             
-            if resultat['success']:
-                return JsonResponse({
+            if resultat.get('success'):
+                response_data = {
                     'success': True,
-                    'reponse': resultat['reponse'],
-                    'date_interaction': resultat['date_interaction'],
-                    'type_interaction': resultat['type_interaction'],
-                    'statistiques': resultat['statistiques']
-                })
+                    'reponse': resultat.get('reponse', ''),
+                    'date_interaction': resultat.get('date_interaction', ''),
+                    'type_interaction': resultat.get('type_interaction', 'question'),
+                    'type_interaction_display': resultat.get('type_interaction_display', 'Question'),
+                    'statistiques': resultat.get('statistiques', {}),
+                }
+                
+                # Add conversation ID if available
+                if 'conversation_id' in resultat:
+                    response_data['conversation_id'] = resultat['conversation_id']
+                
+                return JsonResponse(response_data)
             else:
+                error_msg = resultat.get('error', 'Erreur lors du traitement du message')
+                logger.error(f"Erreur traitement interaction: {error_msg}")
                 return JsonResponse({
                     'success': False,
-                    'error': resultat.get('error', 'Erreur lors du traitement du message')
+                    'error': error_msg
                 }, status=500)
                 
-        except json.JSONDecodeError:
+        except json.JSONDecodeError as e:
+            logger.error(f"Erreur décodage JSON: {e}")
             return JsonResponse({'success': False, 'error': 'Données JSON invalides'}, status=400)
         except Exception as e:
-            logger.error(f"Erreur envoi message: {str(e)}")
-            return JsonResponse({'success': False, 'error': f'Erreur interne du serveur: {str(e)}'}, status=500)
+            logger.error(f"Erreur envoi message: {str(e)}", exc_info=True)
+            return JsonResponse({
+                'success': False,
+                'error': 'Erreur interne du serveur. Veuillez réessayer.'
+            }, status=500)
     
     def _get_client_ip(self, request):
         x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
@@ -390,36 +446,82 @@ class EnvoyerMessageView(LoginRequiredMixin, View):
 
 class HistoriqueConversationsView(LoginRequiredMixin, View):
     def get(self, request):
-        conversations = AssistantIA.objects.filter(
-            utilisateur=request.user
-        ).order_by('-date_creation')
-        
-        sessions = {}
-        for conv in conversations:
-            if conv.session_id not in sessions:
-                sessions[conv.session_id] = []
-            sessions[conv.session_id].append(conv)
-        
-        sessions_json = {}
-        for session_id, convs in sessions.items():
-            session_key = str(session_id)
-            sessions_json[session_key] = [
-                {
-                    'message_utilisateur': conv.message_utilisateur,
-                    'reponse_ia': conv.reponse_ia,
-                    'date_creation': conv.date_creation.isoformat(),
-                    'type_interaction': conv.type_interaction,
-                    'type_interaction_display': conv.get_type_interaction_display(),
-                }
-                for conv in convs
-            ]
-        
-        context = {
-            'sessions': sessions,
-            'sessions_json': json.dumps(sessions_json),
-            'active_tab': 'assistant_ia',
-        }
-        return render(request, 'communication/assistant_ia/historique.html', context)
+        try:
+            # Get all conversations with journal info
+            conversations = AssistantIA.objects.filter(
+                utilisateur=request.user
+            ).select_related('journal').order_by('-date_creation')
+            
+            # Group by session
+            sessions = {}
+            for conv in conversations:
+                session_key = str(conv.session_id)
+                if session_key not in sessions:
+                    sessions[session_key] = []
+                sessions[session_key].append(conv)
+            
+            # Sort sessions by most recent (safely handle empty lists)
+            def get_first_date(session_pair):
+                convs = session_pair[1]
+                if convs and len(convs) > 0:
+                    return convs[0].date_creation
+                return timezone.now()
+            
+            sessions = dict(sorted(sessions.items(), 
+                key=get_first_date,
+                reverse=True
+            ))
+            
+            # Sort conversations within each session by date (oldest first for display)
+            for session_key in sessions:
+                sessions[session_key] = sorted(sessions[session_key], key=lambda x: x.date_creation)
+            
+            # Prepare JSON data with multimodal info
+            sessions_json = {}
+            for session_id, convs in sessions.items():
+                if not convs:
+                    continue
+                sessions_json[session_id] = [
+                    {
+                        'id': str(conv.id),
+                        'message_utilisateur': conv.message_utilisateur or '',
+                        'reponse_ia': conv.reponse_ia or '',
+                        'date_creation': conv.date_creation.isoformat(),
+                        'type_interaction': conv.type_interaction or 'question',
+                        'type_interaction_display': conv.get_type_interaction_display(),
+                        'journal_id': str(conv.journal.id) if conv.journal else None,
+                        'journal_type': getattr(conv.journal, 'type_entree', None) if conv.journal else None,
+                        'multimodal': getattr(conv, 'type_contenu_journal', None) in ['audio', 'image', 'multimodal'] if conv.journal else False,
+                        'tokens_utilises': conv.tokens_utilises or 0,
+                        'score_confiance': float(conv.score_confiance) if conv.score_confiance else 0.0,
+                    }
+                    for conv in convs
+                ]
+            
+            # Get stats
+            total_sessions = len(sessions)
+            total_conversations = conversations.count()
+            
+            # Ensure sessions_json is properly formatted JSON string
+            try:
+                sessions_json_str = json.dumps(sessions_json, default=str, ensure_ascii=False)
+            except Exception as e:
+                logger.error(f"Error serializing sessions_json: {str(e)}")
+                sessions_json_str = "{}"
+            
+            context = {
+                'sessions': sessions,
+                'sessions_json': sessions_json_str,
+                'active_tab': 'assistant_ia',
+                'total_sessions': total_sessions,
+                'total_conversations': total_conversations,
+            }
+            return render(request, 'communication/assistant_ia/historique.html', context)
+            
+        except Exception as e:
+            logger.error(f"Erreur chargement historique: {str(e)}", exc_info=True)
+            messages.error(request, f"Erreur lors du chargement de l'historique: {str(e)}")
+            return redirect('communication:assistant_ia')
 
 class GetSessionView(LoginRequiredMixin, View):
     def get(self, request, session_id):
@@ -449,19 +551,32 @@ class RefreshJournalsView(LoginRequiredMixin, View):
             cache_key = f'journals_{request.user.id}'
             journals_data = cache.get(cache_key)
             if not journals_data:
-                journals = Journal.objects.filter(utilisateur=request.user).order_by('-date_creation')[:10]
-                journals_data = [{
-                    'id': str(journal.id),
-                    'titre': journal.contenu_texte[:50] + '...' if journal.contenu_texte else f'Journal {journal.date_creation.strftime("%Y-%m-%d")}',
-                    'date_creation': journal.date_creation.strftime('%d/%m/%Y'),
-                    'contenu': journal.contenu_texte or f'[{journal.type_entree}: {journal.audio.name if journal.audio else journal.image.name if journal.image else "Sans contenu"}]',
-                    'type_entree': journal.type_entree,
-                    'categorie': journal.categorie or 'Non catégorisé'
-                } for journal in journals]
+                journals = Journal.objects.filter(utilisateur=request.user).select_related('analyse').order_by('-date_creation')[:15]
+                journals_data = []
+                for journal in journals:
+                    has_audio = bool(journal.audio)
+                    has_image = bool(journal.image)
+                    has_text = bool(journal.contenu_texte and journal.contenu_texte.strip())
+                    is_multimodal = (has_audio or has_image) and has_text
+                    
+                    journal_data = {
+                        'id': str(journal.id),
+                        'titre': journal.contenu_texte[:50] + '...' if journal.contenu_texte else f'Journal {journal.date_creation.strftime("%Y-%m-%d")}',
+                        'date_creation': journal.date_creation.strftime('%d/%m/%Y'),
+                        'contenu': journal.contenu_texte or f'[{journal.type_entree}: {journal.audio.name if journal.audio else journal.image.name if journal.image else "Sans contenu"}]',
+                        'type_entree': journal.type_entree,
+                        'categorie': journal.categorie or 'Non catégorisé',
+                        'has_audio': has_audio,
+                        'has_image': has_image,
+                        'has_text': has_text,
+                        'multimodal': is_multimodal,
+                        'has_analysis': hasattr(journal, 'analyse') and journal.analyse is not None,
+                    }
+                    journals_data.append(journal_data)
                 cache.set(cache_key, journals_data, timeout=300)  # Cache for 5 minutes
             return JsonResponse({'success': True, 'journals': journals_data})
         except Exception as e:
-            logger.error(f"Erreur récupération journaux: {str(e)}")
+            logger.error(f"Erreur récupération journaux: {str(e)}", exc_info=True)
             return JsonResponse({'success': False, 'error': 'Erreur lors de la récupération des journaux'}, status=500)
         
 
