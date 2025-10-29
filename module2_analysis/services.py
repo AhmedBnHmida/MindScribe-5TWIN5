@@ -1,6 +1,6 @@
 """
 Main AI orchestration layer for multimodal analysis.
-This module uses OpenRouter to access Mistral AI for multimodal analysis.
+This module uses OpenRouter to access Mistral AI's free model (mistral-nemo) for multimodal analysis.
 """
 import os
 import logging
@@ -13,15 +13,93 @@ from django.conf import settings
 # Configure logging
 logger = logging.getLogger(__name__)
 
-# OpenRouter API key from settings
+# API keys from settings
 OPENROUTER_API_KEY = getattr(settings, 'OPENROUTER_API_KEY', '')
+ASSEMBLYAI_API_KEY = getattr(settings, 'ASSEMBLYAI_API_KEY', '')
 
 # No need for load_all_models function since we're using OpenRouter API
 
 
+def transcribe_audio_with_whisper(audio_path):
+    """
+    Transcribe audio using AssemblyAI's official Python SDK (FREE $50 credits!).
+    Much simpler and more reliable than the REST API.
+    
+    Args:
+        audio_path (str): Path to the audio file
+        
+    Returns:
+        str: The transcription of the audio, or None if transcription failed
+    """
+    try:
+        logger.info("="*80)
+        logger.info("SPEECH-TO-TEXT: Starting audio transcription with AssemblyAI SDK (FREE)...")
+        logger.info("="*80)
+        logger.info(f"Transcribing audio file: {audio_path}")
+        
+        # Check if AssemblyAI API key is available
+        if not ASSEMBLYAI_API_KEY:
+            logger.error("ERROR: AssemblyAI API key not found in settings!")
+            logger.error("Get your FREE API key at: https://www.assemblyai.com/")
+            logger.error("Then add ASSEMBLYAI_API_KEY to your settings.py file")
+            logger.error("="*80)
+            return None
+        
+        # Import AssemblyAI SDK
+        try:
+            import assemblyai as aai
+        except ImportError:
+            logger.error("ERROR: AssemblyAI SDK not installed!")
+            logger.error("Run: pip install assemblyai")
+            logger.error("="*80)
+            return None
+        
+        # Configure AssemblyAI with API key
+        aai.settings.api_key = ASSEMBLYAI_API_KEY
+        
+        logger.info(f"Transcribing audio file: {os.path.basename(audio_path)}")
+        logger.info("Using AssemblyAI SDK to transcribe audio")
+        
+        # Create transcriber and transcribe the audio file
+        # The SDK handles upload and polling automatically!
+        transcriber = aai.Transcriber()
+        
+        # Configure for French language
+        config = aai.TranscriptionConfig(language_code="fr")
+        
+        logger.info("Uploading and processing...")
+        transcript = transcriber.transcribe(audio_path, config=config)
+        
+        # Check if transcription was successful
+        if transcript.status == aai.TranscriptStatus.error:
+            logger.error(f"Transcription failed: {transcript.error}")
+            logger.error("="*80)
+            return None
+        
+        transcription = transcript.text.strip()
+        
+        if transcription:
+            logger.info("TRANSCRIPTION COMPLETED!")
+            logger.info(f"Transcribed text: {transcription}")
+            logger.info("="*80)
+            return transcription
+        else:
+            logger.error("No transcription text in response")
+            logger.error("="*80)
+            return None
+        
+    except Exception as e:
+        logger.error(f"ERROR during transcription: {e}")
+        logger.error("="*80)
+        return None
+
+
 def analyze_multimodal_content(text=None, audio_path=None, image_path=None):
     """
-    Analyze multimodal content (text, audio, image) using Mistral AI via OpenRouter.
+    Analyze multimodal content (text, audio, image) using appropriate AI models via OpenRouter.
+    - Text analysis: mistralai/mistral-nemo:free
+    - Image analysis: google/gemini-2.0-flash-exp:free (supports vision)
+    - Audio: Transcribed first using OpenAI Whisper API, then analyzed
     
     Args:
         text (str, optional): The text to analyze
@@ -35,6 +113,9 @@ def analyze_multimodal_content(text=None, audio_path=None, image_path=None):
     
     # Prepare the content for analysis
     content_parts = []
+    audio_base64 = None
+    image_base64 = None
+    audio_transcription = None
     
     # Add text content if provided with proper encoding handling
     if text:
@@ -48,13 +129,53 @@ def analyze_multimodal_content(text=None, audio_path=None, image_path=None):
             # Fall back to the original text
             content_parts.append(f"TEXT CONTENT: {text}")
     
-    # Process audio file if provided
+    # Process audio file if provided - transcribe it first using Speech-to-Text
     if audio_path:
-        content_parts.append(f"AUDIO FILE: {os.path.basename(audio_path)}")
+        try:
+            # First, transcribe the audio using Speech-to-Text (AssemblyAI)
+            logger.info(f"Processing audio file: {os.path.basename(audio_path)}")
+            print("\n" + "="*80)
+            print("SPEECH-TO-TEXT (AssemblyAI): Starting transcription...")
+            print("="*80)
+            audio_transcription = transcribe_audio_with_whisper(audio_path)
+            
+            if audio_transcription:
+                print("\n" + "="*80)
+                print("TRANSCRIPTION RESULT:")
+                print(f'"{audio_transcription}"')
+                print("="*80 + "\n")
+                logger.info("Speech-to-Text completed successfully!")
+                logger.info(f"Transcribed text: {audio_transcription[:100]}{'...' if len(audio_transcription) > 100 else ''}")
+                content_parts.append(f"AUDIO SPEECH-TO-TEXT TRANSCRIPTION (mot pour mot): {audio_transcription}")
+                content_parts.append("IMPORTANT: Cette transcription provient d'un système Speech-to-Text professionnel et représente EXACTEMENT ce qui a été dit dans l'audio. Base ton analyse émotionnelle sur le CONTENU RÉEL de cette transcription, pas sur des hypothèses.")
+            else:
+                logger.warning("Audio transcription failed, skipping audio analysis")
+                logger.warning("Speech-to-Text transcription failed - audio analysis will be skipped")
+                content_parts.append("AUDIO FILE: Transcription non disponible")
+                
+            # Also encode audio for potential future use
+            with open(audio_path, 'rb') as audio_file:
+                audio_bytes = audio_file.read()
+                audio_base64 = base64.b64encode(audio_bytes).decode('utf-8')
+                logger.info(f"Encoded audio file to base64: {len(audio_base64)} characters")
+        except Exception as e:
+            logger.error(f"Error processing audio file: {e}")
+            logger.error(f"Error processing audio: {e}")
+            content_parts.append("AUDIO FILE: Erreur lors du traitement")
     
     # Process image file if provided
     if image_path:
+        try:
+            # Read and encode image file to base64
+            with open(image_path, 'rb') as image_file:
+                image_bytes = image_file.read()
+                image_base64 = base64.b64encode(image_bytes).decode('utf-8')
+                logger.info(f"Encoded image file to base64: {len(image_base64)} characters")
+        except Exception as e:
+            logger.error(f"Error encoding image file: {e}")
+        
         content_parts.append(f"IMAGE FILE: {os.path.basename(image_path)}")
+        content_parts.append("IMPORTANT POUR L'ANALYSE D'IMAGE: Examine attentivement les expressions faciales, la posture corporelle et l'ambiance générale. Sois particulièrement vigilant pour détecter les signes de tristesse, d'anxiété, de stress ou d'autres émotions négatives. Ne présume pas que les gens sourient ou sont heureux par défaut.")
     
     # Combine all content
     combined_content = "\n\n".join(content_parts)
@@ -81,7 +202,6 @@ Please provide the following information in a structured JSON format:
   "negative_aspects": ["aspect négatif 1", "aspect négatif 2", "aspect négatif 3"],
   "action_items": ["action suggérée 1", "action suggérée 2", "action suggérée 3"],
   "mood_analysis": "Une analyse approfondie de l'humeur et de l'état émotionnel, avec des observations sur les nuances et les variations d'émotions",
-  "audio_transcription": "transcription si un fichier audio est fourni",
   "image_caption": "description si une image est fournie",
   "image_scene": "type de scène si une image est fournie",
   "image_analysis": "analyse approfondie de ce que l'image représente dans son contexte"
@@ -95,8 +215,12 @@ INSTRUCTIONS CRITIQUES:
 5. Suggère des actions concrètes et pertinentes basées sur le contenu.
 6. Toute l'analyse doit être en français et rédigée avec un ton bienveillant et empathique.
 7. L'analyse d'humeur doit être détaillée et nuancée, pas seulement superficielle.
-8. N'utilise PAS de caractères spéciaux ou Unicode rares - utilise uniquement des caractères ASCII standard et des caractères français courants.
-9. Assure-toi que la réponse JSON est valide et ne contient pas de caractères qui pourraient causer des problèmes d'encodage.
+8. Pour les images, ANALYSE ATTENTIVEMENT les expressions faciales et le langage corporel pour détecter les émotions négatives comme la tristesse, la mélancolie, l'anxiété ou la dépression.
+9. Ne présume JAMAIS qu'une personne est heureuse dans une image sans preuves claires (sourire évident, posture joyeuse, etc.).
+10. Si une image montre des signes de tristesse ou d'émotions négatives, reflète cela précisément dans ton analyse.
+11. N'utilise PAS de caractères spéciaux ou Unicode rares - utilise uniquement des caractères ASCII standard et des caractères français courants.
+12. Assure-toi que la réponse JSON est valide et ne contient pas de caractères qui pourraient causer des problèmes d'encodage.
+13. Si une transcription audio est fournie dans le contenu, base ton analyse sur le CONTENU EXACT de la transcription, pas sur des hypothèses.
 """
     
     try:
@@ -104,11 +228,53 @@ INSTRUCTIONS CRITIQUES:
         logger.info("Sending request to OpenRouter AI...")
         
         # Prepare the request payload with a more detailed system prompt
+        # Build the user message content
+        user_message_content = []
+        
+        # Add text prompt
+        user_message_content.append({
+            "type": "text",
+            "text": prompt
+        })
+        
+        # Add image if provided (using data URL format)
+        if image_base64:
+            # Determine image type from file extension
+            image_ext = os.path.splitext(image_path)[1].lower()
+            mime_types = {
+                '.jpg': 'image/jpeg',
+                '.jpeg': 'image/jpeg',
+                '.png': 'image/png',
+                '.gif': 'image/gif',
+                '.webp': 'image/webp'
+            }
+            mime_type = mime_types.get(image_ext, 'image/jpeg')
+            
+            user_message_content.append({
+                "type": "image_url",
+                "image_url": {
+                    "url": f"data:{mime_type};base64,{image_base64}"
+                }
+            })
+            logger.info(f"Added image to request with MIME type: {mime_type}")
+        
+        # Note: Audio is transcribed separately using Whisper, so we don't send audio_url anymore
+        
+        # Choose the right model based on content type
+        # Use Google Gemini Flash (free) for images as it supports vision
+        # Use Mistral Nemo (free) for text-only analysis
+        if image_base64:
+            model_name = "google/gemini-2.0-flash-exp:free"
+            logger.info("Using Google Gemini Flash for image analysis")
+        else:
+            model_name = "mistralai/mistral-nemo:free"
+            logger.info("Using Mistral Nemo for text analysis")
+        
         payload = {
-            "model": "meta-llama/llama-3.1-8b-instruct",  # Modèle gratuit de Meta
+            "model": model_name,
             "messages": [
-                {"role": "system", "content": "Tu es un assistant d'analyse avancé spécialisé dans l'analyse de journaux personnels. Tu excelles dans l'analyse de texte, audio et images pour en extraire des insights profonds. Tu fournis toujours des analyses détaillées, empathiques et pertinentes en français. Tu réponds UNIQUEMENT avec du JSON valide, sans texte supplémentaire. Tes résumés sont toujours personnalisés, utilisant la forme 'tu', et offrent des perspectives significatives. IMPORTANT: N'utilise PAS de caractères spéciaux ou Unicode rares dans tes réponses - utilise uniquement des caractères ASCII standard et des caractères français courants pour éviter les problèmes d'encodage."},
-                {"role": "user", "content": prompt}
+                {"role": "system", "content": "Tu es un assistant d'analyse avancé spécialisé dans l'analyse de journaux personnels. Tu excelles dans l'analyse de texte, audio et images pour en extraire des insights profonds. Tu es PARTICULIÈREMENT doué pour détecter avec précision les émotions réelles dans les expressions faciales, le langage corporel et le ton vocal, qu'elles soient positives (joie, enthousiasme, sérénité) ou négatives (tristesse, anxiété, colère). Pour l'audio, tu commences TOUJOURS par transcrire EXACTEMENT ce qui est dit, mot pour mot, avant de faire ton analyse. NE FABRIQUE JAMAIS une transcription - si tu ne peux pas comprendre l'audio clairement, indique simplement 'Transcription non claire' au lieu d'inventer du contenu. Tu fournis toujours des analyses détaillées, empathiques et pertinentes en français. Tu réponds UNIQUEMENT avec du JSON valide, sans texte supplémentaire. Tes résumés sont toujours personnalisés, utilisant la forme 'tu', et offrent des perspectives significatives. IMPORTANT: N'utilise PAS de caractères spéciaux ou Unicode rares dans tes réponses - utilise uniquement des caractères ASCII standard et des caractères français courants pour éviter les problèmes d'encodage."},
+                {"role": "user", "content": user_message_content if len(user_message_content) > 1 else prompt}
             ]
         }
         
@@ -194,7 +360,8 @@ INSTRUCTIONS CRITIQUES:
             "negative_aspects": ai_results.get("negative_aspects"),
             "action_items": ai_results.get("action_items"),
             "mood_analysis": ai_results.get("mood_analysis"),
-            "audio_transcription": ai_results.get("audio_transcription"),
+            # Use the REAL transcription from Whisper, not the AI's fabricated one
+            "audio_transcription": audio_transcription if audio_transcription else ai_results.get("audio_transcription"),
             "image_caption": ai_results.get("image_caption"),
             "image_scene": ai_results.get("image_scene"),
             "image_analysis": ai_results.get("image_analysis")

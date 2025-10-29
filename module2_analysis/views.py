@@ -144,53 +144,85 @@ def analyse_api_view(request):
         
         # Validate response data
         response_serializer = AnalysisResponseSerializer(data=analysis_results)
+        
+        # Debug logging for response validation
+        print(f"Validating response with serializer: {analysis_results.keys()}")
+        
         if response_serializer.is_valid():
+            print("Response serializer validation successful")
             # If user_id is provided, save the analysis to the database
             if user_id:
                 try:
                     # Try to get the user
+                    print(f"Looking up user with ID: {user_id}")
                     user = User.objects.get(id=user_id)
+                    print(f"Found user: {user.username}")
                     
+                    # Handle None values for JSONFields
+                    emotions_detected = analysis_results.get('emotions_detected') or []
+                    keywords = analysis_results.get('keywords') or []
+                    topics = analysis_results.get('topics') or []
+                    positive_aspects = analysis_results.get('positive_aspects') or []
+                    negative_aspects = analysis_results.get('negative_aspects') or []
+                    action_items = analysis_results.get('action_items') or []
+                    
+                    print("Creating journal analysis entry")
                     # Create a journal analysis entry with enhanced fields
                     journal_analysis = JournalAnalysis.objects.create(
                         user=user,
                         text=text if text else '',
                         sentiment=analysis_results.get('sentiment', 'neutre'),
                         emotion_score=analysis_results.get('emotion_score', 0.5),
-                        emotions_detected=analysis_results.get('emotions_detected', []),
-                        keywords=analysis_results.get('keywords', []),
-                        topics=analysis_results.get('topics', []),
+                        emotions_detected=emotions_detected,
+                        keywords=keywords,
+                        topics=topics,
                         summary=analysis_results.get('summary', ''),
                         detailed_summary=analysis_results.get('detailed_summary', ''),
-                        positive_aspects=analysis_results.get('positive_aspects', []),
-                        negative_aspects=analysis_results.get('negative_aspects', []),
-                        action_items=analysis_results.get('action_items', []),
+                        positive_aspects=positive_aspects,
+                        negative_aspects=negative_aspects,
+                        action_items=action_items,
                         mood_analysis=analysis_results.get('mood_analysis', ''),
-                        audio_transcription=analysis_results.get('audio_transcription', ''),
-                        image_caption=analysis_results.get('image_caption', ''),
-                        image_scene=analysis_results.get('image_scene', ''),
-                        image_analysis=analysis_results.get('image_analysis', '')
+                        audio_transcription=analysis_results.get('audio_transcription') or '',
+                        image_caption=analysis_results.get('image_caption') or '',
+                        image_scene=analysis_results.get('image_scene') or '',
+                        image_analysis=analysis_results.get('image_analysis') or ''
                     )
+                    
+                    print("Journal analysis entry created successfully")
                     
                     # Save audio and image if provided
                     if audio_file:
+                        print(f"Saving audio file: {audio_file.name}")
                         journal_analysis.audio_file = audio_file
                     
                     if image_file:
+                        print(f"Saving image file: {image_file.name}")
                         journal_analysis.image_file = image_file
                     
                     journal_analysis.save()
+                    print("D")
                     
                     # Include the analysis ID in the response
                     analysis_results['analysis_id'] = str(journal_analysis.id)
+                    print(f"Analysis ID added to response: {journal_analysis.id}")
                 
                 except User.DoesNotExist:
                     logger.warning(f"User with ID {user_id} not found")
+                    print(f"ERROR: User with ID {user_id} not found")
                 except Exception as e:
                     logger.error(f"Error saving analysis to database: {e}")
+                    print(f"ERROR saving analysis to database: {e}")
+                    print(f"Error type: {type(e)}")
+                    # Return error to client for debugging
+                    return Response(
+                        {"error": f"Database error: {str(e)}"},
+                        status=status.HTTP_500_INTERNAL_SERVER_ERROR
+                    )
             
+            print("Returning successful response")
             return Response(analysis_results, status=status.HTTP_200_OK)
         else:
+            print(f"Response serializer validation failed: {response_serializer.errors}")
             return Response(response_serializer.errors, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
     
     except Exception as e:
