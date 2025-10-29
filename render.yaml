@@ -1,0 +1,28 @@
+services:
+  - type: web
+    name: mindscribe
+    env: docker
+    plan: starter
+    autoDeploy: true
+    region: frankfurt
+    dockerfilePath: ./Dockerfile
+    healthCheckPath: /
+    envVars:
+      - key: DJANGO_SETTINGS_MODULE
+        value: mindscribe.settings
+      - key: DEBUG
+        value: false
+      - key: SECRET_KEY
+        generateValue: true
+      - key: MONGODB_URI
+        sync: false
+      - key: MONGODB_DB
+        value: mindscribe_db
+      - key: OPENROUTER_API_KEY
+        sync: false
+      - key: WORKERS
+        value: "3"
+      - key: TIMEOUT
+        value: "120"
+
+
