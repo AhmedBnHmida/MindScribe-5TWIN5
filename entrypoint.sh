@@ -6,15 +6,8 @@ set -e
 : "${WORKERS:=3}"
 : "${TIMEOUT:=120}"
 
-echo "Deleting old migrations (if any)..."
-Get-ChildItem -Path . -Filter "0*.py" -Recurse | Where-Object { $_.DirectoryName -like "*migrations*" } | Remove-Item -Force
-
 echo "Applying database migrations (if any)..."
-python manage.py makemigrations
-python manage.py migrate
-
-echo "Collecting static files..."
-python manage.py collectstatic --noinput
+python manage.py migrate --noinput || true
 
 echo "Starting Gunicorn on port ${PORT}..."
 exec gunicorn mindscribe.wsgi:application \
