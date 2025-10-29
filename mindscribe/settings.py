@@ -186,7 +186,7 @@ EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 
 # OpenRouter Configuration
 # Clé API OpenRouter de démonstration (pour tests)
-OPENROUTER_API_KEY = os.environ.get('OPENROUTER_API_KEY', '')
+OPENROUTER_API_KEY = os.environ.get('OPENROUTER_API_KEY', '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')
 OPENROUTER_BASE_URL = "https://openrouter.ai/api/v1"
 
 # 🆓 MODÈLES 100% GRATUITS - TESTÉS ET FONCTIONNELS
