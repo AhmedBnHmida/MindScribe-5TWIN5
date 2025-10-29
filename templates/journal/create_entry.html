@@ -3,143 +3,663 @@
 
 {% block extra_css %}
 <style>
-    .journal-form {
-        background-color: rgba(255, 255, 255, 0.9);
-        border-radius: 15px;
-        box-shadow: 0 5px 20px rgba(0, 0, 0, 0.1);
+    :root {
+        --primary-color: #6366f1;
+        --primary-light: rgba(99, 102, 241, 0.1);
+        --primary-dark: #4f46e5;
+        --secondary-color: #10b981;
+        --secondary-light: rgba(16, 185, 129, 0.1);
+        --accent-color: #f59e0b;
+        --accent-light: rgba(245, 158, 11, 0.1);
+        --danger-color: #ef4444;
+        --danger-light: rgba(239, 68, 68, 0.1);
+        --neutral-50: #f9fafb;
+        --neutral-100: #f3f4f6;
+        --neutral-200: #e5e7eb;
+        --neutral-300: #d1d5db;
+        --neutral-400: #9ca3af;
+        --neutral-500: #6b7280;
+        --neutral-600: #4b5563;
+        --neutral-700: #374151;
+        --neutral-800: #1f2937;
+        --neutral-900: #111827;
+        --glass-bg: rgba(255, 255, 255, 0.9);
+        --glass-border: rgba(255, 255, 255, 0.2);
+        --glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+        --card-radius: 16px;
+        --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    
+    /* Modern Journal Form */
+    .journal-container {
+        max-width: 1200px;
+        margin: 0 auto;
+    }
+    
+    .ultra-glass-card {
+        background: var(--glass-bg);
+        backdrop-filter: blur(10px);
+        border-radius: var(--card-radius);
+        border: 1px solid var(--glass-border);
+        box-shadow: var(--glass-shadow);
         padding: 2rem;
         margin-bottom: 2rem;
+        transition: var(--transition-smooth);
+        overflow: hidden;
     }
     
-    .tab-content {
-        padding: 1.5rem 0;
+    .ultra-glass-card:hover {
+        box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15);
+        transform: translateY(-2px);
     }
     
-    .nav-tabs .nav-link {
+    /* Modern Tabs */
+    .ultra-tabs {
+        display: flex;
+        position: relative;
+        border-bottom: 1px solid var(--neutral-200);
+        margin-bottom: 1.5rem;
+        overflow-x: auto;
+        scrollbar-width: none;
+    }
+    
+    .ultra-tabs::-webkit-scrollbar {
+        display: none;
+    }
+    
+    .ultra-tabs .nav-link {
         font-weight: 500;
-        color: #5F74A9;
+        color: var(--neutral-600);
         border: none;
         padding: 0.75rem 1.5rem;
         border-radius: 0;
         position: relative;
+        transition: var(--transition-smooth);
+        cursor: pointer;
+        white-space: nowrap;
+        display: flex;
+        align-items: center;
+        gap: 8px;
     }
     
-    .nav-tabs .nav-link.active {
-        color: #3E4E88;
-        background-color: transparent;
+    .ultra-tabs .nav-link:hover {
+        color: var(--primary-color);
+    }
+    
+    .ultra-tabs .nav-link.active {
+        color: var(--primary-color);
         font-weight: 600;
     }
     
-    .nav-tabs .nav-link.active::after {
-        content: '';
+    .nav-indicator {
         position: absolute;
-        bottom: 0;
+        bottom: -1px;
+        height: 3px;
+        background-color: var(--primary-color);
+        border-radius: 3px;
+        transition: var(--transition-smooth);
+    }
+    
+    /* Tab Content */
+    .tab-content {
+        padding: 1.5rem 0;
+    }
+    
+    /* Floating Input */
+    .floating-input-group {
+        position: relative;
+        margin-bottom: 1.5rem;
+    }
+    
+    .floating-input {
+        width: 100%;
+        padding: 1rem;
+        font-size: 1rem;
+        border: 2px solid var(--neutral-200);
+        border-radius: 12px;
+        background-color: var(--neutral-50);
+        transition: var(--transition-smooth);
+        min-height: 200px;
+        resize: vertical;
+        color: var(--neutral-800);
+    }
+    
+    .floating-input:focus {
+        outline: none;
+        border-color: var(--primary-color);
+        background-color: white;
+        box-shadow: 0 0 0 4px var(--primary-light);
+    }
+    
+    .floating-input:focus + .floating-label,
+    .floating-input:not(:placeholder-shown) + .floating-label {
+        transform: translateY(-2.5rem) scale(0.85);
+        color: var(--primary-color);
+        padding: 0 0.5rem;
+        background-color: white;
+    }
+    
+    .floating-label {
+        position: absolute;
+        top: 1rem;
+        left: 1rem;
+        color: var(--neutral-500);
+        transition: var(--transition-smooth);
+        pointer-events: none;
+        transform-origin: left top;
+    }
+    
+    /* Recording Controls */
+    .recording-controls {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 12px;
+        margin-bottom: 1.5rem;
+        align-items: center;
+    }
+    
+    .btn-ultra-modern {
+        padding: 0.75rem 1.5rem;
+        border-radius: 12px;
+        font-weight: 500;
+        transition: var(--transition-smooth);
+        border: none;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        cursor: pointer;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.08);
+    }
+    
+    .btn-ultra-primary {
+        background-color: var(--primary-color);
+        color: white;
+    }
+    
+    .btn-ultra-primary:hover {
+        background-color: var(--primary-dark);
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+    }
+    
+    .btn-ultra-secondary {
+        background-color: var(--secondary-color);
+        color: white;
+    }
+    
+    .btn-ultra-secondary:hover {
+        background-color: #0ea271;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+    }
+    
+    .btn-ultra-outline {
+        background-color: transparent;
+        border: 2px solid var(--neutral-300);
+        color: var(--neutral-700);
+    }
+    
+    .btn-ultra-outline:hover {
+        border-color: var(--primary-color);
+        color: var(--primary-color);
+        transform: translateY(-2px);
+    }
+    
+    .btn-ultra-outline:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+        transform: none;
+    }
+    
+    .recording-indicator {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        color: var(--danger-color);
+        font-weight: 500;
+        animation: pulse 1.5s infinite;
+    }
+    
+    @keyframes pulse {
+        0% { opacity: 1; }
+        50% { opacity: 0.5; }
+        100% { opacity: 1; }
+    }
+    
+    /* File Upload */
+    .ultra-file-upload {
+        border: 2px dashed var(--neutral-300);
+        border-radius: 12px;
+        padding: 2rem;
+        text-align: center;
+        transition: var(--transition-smooth);
+        cursor: pointer;
+        position: relative;
+        background-color: var(--neutral-50);
+    }
+    
+    .ultra-file-upload:hover {
+        border-color: var(--primary-color);
+        background-color: var(--primary-light);
+    }
+    
+    .ultra-file-upload i {
+        font-size: 2.5rem;
+        color: var(--primary-color);
+        margin-bottom: 1rem;
+    }
+    
+    .ultra-file-upload .upload-text {
+        font-weight: 500;
+        color: var(--neutral-700);
+        margin-bottom: 0.5rem;
+    }
+    
+    .ultra-file-upload .upload-hint {
+        color: var(--neutral-500);
+        font-size: 0.875rem;
+    }
+    
+    .ultra-file-upload input[type="file"] {
+        position: absolute;
+        top: 0;
         left: 0;
         width: 100%;
-        height: 3px;
-        background-color: #5F74A9;
-        border-radius: 3px;
-    }
-    
-    .form-control {
-        border-radius: 8px;
-        padding: 0.75rem;
-        border: 1px solid #ced4da;
-    }
-    
-    .form-control:focus {
-        border-color: #5F74A9;
-        box-shadow: 0 0 0 0.2rem rgba(95, 116, 169, 0.25);
-    }
-    
-    textarea.form-control {
-        min-height: 150px;
-    }
-    
-    .custom-file-upload {
-        display: inline-block;
-        padding: 10px 15px;
+        height: 100%;
+        opacity: 0;
         cursor: pointer;
-        background-color: #f8f9fa;
-        border: 1px solid #ced4da;
-        border-radius: 8px;
-        transition: all 0.3s;
     }
     
-    .custom-file-upload:hover {
-        background-color: #e9ecef;
+    /* Card Components */
+    .ultra-card {
+        background: white;
+        border-radius: 12px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+        overflow: hidden;
+        transition: var(--transition-smooth);
+        margin-bottom: 1.5rem;
     }
     
-    .preview-container {
-        margin-top: 1rem;
-        text-align: center;
+    .ultra-card:hover {
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+        transform: translateY(-2px);
     }
     
-    .preview-container img {
-        max-width: 100%;
-        max-height: 300px;
-        border-radius: 8px;
+    .ultra-card-header {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 1.25rem 1.5rem;
+        border-bottom: 1px solid var(--neutral-100);
     }
     
-    .preview-container audio {
-        width: 100%;
+    .ultra-card-icon {
+        width: 40px;
+        height: 40px;
+        border-radius: 10px;
+        background-color: var(--primary-light);
+        color: var(--primary-color);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.25rem;
     }
     
-    #analysisResults {
-        display: none;
-        background-color: rgba(255, 255, 255, 0.9);
-        border-radius: 15px;
-        box-shadow: 0 5px 20px rgba(0, 0, 0, 0.1);
+    .ultra-card-icon.ultra-icon-secondary {
+        background-color: var(--secondary-light);
+        color: var(--secondary-color);
+    }
+    
+    .ultra-card-icon.ultra-icon-accent {
+        background-color: var(--accent-light);
+        color: var(--accent-color);
+    }
+    
+    .ultra-card h6 {
+        margin: 0;
+        font-weight: 600;
+        color: var(--neutral-800);
+    }
+    
+    .ultra-card-body {
+        padding: 1.5rem;
+    }
+    
+    /* Preview Containers */
+    .ultra-preview {
+        margin-top: 1.5rem;
+    }
+    
+    /* Loading Spinner */
+    .ultra-loading {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        padding: 3rem 2rem;
+        background: var(--glass-bg);
+        backdrop-filter: blur(10px);
+        border-radius: var(--card-radius);
+        border: 1px solid var(--glass-border);
+        box-shadow: var(--glass-shadow);
+        margin: 2rem 0;
+    }
+    
+    .ultra-spinner {
+        width: 50px;
+        height: 50px;
+        border: 4px solid var(--primary-light);
+        border-top: 4px solid var(--primary-color);
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+        margin-bottom: 1.5rem;
+    }
+    
+    @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+    }
+    
+    .ultra-loading-text {
+        font-weight: 600;
+        font-size: 1.25rem;
+        color: var(--neutral-800);
+        margin-bottom: 0.5rem;
+    }
+    
+    .ultra-loading-subtext {
+        color: var(--neutral-600);
+    }
+    
+    /* Analysis Results */
+    .ultra-results {
+        background: var(--glass-bg);
+        backdrop-filter: blur(10px);
+        border-radius: var(--card-radius);
+        border: 1px solid var(--glass-border);
+        box-shadow: var(--glass-shadow);
         padding: 2rem;
         margin-top: 2rem;
     }
     
-    .analysis-section {
+    .ultra-results-header {
+        text-align: center;
+        margin-bottom: 2rem;
+    }
+    
+    .ultra-results-header h3 {
+        color: var(--neutral-800);
+        font-weight: 700;
+        margin-bottom: 0.5rem;
+    }
+    
+    .ultra-results-header p {
+        color: var(--neutral-600);
+    }
+    
+    .ultra-section {
+        background: rgba(255, 255, 255, 0.5);
+        border-radius: 12px;
+        padding: 1.5rem;
         margin-bottom: 1.5rem;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.03);
+        transition: var(--transition-smooth);
+        transform: translateY(20px);
+        opacity: 0;
     }
     
-    .analysis-section h5 {
-        color: #3E4E88;
-        margin-bottom: 0.75rem;
+    .ultra-section.animated {
+        transform: translateY(0);
+        opacity: 1;
+    }
+    
+    .ultra-section:hover {
+        box-shadow: 0 6px 12px rgba(0, 0, 0, 0.08);
+    }
+    
+    .ultra-section-header {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin-bottom: 1rem;
+    }
+    
+    .ultra-section-icon {
+        width: 40px;
+        height: 40px;
+        border-radius: 10px;
+        background-color: var(--primary-light);
+        color: var(--primary-color);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.25rem;
+    }
+    
+    .ultra-section-icon.ultra-icon-success {
+        background-color: var(--secondary-light);
+        color: var(--secondary-color);
+    }
+    
+    .ultra-section-icon.ultra-icon-danger {
+        background-color: var(--danger-light);
+        color: var(--danger-color);
+    }
+    
+    .ultra-section-icon.ultra-icon-warning {
+        background-color: var(--accent-light);
+        color: var(--accent-color);
+    }
+    
+    .ultra-section-icon.ultra-icon-primary {
+        background-color: var(--primary-light);
+        color: var(--primary-color);
+    }
+    
+    .ultra-section h5 {
+        margin: 0;
         font-weight: 600;
+        color: var(--neutral-800);
     }
     
-    .analysis-tag {
-        display: inline-block;
-        background-color: #e9ecef;
-        color: #495057;
-        padding: 0.3rem 0.75rem;
+    /* Sentiment */
+    .ultra-sentiment {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 0.5rem 1rem;
         border-radius: 20px;
+        font-weight: 500;
+    }
+    
+    .ultra-sentiment-positive {
+        background-color: var(--secondary-light);
+        color: var(--secondary-color);
+    }
+    
+    .ultra-sentiment-neutral {
+        background-color: rgba(107, 114, 128, 0.1);
+        color: var(--neutral-600);
+    }
+    
+    .ultra-sentiment-negative {
+        background-color: var(--danger-light);
+        color: var(--danger-color);
+    }
+    
+    .ultra-progress {
+        height: 8px;
+        background-color: var(--neutral-200);
+        border-radius: 4px;
+        overflow: hidden;
+        margin-top: 1rem;
+    }
+    
+    .ultra-progress-bar {
+        height: 100%;
+        background-color: var(--primary-color);
+        border-radius: 4px;
+    }
+    
+    /* Tags */
+    .ultra-tag {
+        display: inline-flex;
+        align-items: center;
+        padding: 0.35rem 0.75rem;
+        border-radius: 20px;
+        font-size: 0.875rem;
+        font-weight: 500;
         margin-right: 0.5rem;
         margin-bottom: 0.5rem;
-        font-size: 0.9rem;
     }
     
-    .sentiment-positive {
-        background-color: rgba(58, 183, 149, 0.2);
-        color: #2a856c;
+    .ultra-tag-primary {
+        background-color: var(--primary-light);
+        color: var(--primary-color);
     }
     
-    .sentiment-neutral {
-        background-color: rgba(108, 117, 125, 0.2);
-        color: #495057;
+    .ultra-tag-success {
+        background-color: var(--secondary-light);
+        color: var(--secondary-color);
     }
     
-    .sentiment-negative {
-        background-color: rgba(255, 125, 125, 0.2);
-        color: #dc3545;
+    .ultra-tag-warning {
+        background-color: var(--accent-light);
+        color: var(--accent-color);
     }
     
-    .loading-spinner {
-        display: none;
-        text-align: center;
-        margin: 2rem 0;
+    .ultra-tag-light {
+        background-color: var(--neutral-100);
+        color: var(--neutral-600);
     }
     
-    .spinner-border {
-        width: 3rem;
-        height: 3rem;
-        color: #5F74A9;
+    /* Lists */
+    .ultra-list {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+    }
+    
+    .ultra-list-item {
+        padding: 0.75rem 0;
+        border-bottom: 1px solid var(--neutral-200);
+        display: flex;
+        align-items: flex-start;
+        gap: 10px;
+    }
+    
+    .ultra-list-item:last-child {
+        border-bottom: none;
+    }
+    
+    /* Action Items */
+    .ultra-action-items {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+    }
+    
+    .ultra-action-item {
+        display: flex;
+        align-items: flex-start;
+        gap: 12px;
+        padding: 1rem;
+        background-color: var(--neutral-50);
+        border-radius: 10px;
+        transition: var(--transition-smooth);
+    }
+    
+    .ultra-action-item:hover {
+        background-color: var(--primary-light);
+        transform: translateX(5px);
+    }
+    
+    .ultra-action-number {
+        width: 28px;
+        height: 28px;
+        border-radius: 50%;
+        background-color: var(--primary-color);
+        color: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 600;
+        font-size: 0.875rem;
+        flex-shrink: 0;
+    }
+    
+    .ultra-action-text {
+        flex: 1;
+    }
+    
+    /* Animations */
+    .animate-fade-in {
+        animation: fadeIn 0.5s ease-in-out;
+    }
+    
+    @keyframes fadeIn {
+        from { opacity: 0; }
+        to { opacity: 1; }
+    }
+    
+    .ultra-fade-in {
+        opacity: 0;
+        animation: fadeIn 0.8s ease-in-out forwards;
+    }
+    
+    .ultra-slide-up {
+        opacity: 0;
+        transform: translateY(30px);
+        animation: slideUp 0.8s ease-in-out forwards;
+        animation-delay: 0.2s;
+    }
+    
+    @keyframes slideUp {
+        from {
+            opacity: 0;
+            transform: translateY(30px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+    
+    /* Audio Player Styling */
+    audio {
+        width: 100%;
+        height: 40px;
+        border-radius: 8px;
+    }
+    
+    audio::-webkit-media-controls-panel {
+        background-color: var(--neutral-100);
+    }
+    
+    audio::-webkit-media-controls-play-button {
+        background-color: var(--primary-color);
+        border-radius: 50%;
+        color: white;
+    }
+    
+    /* Responsive adjustments */
+    @media (max-width: 768px) {
+        .ultra-glass-card {
+            padding: 1.5rem;
+        }
+        
+        .ultra-tabs {
+            overflow-x: auto;
+        }
+        
+        .ultra-tabs .nav-link {
+            padding: 0.75rem 1rem;
+        }
+        
+        .ultra-file-upload {
+            padding: 1.5rem;
+        }
     }
 </style>
 {% endblock %}
@@ -171,59 +691,129 @@
                     
                     <div class="tab-content" id="journalTabsContent">
                         <div class="tab-pane fade show active" id="text" role="tabpanel">
-                            <div class="floating-input-group">
-                                <textarea class="floating-input" id="journalText" placeholder=" " rows="6"></textarea>
-                                <label class="floating-label">Comment vous sentez-vous aujourd'hui ?</label>
+                            <div class="mb-4">
+                                <h5 class="mb-3">Exprimez vos pensées</h5>
+                                <p class="text-muted mb-4">Partagez vos réflexions, sentiments et expériences pour une analyse personnalisée</p>
+                                
+                                <div class="ultra-card">
+                                    <div class="ultra-card-header">
+                                        <div class="ultra-card-icon">
+                                            <i class="fas fa-pen-alt"></i>
+                                        </div>
+                                        <h6>Journal textuel</h6>
+                                    </div>
+                                    <div class="ultra-card-body">
+                                        <p class="text-muted mb-3">Notre IA analysera votre texte pour identifier les émotions, thèmes et insights</p>
+                                        
+                                        <div class="floating-input-group">
+                                            <textarea class="floating-input" id="journalText" placeholder=" " rows="8"></textarea>
+                                            <label class="floating-label">Comment vous sentez-vous aujourd'hui ?</label>
+                                        </div>
+                                        
+                                        <div class="mt-3 d-flex justify-content-between text-muted">
+                                            <small id="charCount">0 caractères</small>
+                                            <small><i class="fas fa-lightbulb me-1"></i> Plus vous écrivez, plus l'analyse sera riche</small>
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                         
                         <div class="tab-pane fade" id="audio" role="tabpanel">
                             <div class="mb-4">
-                                <h5 class="mb-4">Enregistrez votre voix ou téléchargez un fichier audio</h5>
+                                <h5 class="mb-3">Partagez vos pensées en audio</h5>
+                                <p class="text-muted mb-4">Enregistrez votre voix ou téléchargez un fichier audio pour l'analyser avec notre IA</p>
                                 
-                                <div class="d-flex flex-wrap gap-3 mb-4">
-                                    <button type="button" id="startRecording" class="btn-ultra-modern btn-ultra-primary">
-                                        <i class="fas fa-microphone me-2"></i> Commencer l'enregistrement
-                                    </button>
-                                    <button type="button" id="stopRecording" class="btn-ultra-modern btn-ultra-outline" disabled>
-                                        <i class="fas fa-stop-circle me-2"></i> Arrêter
-                                    </button>
-                                    <div id="recordingIndicator" class="recording-indicator" style="display: none;">
-                                        <i class="fas fa-circle"></i> Enregistrement en cours...
+                                <div class="ultra-card mb-4">
+                                    <div class="ultra-card-header">
+                                        <div class="ultra-card-icon">
+                                            <i class="fas fa-microphone"></i>
+                                        </div>
+                                        <h6>Enregistrement vocal</h6>
+                                    </div>
+                                    <div class="ultra-card-body">
+                                        <p class="text-muted mb-3">Parlez librement, notre IA analysera votre ton et vos émotions</p>
+                                        
+                                        <div class="recording-controls">
+                                            <button type="button" id="startRecording" class="btn-ultra-modern btn-ultra-primary">
+                                                <i class="fas fa-microphone me-2"></i> Commencer l'enregistrement
+                                            </button>
+                                            <button type="button" id="stopRecording" class="btn-ultra-modern btn-ultra-outline" disabled>
+                                                <i class="fas fa-stop-circle me-2"></i> Arrêter
+                                            </button>
+                                            <div id="recordingIndicator" class="recording-indicator" style="display: none;">
+                                                <i class="fas fa-circle"></i> Enregistrement en cours...
+                                            </div>
+                                        </div>
+                                        
+                                        <div class="ultra-preview" id="audioPreview"></div>
                                     </div>
                                 </div>
                                 
-                                <div class="ultra-file-upload">
-                                    <i class="fas fa-cloud-upload-alt"></i>
-                                    <div class="upload-text">Télécharger un fichier audio</div>
-                                    <div class="upload-hint">MP3, WAV ou OGG</div>
-                                    <input type="file" id="audioFile" accept="audio/*">
+                                <div class="ultra-card">
+                                    <div class="ultra-card-header">
+                                        <div class="ultra-card-icon ultra-icon-secondary">
+                                            <i class="fas fa-file-audio"></i>
+                                        </div>
+                                        <h6>Téléchargement audio</h6>
+                                    </div>
+                                    <div class="ultra-card-body">
+                                        <p class="text-muted mb-3">Téléchargez un fichier audio existant pour l'analyser</p>
+                                        
+                                        <div class="ultra-file-upload">
+                                            <i class="fas fa-cloud-upload-alt"></i>
+                                            <div class="upload-text">Télécharger un fichier audio</div>
+                                            <div class="upload-hint">MP3, WAV ou OGG</div>
+                                            <input type="file" id="audioFile" accept="audio/*">
+                                        </div>
+                                    </div>
                                 </div>
-                                
-                                <div class="ultra-preview" id="audioPreview"></div>
                             </div>
                         </div>
                         
                         <div class="tab-pane fade" id="image" role="tabpanel">
                             <div class="mb-4">
-                                <h5 class="mb-4">Téléchargez une image pour l'analyser</h5>
+                                <h5 class="mb-3">Partagez une image significative</h5>
+                                <p class="text-muted mb-4">Téléchargez une image pour que notre IA l'analyse et en extraie des insights</p>
                                 
-                                <div class="ultra-file-upload">
-                                    <i class="fas fa-cloud-upload-alt"></i>
-                                    <div class="upload-text">Glissez-déposez une image ici</div>
-                                    <div class="upload-hint">JPG, PNG ou GIF</div>
-                                    <input type="file" id="imageFile" accept="image/*">
+                                <div class="ultra-card">
+                                    <div class="ultra-card-header">
+                                        <div class="ultra-card-icon ultra-icon-accent">
+                                            <i class="fas fa-image"></i>
+                                        </div>
+                                        <h6>Téléchargement d'image</h6>
+                                    </div>
+                                    <div class="ultra-card-body">
+                                        <p class="text-muted mb-3">Notre IA analysera le contenu, les couleurs et l'ambiance de votre image</p>
+                                        
+                                        <div class="ultra-file-upload">
+                                            <i class="fas fa-cloud-upload-alt"></i>
+                                            <div class="upload-text">Glissez-déposez une image ici</div>
+                                            <div class="upload-hint">JPG, PNG ou GIF</div>
+                                            <input type="file" id="imageFile" accept="image/*">
+                                        </div>
+                                        
+                                        <div class="ultra-preview" id="imagePreview"></div>
+                                        
+                                        <div class="mt-3 text-center ultra-image-tips">
+                                            <small class="text-muted">
+                                                <i class="fas fa-lightbulb me-1"></i> Astuce : Les images avec des sujets clairs et une bonne luminosité donnent de meilleurs résultats d'analyse
+                                            </small>
+                                        </div>
+                                    </div>
                                 </div>
-                                
-                                <div class="ultra-preview" id="imagePreview"></div>
                             </div>
                         </div>
                     </div>
                     
-                    <div class="d-grid gap-2 mt-4">
-                        <button type="button" id="saveJournalButton" class="btn-ultra-modern btn-ultra-secondary">
-                            <i class="fas fa-save me-2"></i>Enregistrer
+                    <div class="d-flex justify-content-center mt-5">
+                        <button type="button" id="saveJournalButton" class="btn-ultra-modern btn-ultra-secondary btn-lg">
+                            <i class="fas fa-brain me-2"></i>Analyser et enregistrer
                         </button>
+                    </div>
+                    
+                    <div class="text-center mt-3">
+                        <small class="text-muted">L'analyse prend généralement 10-15 secondes selon la complexité du contenu</small>
                     </div>
                 </div>
                 
@@ -232,6 +822,14 @@
                     <div class="ultra-spinner"></div>
                     <div class="ultra-loading-text">Analyse en cours</div>
                     <div class="ultra-loading-subtext">Notre IA analyse votre contenu en profondeur...</div>
+                    <div class="ultra-loading-progress mt-4">
+                        <div class="ultra-progress">
+                            <div id="loadingProgressBar" class="ultra-progress-bar" style="width: 0%"></div>
+                        </div>
+                        <div class="mt-2 text-muted ultra-loading-steps">
+                            <span id="loadingStep">Préparation de l'analyse...</span>
+                        </div>
+                    </div>
                 </div>
                 
                 <!-- Ultra Analysis Results -->
@@ -294,9 +892,15 @@
                                     <div class="ultra-section-icon">
                                         <i class="fas fa-microphone"></i>
                                     </div>
-                                    <h5>Transcription Audio</h5>
+                                    <h5>Transcription Audio (Speech-to-Text)</h5>
                                 </div>
-                                <div id="audioTranscriptionResult" class="mt-3"></div>
+                                <div class="mt-3">
+                                    <div class="alert alert-info mb-2" style="background: linear-gradient(135deg, rgba(99, 102, 241, 0.1), rgba(16, 185, 129, 0.1)); border: 1px solid rgba(99, 102, 241, 0.2); border-radius: 12px;">
+                                        <i class="fas fa-info-circle me-2"></i>
+                                        <small>Voici ce qui a été dit dans votre enregistrement audio :</small>
+                                    </div>
+                                    <div id="audioTranscriptionResult" class="p-3 rounded" style="background: rgba(255,255,255,0.6); border-left: 4px solid var(--primary-color); font-size: 1.05rem; line-height: 1.6; font-style: italic; color: var(--neutral-800);"></div>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -395,6 +999,15 @@
         let audioBlob = null;
         let imageFile = null;
         
+        // Character counter for text input
+        const journalText = document.getElementById('journalText');
+        const charCount = document.getElementById('charCount');
+        
+        journalText.addEventListener('input', () => {
+            const count = journalText.value.length;
+            charCount.textContent = count + (count === 1 ? ' caractère' : ' caractères');
+        });
+        
         // Initialize tab indicator
         const tabsContainer = document.getElementById('journalTabsContainer');
         const navIndicator = document.getElementById('navIndicator');
@@ -409,7 +1022,7 @@
         // Initialize indicator position
         setIndicatorPosition(document.querySelector('.nav-link.active'));
         
-        // Update indicator on tab click
+        // Update indicator on tab click and activate Bootstrap tabs
         tabs.forEach(tab => {
             tab.addEventListener('click', () => {
                 setIndicatorPosition(tab);
@@ -419,6 +1032,20 @@
                 
                 // Add active class to clicked tab
                 tab.classList.add('active');
+                
+                // Get the target tab content id from data-bs-target attribute
+                const targetId = tab.getAttribute('data-bs-target');
+                
+                // Hide all tab panes
+                document.querySelectorAll('.tab-pane').forEach(pane => {
+                    pane.classList.remove('show', 'active');
+                });
+                
+                // Show the target tab pane
+                const targetPane = document.querySelector(targetId);
+                if (targetPane) {
+                    targetPane.classList.add('show', 'active');
+                }
             });
         });
         
@@ -611,12 +1238,41 @@
                 return false;
             }
             
-            // Show loading spinner
+            // Show loading spinner with animated progress
             loadingSpinner.style.display = 'flex';
             analysisResults.style.display = 'none';
             
             // Scroll to loading spinner
             loadingSpinner.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            
+            // Animate loading progress
+            const loadingProgressBar = document.getElementById('loadingProgressBar');
+            const loadingStep = document.getElementById('loadingStep');
+            const loadingSteps = [
+                'Préparation de l\'analyse...',
+                'Extraction des caractéristiques...',
+                'Analyse des émotions...',
+                'Identification des thèmes...',
+                'Génération des insights...',
+                'Finalisation des résultats...'
+            ];
+            
+            // Reset progress bar
+            loadingProgressBar.style.width = '0%';
+            
+            // Animate progress bar
+            let currentStep = 0;
+            const progressInterval = setInterval(() => {
+                const progress = (currentStep + 1) / loadingSteps.length;
+                loadingProgressBar.style.transition = 'width 0.8s ease-in-out';
+                loadingProgressBar.style.width = `${progress * 100}%`;
+                loadingStep.textContent = loadingSteps[currentStep];
+                
+                currentStep++;
+                if (currentStep >= loadingSteps.length) {
+                    clearInterval(progressInterval);
+                }
+            }, 1500);
             
             // Create JSON payload with base64 encoded files
             const payload = {};
@@ -669,6 +1325,16 @@
                 if (!response.ok) {
                     throw new Error(`HTTP error! Status: ${response.status}`);
                 }
+                
+                // Clear the progress interval if it's still running
+                clearInterval(progressInterval);
+                
+                // Complete the progress bar animation
+                loadingProgressBar.style.width = '100%';
+                loadingStep.textContent = 'Analyse terminée avec succès!';
+                
+                // Short delay before showing results
+                await new Promise(resolve => setTimeout(resolve, 500));
                 
                 const analysisData = await response.json();
                 displayAnalysisResults(analysisData);
@@ -952,13 +1618,19 @@
                 imageSection.style.display = 'none';
             }
             
-            // Audio transcription
+            // Audio transcription (Speech-to-Text)
             const audioSection = document.getElementById('audioSection');
             const audioTranscriptionElement = document.getElementById('audioTranscriptionResult');
             
             if (data.audio_transcription) {
                 audioSection.style.display = 'block';
-                audioTranscriptionElement.innerHTML = `<div class="p-3 rounded" style="background: rgba(255,255,255,0.1);">${data.audio_transcription}</div>`;
+                // Display with nice animation
+                audioTranscriptionElement.style.opacity = '0';
+                audioTranscriptionElement.innerHTML = `<i class="fas fa-quote-left me-2" style="color: var(--primary-color);"></i>${data.audio_transcription}<i class="fas fa-quote-right ms-2" style="color: var(--primary-color);"></i>`;
+                setTimeout(() => {
+                    audioTranscriptionElement.style.transition = 'opacity 0.8s ease-in-out';
+                    audioTranscriptionElement.style.opacity = '1';
+                }, 1200);
             } else {
                 audioSection.style.display = 'none';
             }

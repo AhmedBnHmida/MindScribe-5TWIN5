@@ -4,106 +4,358 @@
 {% block extra_css %}
 <style>
     .journal-list-container {
-        background-color: rgba(255, 255, 255, 0.9);
-        border-radius: 15px;
-        box-shadow: 0 5px 20px rgba(0, 0, 0, 0.1);
-        padding: 2rem;
+        background-color: rgba(255, 255, 255, 0.95);
+        border-radius: 20px;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+        padding: 2.5rem;
         margin-bottom: 2rem;
     }
     
+    .search-filter-card {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        border-radius: 15px;
+        border: none;
+        box-shadow: 0 8px 20px rgba(102, 126, 234, 0.3);
+        margin-bottom: 2rem;
+    }
+    
+    .search-filter-card .card-body {
+        padding: 2rem;
+    }
+    
+    .search-filter-card .input-group-text {
+        background: white;
+        border: none;
+        color: #667eea;
+    }
+    
+    .search-filter-card .form-control,
+    .search-filter-card .form-select {
+        border: 2px solid rgba(255, 255, 255, 0.3);
+        background: rgba(255, 255, 255, 0.95);
+        font-weight: 500;
+    }
+    
+    .search-filter-card .form-control:focus,
+    .search-filter-card .form-select:focus {
+        border-color: white;
+        box-shadow: 0 0 0 0.2rem rgba(255, 255, 255, 0.25);
+    }
+    
+    .search-filter-card .btn-primary {
+        background: white;
+        color: #667eea;
+        border: none;
+        font-weight: 600;
+    }
+    
+    .search-filter-card .btn-primary:hover {
+        background: #f8f9ff;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    }
+    
+    .search-filter-card .text-muted,
+    .search-filter-card small {
+        color: rgba(255, 255, 255, 0.9) !important;
+    }
+    
+    .search-filter-card .btn-outline-secondary {
+        color: white;
+        border-color: rgba(255, 255, 255, 0.5);
+    }
+    
+    .search-filter-card .btn-outline-secondary:hover {
+        background: rgba(255, 255, 255, 0.2);
+        border-color: white;
+    }
+    
     .journal-card {
-        border-radius: 12px;
-        transition: transform 0.3s, box-shadow 0.3s;
-        margin-bottom: 1.5rem;
+        border-radius: 16px;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        margin-bottom: 2rem;
         overflow: hidden;
         border: none;
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+        background: white;
+        height: 100%;
     }
     
     .journal-card:hover {
-        transform: translateY(-5px);
-        box-shadow: 0 8px 15px rgba(0, 0, 0, 0.1);
+        transform: translateY(-8px) scale(1.02);
+        box-shadow: 0 12px 35px rgba(0, 0, 0, 0.15);
     }
     
     .journal-card .card-header {
-        background-color: #f8f9fa;
-        border-bottom: 1px solid rgba(0, 0, 0, 0.05);
-        padding: 0.75rem 1.25rem;
+        background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+        border-bottom: 2px solid rgba(102, 126, 234, 0.1);
+        padding: 1rem 1.5rem;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: nowrap;
+    }
+    
+    .journal-card .card-header .header-left {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        flex: 1;
+        min-width: 0;
+    }
+    
+    .journal-card .card-header .header-right {
+        flex-shrink: 0;
+        margin-left: 0.75rem;
     }
     
     .journal-card .card-body {
-        padding: 1.5rem;
+        padding: 2rem 1.5rem;
+        position: relative;
+        min-height: 250px;
+        display: flex;
+        flex-direction: column;
     }
     
     .journal-text {
-        max-height: 100px;
+        max-height: 80px;
         overflow: hidden;
         text-overflow: ellipsis;
         display: -webkit-box;
         -webkit-line-clamp: 3;
         -webkit-box-orient: vertical;
+        font-size: 0.95rem;
+        line-height: 1.6;
+        color: #495057;
+        margin-bottom: 1rem;
+        padding-right: 100px;
     }
     
     .journal-type-badge {
         position: absolute;
-        top: 10px;
-        right: 10px;
-        padding: 0.25rem 0.75rem;
-        border-radius: 20px;
-        font-size: 0.8rem;
-        font-weight: 500;
+        top: 1.25rem;
+        right: 1.25rem;
+        padding: 0.5rem 1rem;
+        border-radius: 25px;
+        font-size: 0.85rem;
+        font-weight: 600;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        z-index: 10;
+    }
+    
+    .journal-type-badge i {
+        font-size: 0.9rem;
     }
     
     .journal-type-texte {
-        background-color: rgba(95, 116, 169, 0.2);
-        color: #3E4E88;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
     }
     
     .journal-type-audio {
-        background-color: rgba(58, 183, 149, 0.2);
-        color: #2a856c;
+        background: linear-gradient(135deg, #3ab795 0%, #2a856c 100%);
+        color: white;
     }
     
     .journal-type-image {
-        background-color: rgba(255, 183, 77, 0.2);
-        color: #e09e00;
-    }
-    
-    .journal-media-indicator {
-        display: inline-block;
-        margin-right: 0.5rem;
-        font-size: 0.9rem;
+        background: linear-gradient(135deg, #ffb74d 0%, #ff9800 100%);
+        color: white;
     }
     
     .sentiment-indicator {
         display: inline-block;
-        width: 12px;
-        height: 12px;
+        width: 14px;
+        height: 14px;
         border-radius: 50%;
         margin-right: 0.5rem;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
     }
     
     .sentiment-positif {
-        background-color: #3ab795;
+        background: linear-gradient(135deg, #3ab795 0%, #2ecc71 100%);
     }
     
     .sentiment-neutre {
-        background-color: #6c757d;
+        background: linear-gradient(135deg, #95a5a6 0%, #7f8c8d 100%);
     }
     
     .sentiment-negatif {
-        background-color: #ff7d7d;
+        background: linear-gradient(135deg, #ff7d7d 0%, #e74c3c 100%);
+    }
+    
+    .badge-container {
+        margin-top: auto;
+        padding-top: 1rem;
+    }
+    
+    .badge {
+        font-weight: 500;
+        padding: 0.4rem 0.8rem;
+        border-radius: 8px;
+        font-size: 0.8rem;
+    }
+    
+    .badge.bg-primary {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+    }
+    
+    .badge.bg-secondary {
+        background: linear-gradient(135deg, #95a5a6 0%, #7f8c8d 100%) !important;
+    }
+    
+    .badge.bg-light {
+        background: #f1f3f5 !important;
+        color: #495057 !important;
+        border: 1px solid #dee2e6;
+    }
+    
+    .badge.bg-warning {
+        background: linear-gradient(135deg, #ffb74d 0%, #ff9800 100%) !important;
+        color: white !important;
+    }
+    
+    .action-buttons {
+        margin-top: 1rem;
+        padding-top: 1rem;
+        border-top: 1px solid #e9ecef;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 0.5rem;
+    }
+    
+    .action-buttons .btn {
+        transition: all 0.2s;
+        font-weight: 500;
+        border-radius: 8px;
+    }
+    
+    .action-buttons .btn-outline-secondary {
+        border-color: #dee2e6;
+        color: #6c757d;
+    }
+    
+    .action-buttons .btn-outline-secondary:hover {
+        background: #667eea;
+        border-color: #667eea;
+        color: white;
+        transform: scale(1.05);
+    }
+    
+    .action-buttons .btn-outline-danger:hover {
+        background: #e74c3c;
+        border-color: #e74c3c;
+        color: white;
+        transform: scale(1.05);
+    }
+    
+    .action-buttons .btn-outline-primary {
+        border-color: #667eea;
+        color: #667eea;
+        padding: 0.5rem 1rem;
+    }
+    
+    .action-buttons .btn-outline-primary:hover {
+        background: #667eea;
+        border-color: #667eea;
+        color: white;
+        transform: translateX(3px);
     }
     
     .empty-state {
         text-align: center;
-        padding: 3rem 0;
+        padding: 4rem 2rem;
+        background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+        border-radius: 15px;
     }
     
     .empty-state i {
-        font-size: 4rem;
-        color: #ced4da;
+        font-size: 5rem;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
         margin-bottom: 1.5rem;
+    }
+    
+    .empty-state h4 {
+        color: #495057;
+        font-weight: 600;
+        margin-bottom: 1rem;
+    }
+    
+    .empty-state .text-muted {
+        font-size: 1.1rem;
+    }
+    
+    .pagination .page-link {
+        border-radius: 8px;
+        margin: 0 0.25rem;
+        border: 2px solid #e9ecef;
+        color: #667eea;
+        font-weight: 500;
+    }
+    
+    .pagination .page-item.active .page-link {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        border-color: transparent;
+    }
+    
+    .pagination .page-link:hover {
+        background: #f8f9ff;
+        border-color: #667eea;
+        transform: translateY(-2px);
+    }
+    
+    /* Header buttons */
+    .btn.btn-outline-primary:hover {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+        color: white !important;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+    }
+    
+    .btn.btn-primary:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(102, 126, 234, 0.5) !important;
+    }
+    
+    /* Responsive improvements */
+    @media (max-width: 768px) {
+        .journal-card .card-body {
+            padding: 1.5rem 1rem;
+            min-height: auto;
+        }
+        
+        .journal-type-badge {
+            position: static;
+            display: inline-flex;
+            margin-bottom: 1rem;
+        }
+        
+        .journal-text {
+            padding-right: 0;
+        }
+        
+        .action-buttons {
+            flex-direction: column;
+        }
+        
+        .action-buttons > div {
+            width: 100%;
+            display: flex;
+            gap: 0.5rem;
+        }
+        
+        .action-buttons .btn-outline-primary {
+            width: 100%;
+        }
+        
+        h2 {
+            font-size: 1.8rem !important;
+        }
     }
 </style>
 {% endblock %}
@@ -114,186 +366,290 @@
         <div class="row justify-content-center">
             <div class="col-lg-10">
                 <div class="d-flex justify-content-between align-items-center mb-4">
-                    <h2>Mon Journal</h2>
+                    <h2 style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; font-weight: 700; font-size: 2.5rem;">
+                        <i class="fas fa-book-open" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent;"></i>
+                        Mon Journal
+                    </h2>
                     <div class="d-flex gap-2">
-                        <a href="{% url 'recommendations:dashboard' %}" class="btn btn-outline-primary">
+                        <a href="{% url 'recommendations:dashboard' %}" class="btn btn-outline-primary" style="border: 2px solid #667eea; color: #667eea; font-weight: 600; border-radius: 12px; padding: 0.6rem 1.2rem; transition: all 0.3s;">
                             <i class="fas fa-magic me-2"></i>Recommandations
                         </a>
-                        <a href="{% url 'journal:create' %}" class="btn btn-primary">
+                        <a href="{% url 'journal:create' %}" class="btn btn-primary" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border: none; font-weight: 600; border-radius: 12px; padding: 0.6rem 1.2rem; box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4); transition: all 0.3s;">
                             <i class="fas fa-plus-circle me-2"></i>Nouvelle Entrée
                         </a>
                     </div>
                 </div>
                 
-                <div class="journal-list-container">
-                    {% if journals or journal_analyses %}
-                        <div class="row">
-                            <!-- New Journal Analyses (from module2_analysis) -->
-                            {% for analysis in journal_analyses %}
-                                <div class="col-md-6">
-                                    <div class="card journal-card">
-                                        <div class="card-header d-flex justify-content-between align-items-center">
-                                            <div>
-                                                <small class="text-muted">{{ analysis.created_at|date:"d/m/Y H:i" }}</small>
-                                                {% if analysis.sentiment %}
-                                                    <span class="sentiment-indicator sentiment-{{ analysis.sentiment }}" title="Sentiment: {{ analysis.sentiment }}"></span>
-                                                {% endif %}
-                                            </div>
-                                            <div>
-                                                <span class="badge bg-primary">IA Analysé</span>
-                                            </div>
-                                        </div>
-                                        <div class="card-body position-relative">
-                                            <!-- Type indicators -->
-                                            {% if analysis.text %}
-                                                <span class="journal-type-badge journal-type-texte">
-                                                    <i class="fas fa-pen-alt me-1"></i>Texte
-                                                </span>
-                                            {% elif analysis.audio_file %}
-                                                <span class="journal-type-badge journal-type-audio">
-                                                    <i class="fas fa-microphone me-1"></i>Audio
-                                                </span>
-                                            {% elif analysis.image_file %}
-                                                <span class="journal-type-badge journal-type-image">
-                                                    <i class="fas fa-image me-1"></i>Image
-                                                </span>
-                                            {% endif %}
-                                            
-                                            <!-- Summary or text content -->
-                                            {% if analysis.summary %}
-                                                <p class="journal-text"><strong>Résumé:</strong> {{ analysis.summary }}</p>
-                                            {% elif analysis.text %}
-                                                <p class="journal-text">{{ analysis.text }}</p>
-                                            {% elif analysis.audio_transcription %}
-                                                <p class="journal-text"><strong>Transcription:</strong> {{ analysis.audio_transcription }}</p>
-                                            {% elif analysis.image_caption %}
-                                                <p class="journal-text"><strong>Image:</strong> {{ analysis.image_caption }}</p>
-                                            {% endif %}
-                                            
-                                            <!-- Media indicators -->
-                                            {% if analysis.image_file %}
-                                                <div class="journal-media-indicator">
-                                                    <i class="fas fa-image text-primary"></i>
-                                                </div>
-                                            {% endif %}
-                                            
-                                            {% if analysis.audio_file %}
-                                                <div class="journal-media-indicator">
-                                                    <i class="fas fa-volume-up text-success"></i>
-                                                </div>
-                                            {% endif %}
-                                            
-                                            <!-- Keywords -->
-                                            {% if analysis.keywords %}
-                                                <div class="mt-3">
-                                                    <small class="text-muted">Mots-clés:</small>
-                                                    {% for keyword in analysis.keywords|slice:":3" %}
-                                                        <span class="badge bg-light text-dark me-1">{{ keyword }}</span>
-                                                    {% endfor %}
-                                                    {% if analysis.keywords|length > 3 %}
-                                                        <small class="text-muted">...</small>
-                                                    {% endif %}
-                                                </div>
-                                            {% endif %}
-                                            
-                                            <!-- Emotions -->
-                                            {% if analysis.emotions_detected %}
-                                                <div class="mt-2">
-                                                    <small class="text-muted">Émotions:</small>
-                                                    {% for emotion in analysis.emotions_detected|slice:":3" %}
-                                                        <span class="badge bg-warning text-dark me-1">{{ emotion }}</span>
-                                                    {% endfor %}
-                                                </div>
-                                            {% endif %}
-                                            
-                                            <div class="text-end mt-3">
-                                                <a href="{% url 'module2_analysis:analysis_detail' analysis.id %}" class="btn btn-sm btn-outline-primary">
-                                                    <i class="fas fa-eye me-1"></i>Voir détails
-                                                </a>
-                                            </div>
-                                        </div>
-                                    </div>
+                <!-- Search and Filter Bar -->
+                <div class="card search-filter-card mb-4">
+                    <div class="card-body">
+                        <form method="get" action="{% url 'journal:list' %}" class="row g-3">
+                            <div class="col-md-6">
+                                <div class="input-group">
+                                    <span class="input-group-text"><i class="fas fa-search"></i></span>
+                                    <input type="text" 
+                                           class="form-control" 
+                                           name="q" 
+                                           placeholder="Rechercher dans vos entrées..." 
+                                           value="{{ search_query }}">
                                 </div>
-                            {% endfor %}
-                            
-                            <!-- Old Journal Entries -->
-                            {% for journal in journals %}
-                                <div class="col-md-6">
-                                    <div class="card journal-card">
-                                        <div class="card-header d-flex justify-content-between align-items-center">
-                                            <div>
-                                                <small class="text-muted">{{ journal.date_creation|date:"d/m/Y H:i" }}</small>
-                                                {% if journal.analyse %}
-                                                    <span class="sentiment-indicator sentiment-{{ journal.analyse.ton_general }}" title="Sentiment: {{ journal.analyse.ton_general }}"></span>
-                                                {% endif %}
-                                            </div>
-                                            <div>
-                                                {% if journal.categorie %}
-                                                    <span class="badge bg-secondary">{{ journal.categorie }}</span>
-                                                {% endif %}
-                                            </div>
-                                        </div>
-                                        <div class="card-body position-relative">
-                                            <span class="journal-type-badge journal-type-{{ journal.type_entree }}">
-                                                {% if journal.type_entree == 'texte' %}
-                                                    <i class="fas fa-pen-alt me-1"></i>Texte
-                                                {% elif journal.type_entree == 'audio' %}
-                                                    <i class="fas fa-microphone me-1"></i>Audio
-                                                {% elif journal.type_entree == 'image' %}
-                                                    <i class="fas fa-image me-1"></i>Image
-                                                {% endif %}
-                                            </span>
-                                            
-                                            {% if journal.contenu_texte %}
-                                                <p class="journal-text">{{ journal.contenu_texte }}</p>
-                                            {% endif %}
-                                            
-                                            {% if journal.image %}
-                                                <div class="journal-media-indicator">
-                                                    <i class="fas fa-image text-primary"></i>
+                            </div>
+                            <div class="col-md-4">
+                                <select name="type" class="form-select">
+                                    <option value="all" {% if filter_type == 'all' %}selected{% endif %}>Tous les types</option>
+                                    <option value="text" {% if filter_type == 'text' %}selected{% endif %}>Texte</option>
+                                    <option value="audio" {% if filter_type == 'audio' %}selected{% endif %}>Audio</option>
+                                    <option value="image" {% if filter_type == 'image' %}selected{% endif %}>Image</option>
+                                </select>
+                            </div>
+                            <div class="col-md-2">
+                                <button type="submit" class="btn btn-primary w-100">
+                                    <i class="fas fa-filter me-1"></i>Filtrer
+                                </button>
+                            </div>
+                        </form>
+                        {% if search_query or filter_type != 'all' %}
+                        <div class="mt-3">
+                            <small class="text-muted">
+                                {{ total_count }} résultat{{ total_count|pluralize }}
+                                {% if search_query %}
+                                    pour "{{ search_query }}"
+                                {% endif %}
+                            </small>
+                            <a href="{% url 'journal:list' %}" class="btn btn-sm btn-outline-secondary ms-2">
+                                <i class="fas fa-times me-1"></i>Réinitialiser
+                            </a>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+                
+                <div class="journal-list-container">
+                    {% if entries %}
+                        <div class="row">
+                            <!-- Loop through all entries (both old and new) -->
+                            {% for entry in entries %}
+                                {% if entry.created_at %}
+                                    <!-- New Journal Analysis Entry -->
+                                    <div class="col-md-6">
+                                        <div class="card journal-card">
+                                            <div class="card-header">
+                                                <div class="header-left">
+                                                    {% if entry.sentiment %}
+                                                        <span class="sentiment-indicator sentiment-{{ entry.sentiment }}" title="Sentiment: {{ entry.sentiment }}"></span>
+                                                    {% endif %}
+                                                    <small class="text-muted" style="white-space: nowrap;">{{ entry.created_at|date:"d/m/Y H:i" }}</small>
                                                 </div>
-                                            {% endif %}
-                                            
-                                            {% if journal.audio %}
-                                                <div class="journal-media-indicator">
-                                                    <i class="fas fa-volume-up text-success"></i>
+                                                <div class="header-right">
+                                                    <span class="badge bg-primary">IA Analysé</span>
                                                 </div>
-                                            {% endif %}
-                                            
-                                            {% if journal.analyse %}
-                                                <div class="mt-3">
-                                                    {% if journal.analyse.mots_cles %}
+                                            </div>
+                                            <div class="card-body position-relative">
+                                                <!-- Type indicators -->
+                                                {% if entry.text %}
+                                                    <span class="journal-type-badge journal-type-texte">
+                                                        <i class="fas fa-pen-alt me-1"></i>Texte
+                                                    </span>
+                                                {% elif entry.audio_file %}
+                                                    <span class="journal-type-badge journal-type-audio">
+                                                        <i class="fas fa-microphone me-1"></i>Audio
+                                                    </span>
+                                                {% elif entry.image_file %}
+                                                    <span class="journal-type-badge journal-type-image">
+                                                        <i class="fas fa-image me-1"></i>Image
+                                                    </span>
+                                                {% endif %}
+                                                
+                                                <!-- Summary or text content -->
+                                                {% if entry.summary %}
+                                                    <p class="journal-text"><strong>Résumé:</strong> {{ entry.summary }}</p>
+                                                {% elif entry.text %}
+                                                    <p class="journal-text">{{ entry.text }}</p>
+                                                {% elif entry.audio_transcription %}
+                                                    <p class="journal-text"><strong>Transcription:</strong> {{ entry.audio_transcription }}</p>
+                                                {% elif entry.image_caption %}
+                                                    <p class="journal-text"><strong>Image:</strong> {{ entry.image_caption }}</p>
+                                                {% endif %}
+                                                
+                                                <!-- Keywords and Emotions -->
+                                                <div class="badge-container">
+                                                    {% if entry.keywords %}
                                                         <div class="mb-2">
-                                                            <small class="text-muted">Mots-clés:</small>
-                                                            {% for mot in journal.analyse.mots_cles|slice:":3" %}
-                                                                <span class="badge bg-light text-dark me-1">{{ mot }}</span>
+                                                            <small class="text-muted d-block mb-1">Mots-clés:</small>
+                                                            {% for keyword in entry.keywords|slice:":3" %}
+                                                                <span class="badge bg-light text-dark me-1 mb-1">{{ keyword }}</span>
                                                             {% endfor %}
-                                                            {% if journal.analyse.mots_cles|length > 3 %}
+                                                            {% if entry.keywords|length > 3 %}
                                                                 <small class="text-muted">...</small>
                                                             {% endif %}
                                                         </div>
                                                     {% endif %}
+                                                    
+                                                    {% if entry.emotions_detected %}
+                                                        <div class="mb-2">
+                                                            <small class="text-muted d-block mb-1">Émotions:</small>
+                                                            {% for emotion in entry.emotions_detected|slice:":3" %}
+                                                                <span class="badge bg-warning text-dark me-1 mb-1">{{ emotion }}</span>
+                                                            {% endfor %}
+                                                        </div>
+                                                    {% endif %}
                                                 </div>
-                                            {% endif %}
-                                            
-                                            <div class="text-end mt-3">
-                                                <a href="{% url 'journal:detail' journal.id %}" class="btn btn-sm btn-outline-primary">
-                                                    <i class="fas fa-eye me-1"></i>Voir détails
-                                                </a>
+                                                
+                                                <div class="action-buttons">
+                                                    <div>
+                                                        <a href="{% url 'journal:edit' entry.id %}" class="btn btn-sm btn-outline-secondary me-1" title="Modifier">
+                                                            <i class="fas fa-edit"></i>
+                                                        </a>
+                                                        <button type="button" class="btn btn-sm btn-outline-danger" 
+                                                                onclick="confirmDelete('{{ entry.id }}', 'analysis')" 
+                                                                title="Supprimer">
+                                                            <i class="fas fa-trash"></i>
+                                                        </button>
+                                                    </div>
+                                                    <a href="{% url 'module2_analysis:analysis_detail' entry.id %}" class="btn btn-sm btn-outline-primary">
+                                                        <i class="fas fa-eye me-1"></i>Voir détails
+                                                    </a>
+                                                </div>
                                             </div>
                                         </div>
                                     </div>
-                                </div>
+                                {% else %}
+                                    <!-- Old Journal Entry -->
+                                    <div class="col-md-6">
+                                        <div class="card journal-card">
+                                            <div class="card-header">
+                                                <div class="header-left">
+                                                    {% if entry.analyse %}
+                                                        <span class="sentiment-indicator sentiment-{{ entry.analyse.sentiment_dominant }}" title="Sentiment: {{ entry.analyse.sentiment_dominant }}"></span>
+                                                    {% endif %}
+                                                    <small class="text-muted" style="white-space: nowrap;">{{ entry.date_creation|date:"d/m/Y H:i" }}</small>
+                                                </div>
+                                                <div class="header-right">
+                                                    <span class="badge bg-secondary">Ancien</span>
+                                                </div>
+                                            </div>
+                                            <div class="card-body position-relative">
+                                                <span class="journal-type-badge journal-type-texte">
+                                                    <i class="fas fa-pen-alt"></i>Texte
+                                                </span>
+                                                
+                                                <p class="journal-text">{{ entry.contenu }}</p>
+                                                
+                                                <div class="badge-container">
+                                                    {% if entry.analyse %}
+                                                        {% if entry.analyse.mots_cles %}
+                                                            <div class="mb-2">
+                                                                <small class="text-muted d-block mb-1">Mots-clés:</small>
+                                                                {% for mot in entry.analyse.mots_cles|slice:":3" %}
+                                                                    <span class="badge bg-light text-dark me-1 mb-1">{{ mot }}</span>
+                                                                {% endfor %}
+                                                                {% if entry.analyse.mots_cles|length > 3 %}
+                                                                    <small class="text-muted">...</small>
+                                                                {% endif %}
+                                                            </div>
+                                                        {% endif %}
+                                                    {% endif %}
+                                                </div>
+                                                
+                                                <div class="action-buttons">
+                                                    <div>
+                                                        <a href="{% url 'journal:edit_old' entry.id %}" class="btn btn-sm btn-outline-secondary me-1" title="Modifier">
+                                                            <i class="fas fa-edit"></i>
+                                                        </a>
+                                                        <button type="button" class="btn btn-sm btn-outline-danger" 
+                                                                onclick="confirmDelete('{{ entry.id }}', 'old')" 
+                                                                title="Supprimer">
+                                                            <i class="fas fa-trash"></i>
+                                                        </button>
+                                                    </div>
+                                                    <a href="{% url 'journal:detail' entry.id %}" class="btn btn-sm btn-outline-primary">
+                                                        <i class="fas fa-eye me-1"></i>Voir détails
+                                                    </a>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                {% endif %}
                             {% endfor %}
                         </div>
+                        
+                        <!-- Pagination -->
+                        {% if entries.has_other_pages %}
+                        <nav aria-label="Journal pagination" class="mt-4">
+                            <ul class="pagination justify-content-center">
+                                {% if entries.has_previous %}
+                                    <li class="page-item">
+                                        <a class="page-link" href="?page=1{% if search_query %}&q={{ search_query }}{% endif %}{% if filter_type != 'all' %}&type={{ filter_type }}{% endif %}">
+                                            <i class="fas fa-angle-double-left"></i>
+                                        </a>
+                                    </li>
+                                    <li class="page-item">
+                                        <a class="page-link" href="?page={{ entries.previous_page_number }}{% if search_query %}&q={{ search_query }}{% endif %}{% if filter_type != 'all' %}&type={{ filter_type }}{% endif %}">
+                                            <i class="fas fa-angle-left"></i>
+                                        </a>
+                                    </li>
+                                {% else %}
+                                    <li class="page-item disabled">
+                                        <span class="page-link"><i class="fas fa-angle-double-left"></i></span>
+                                    </li>
+                                    <li class="page-item disabled">
+                                        <span class="page-link"><i class="fas fa-angle-left"></i></span>
+                                    </li>
+                                {% endif %}
+                                
+                                {% for num in entries.paginator.page_range %}
+                                    {% if entries.number == num %}
+                                        <li class="page-item active"><span class="page-link">{{ num }}</span></li>
+                                    {% elif num > entries.number|add:'-3' and num < entries.number|add:'3' %}
+                                        <li class="page-item">
+                                            <a class="page-link" href="?page={{ num }}{% if search_query %}&q={{ search_query }}{% endif %}{% if filter_type != 'all' %}&type={{ filter_type }}{% endif %}">{{ num }}</a>
+                                        </li>
+                                    {% endif %}
+                                {% endfor %}
+                                
+                                {% if entries.has_next %}
+                                    <li class="page-item">
+                                        <a class="page-link" href="?page={{ entries.next_page_number }}{% if search_query %}&q={{ search_query }}{% endif %}{% if filter_type != 'all' %}&type={{ filter_type }}{% endif %}">
+                                            <i class="fas fa-angle-right"></i>
+                                        </a>
+                                    </li>
+                                    <li class="page-item">
+                                        <a class="page-link" href="?page={{ entries.paginator.num_pages }}{% if search_query %}&q={{ search_query }}{% endif %}{% if filter_type != 'all' %}&type={{ filter_type }}{% endif %}">
+                                            <i class="fas fa-angle-double-right"></i>
+                                        </a>
+                                    </li>
+                                {% else %}
+                                    <li class="page-item disabled">
+                                        <span class="page-link"><i class="fas fa-angle-right"></i></span>
+                                    </li>
+                                    <li class="page-item disabled">
+                                        <span class="page-link"><i class="fas fa-angle-double-right"></i></span>
+                                    </li>
+                                {% endif %}
+                            </ul>
+                            <div class="text-center mt-2">
+                                <small class="text-muted">
+                                    Page {{ entries.number }} sur {{ entries.paginator.num_pages }} 
+                                    ({{ total_count }} entrée{{ total_count|pluralize }})
+                                </small>
+                            </div>
+                        </nav>
+                        {% endif %}
                     {% else %}
                         <div class="empty-state">
                             <i class="fas fa-book-open"></i>
-                            <h4>Aucune entrée de journal</h4>
-                            <p class="text-muted">Commencez à écrire votre première entrée de journal pour voir les analyses IA.</p>
-                            <a href="{% url 'journal:create' %}" class="btn btn-primary mt-3">
-                                <i class="fas fa-plus-circle me-2"></i>Créer ma première entrée
-                            </a>
+                            <h4>Aucune entrée trouvée</h4>
+                            {% if search_query or filter_type != 'all' %}
+                                <p class="text-muted">Aucun résultat ne correspond à vos critères de recherche.</p>
+                                <a href="{% url 'journal:list' %}" class="btn btn-outline-primary mt-3">
+                                    <i class="fas fa-times me-2"></i>Effacer les filtres
+                                </a>
+                            {% else %}
+                                <p class="text-muted">Commencez à écrire votre première entrée de journal pour voir les analyses IA.</p>
+                                <a href="{% url 'journal:create' %}" class="btn btn-primary mt-3">
+                                    <i class="fas fa-plus-circle me-2"></i>Créer ma première entrée
+                                </a>
+                            {% endif %}
                         </div>
                     {% endif %}
                 </div>
@@ -301,5 +657,69 @@
         </div>
     </div>
 </div>
+
+<!-- Delete Confirmation Modal -->
+<div class="modal fade" id="deleteModal" tabindex="-1" aria-labelledby="deleteModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title" id="deleteModalLabel">
+                    <i class="fas fa-exclamation-triangle me-2"></i>Confirmer la suppression
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>Êtes-vous sûr de vouloir supprimer cette entrée de journal ?</p>
+                <p class="text-muted mb-0"><small>Cette action est irréversible.</small></p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+                <form id="deleteForm" method="POST" style="display: inline;">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-danger">
+                        <i class="fas fa-trash me-1"></i>Supprimer
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
 {% endblock %}
 
+{% block extra_js %}
+<script>
+function confirmDelete(entryId, entryType) {
+    const modal = new bootstrap.Modal(document.getElementById('deleteModal'));
+    const form = document.getElementById('deleteForm');
+    
+    // Set the form action based on entry type
+    if (entryType === 'analysis') {
+        form.action = "{% url 'journal:delete' '00000000-0000-0000-0000-000000000000' %}".replace('00000000-0000-0000-0000-000000000000', entryId);
+    } else {
+        form.action = "{% url 'journal:delete_old' '00000000-0000-0000-0000-000000000000' %}".replace('00000000-0000-0000-0000-000000000000', entryId);
+    }
+    
+    modal.show();
+}
+
+// Show success message if present
+document.addEventListener('DOMContentLoaded', function() {
+    {% if messages %}
+        {% for message in messages %}
+            const toast = document.createElement('div');
+            toast.className = 'alert alert-{{ message.tags }} alert-dismissible fade show position-fixed top-0 start-50 translate-middle-x mt-3';
+            toast.style.zIndex = '9999';
+            toast.innerHTML = `
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            `;
+            document.body.appendChild(toast);
+            
+            setTimeout(() => {
+                toast.remove();
+            }, 5000);
+        {% endfor %}
+    {% endif %}
+});
+</script>
+{% endblock %}

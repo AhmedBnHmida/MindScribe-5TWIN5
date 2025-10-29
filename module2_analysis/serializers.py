@@ -59,10 +59,10 @@ class AnalysisResponseSerializer(serializers.Serializer):
     negative_aspects = serializers.ListField(child=serializers.CharField(), required=False)
     action_items = serializers.ListField(child=serializers.CharField(), required=False)
     mood_analysis = serializers.CharField(required=False, allow_blank=True)
-    audio_transcription = serializers.CharField(required=False, allow_blank=True)
-    image_caption = serializers.CharField(required=False, allow_blank=True)
-    image_scene = serializers.CharField(required=False, allow_blank=True)
-    image_analysis = serializers.CharField(required=False, allow_blank=True)
+    audio_transcription = serializers.CharField(required=False, allow_blank=True, allow_null=True)
+    image_caption = serializers.CharField(required=False, allow_blank=True, allow_null=True)
+    image_scene = serializers.CharField(required=False, allow_blank=True, allow_null=True)
+    image_analysis = serializers.CharField(required=False, allow_blank=True, allow_null=True)
 
 
 class JournalAnalysisSerializer(serializers.ModelSerializer):
