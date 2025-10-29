@@ -52,6 +52,7 @@ INSTALLED_APPS = [
     'recommendations.apps.RecommendationsConfig',
     'communication',
     'module2_analysis.apps.Module2AnalysisConfig',
+    'feedback',
 ]
 
 MIDDLEWARE = [

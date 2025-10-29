@@ -1,0 +1,382 @@
+{% extends 'base.html' %}
+{% block title %}Mes Retours{% endblock %}
+
+{% block extra_css %}
+<style>
+    .feedback-container {
+        background-color: rgba(255, 255, 255, 0.95);
+        border-radius: 20px;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+        padding: 2.5rem;
+        margin-bottom: 2rem;
+    }
+    
+    .feedback-card {
+        border-radius: 16px;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        margin-bottom: 2rem;
+        overflow: hidden;
+        border: none;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+        background: white;
+    }
+    
+    .feedback-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 12px 35px rgba(0, 0, 0, 0.15);
+    }
+    
+    .feedback-card .card-header {
+        background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+        border-bottom: 2px solid rgba(102, 126, 234, 0.1);
+        padding: 1rem 1.5rem;
+    }
+    
+    .feedback-card .card-body {
+        padding: 2rem;
+    }
+    
+    .star-rating {
+        display: inline-flex;
+        gap: 0.25rem;
+        font-size: 1.5rem;
+    }
+    
+    .star-rating .star {
+        color: #ffc107;
+        transition: transform 0.2s;
+    }
+    
+    .star-rating .star.empty {
+        color: #e9ecef;
+    }
+    
+    .star-rating .star:hover {
+        transform: scale(1.2);
+    }
+    
+    .feedback-text {
+        color: #495057;
+        line-height: 1.8;
+        font-size: 1rem;
+        background: #f8f9fa;
+        padding: 1.5rem;
+        border-radius: 12px;
+        border-left: 4px solid #667eea;
+    }
+    
+    .empty-state {
+        text-align: center;
+        padding: 4rem 2rem;
+        background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+        border-radius: 15px;
+    }
+    
+    .empty-state i {
+        font-size: 5rem;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        margin-bottom: 1.5rem;
+    }
+    
+    .action-buttons .btn {
+        transition: all 0.2s;
+        font-weight: 500;
+        border-radius: 8px;
+    }
+    
+    .action-buttons .btn-outline-secondary:hover {
+        background: #667eea;
+        border-color: #667eea;
+        color: white;
+        transform: scale(1.05);
+    }
+    
+    .action-buttons .btn-outline-danger:hover {
+        background: #e74c3c;
+        border-color: #e74c3c;
+        color: white;
+        transform: scale(1.05);
+    }
+    
+    .btn-add-feedback {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        border: none;
+        font-weight: 600;
+        border-radius: 12px;
+        padding: 0.6rem 1.5rem;
+        box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+        transition: all 0.3s;
+        color: white;
+    }
+    
+    .btn-add-feedback:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(102, 126, 234, 0.5);
+        color: white;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="content-wrapper">
+    <div class="container py-5">
+        <div class="row justify-content-center">
+            <div class="col-lg-10">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h2 style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; font-weight: 700; font-size: 2.5rem;">
+                        <i class="fas fa-star" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent;"></i>
+                        Mes Retours
+                    </h2>
+                    <button type="button" class="btn btn-add-feedback" data-bs-toggle="modal" data-bs-target="#addFeedbackModal">
+                        <i class="fas fa-plus-circle me-2"></i>Ajouter un retour
+                    </button>
+                </div>
+                
+                <div class="feedback-container">
+                    {% if feedbacks %}
+                        <div class="row">
+                            {% for feedback in feedbacks %}
+                                <div class="col-md-6">
+                                    <div class="card feedback-card">
+                                        <div class="card-header d-flex justify-content-between align-items-center">
+                                            <div class="star-rating">
+                                                {% for i in "12345" %}
+                                                    {% if forloop.counter <= feedback.rating %}
+                                                        <i class="fas fa-star star"></i>
+                                                    {% else %}
+                                                        <i class="fas fa-star star empty"></i>
+                                                    {% endif %}
+                                                {% endfor %}
+                                            </div>
+                                            <small class="text-muted">{{ feedback.created_at|date:"d/m/Y H:i" }}</small>
+                                        </div>
+                                        <div class="card-body">
+                                            {% if feedback.feedback_text %}
+                                                <div class="feedback-text">
+                                                    {{ feedback.feedback_text }}
+                                                </div>
+                                            {% else %}
+                                                <p class="text-muted text-center"><em>Aucun commentaire</em></p>
+                                            {% endif %}
+                                            
+                                            {% if feedback.updated_at != feedback.created_at %}
+                                                <small class="text-muted d-block mt-3">
+                                                    <i class="fas fa-edit me-1"></i>Modifié le {{ feedback.updated_at|date:"d/m/Y H:i" }}
+                                                </small>
+                                            {% endif %}
+                                            
+                                            <div class="action-buttons d-flex gap-2 mt-3 pt-3 border-top">
+                                                <a href="{% url 'feedback:edit' feedback.id %}" class="btn btn-sm btn-outline-secondary">
+                                                    <i class="fas fa-edit me-1"></i>Modifier
+                                                </a>
+                                                <button type="button" class="btn btn-sm btn-outline-danger" 
+                                                        onclick="confirmDelete('{{ feedback.id }}')">
+                                                    <i class="fas fa-trash me-1"></i>Supprimer
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <div class="empty-state">
+                            <i class="fas fa-comments"></i>
+                            <h4>Aucun retour pour le moment</h4>
+                            <p class="text-muted">Partagez votre expérience avec MindScribe !</p>
+                            <button type="button" class="btn btn-add-feedback mt-3" data-bs-toggle="modal" data-bs-target="#addFeedbackModal">
+                                <i class="fas fa-plus-circle me-2"></i>Ajouter mon premier retour
+                            </button>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Add Feedback Modal -->
+<div class="modal fade" id="addFeedbackModal" tabindex="-1" aria-labelledby="addFeedbackModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content" style="border-radius: 20px; border: none; box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);">
+            <div class="modal-header" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border-radius: 20px 20px 0 0;">
+                <h5 class="modal-title" id="addFeedbackModalLabel">
+                    <i class="fas fa-star me-2"></i>Votre avis nous intéresse
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body" style="padding: 2rem;">
+                <form method="POST" action="{% url 'feedback:create' %}">
+                    {% csrf_token %}
+                    
+                    <div class="mb-4 text-center">
+                        <label class="form-label fw-bold" style="font-size: 1.1rem; color: #495057;">
+                            Comment évaluez-vous MindScribe ?
+                        </label>
+                        <div class="star-rating-input d-flex justify-content-center gap-2 mt-3" style="font-size: 2.5rem;">
+                            <i class="fas fa-star star-input" data-rating="1"></i>
+                            <i class="fas fa-star star-input" data-rating="2"></i>
+                            <i class="fas fa-star star-input" data-rating="3"></i>
+                            <i class="fas fa-star star-input" data-rating="4"></i>
+                            <i class="fas fa-star star-input" data-rating="5"></i>
+                        </div>
+                        <input type="hidden" name="rating" id="rating-input" value="0" required>
+                        <small class="text-danger d-none" id="rating-error">Veuillez sélectionner une note</small>
+                    </div>
+                    
+                    <div class="mb-4">
+                        <label for="feedback-text" class="form-label fw-bold" style="color: #495057;">
+                            Partagez votre expérience (optionnel)
+                        </label>
+                        <textarea class="form-control" 
+                                  id="feedback-text" 
+                                  name="feedback_text" 
+                                  rows="4" 
+                                  placeholder="Qu'est-ce qui vous plaît ? Qu'est-ce qui pourrait être amélioré ?"
+                                  style="border-radius: 12px; border: 2px solid #e9ecef; resize: none;"></textarea>
+                    </div>
+                    
+                    <button type="submit" class="btn btn-add-feedback w-100" style="padding: 0.75rem;">
+                        <i class="fas fa-paper-plane me-2"></i>Envoyer mon retour
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div class="modal fade" id="deleteModal" tabindex="-1" aria-labelledby="deleteModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title" id="deleteModalLabel">
+                    <i class="fas fa-exclamation-triangle me-2"></i>Confirmer la suppression
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>Êtes-vous sûr de vouloir supprimer ce retour ?</p>
+                <p class="text-muted mb-0"><small>Cette action est irréversible.</small></p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+                <form id="deleteForm" method="POST" style="display: inline;">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-danger">
+                        <i class="fas fa-trash me-1"></i>Supprimer
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Star rating input functionality
+document.addEventListener('DOMContentLoaded', function() {
+    const stars = document.querySelectorAll('.star-input');
+    const ratingInput = document.getElementById('rating-input');
+    const ratingError = document.getElementById('rating-error');
+    let currentRating = 0;
+    
+    stars.forEach(star => {
+        star.style.cursor = 'pointer';
+        star.style.color = '#e9ecef';
+        star.style.transition = 'all 0.2s';
+        
+        star.addEventListener('mouseenter', function() {
+            const rating = parseInt(this.dataset.rating);
+            highlightStars(rating);
+        });
+        
+        star.addEventListener('click', function() {
+            currentRating = parseInt(this.dataset.rating);
+            ratingInput.value = currentRating;
+            ratingError.classList.add('d-none');
+            highlightStars(currentRating, true);
+        });
+    });
+    
+    // Reset on mouse leave
+    document.querySelector('.star-rating-input').addEventListener('mouseleave', function() {
+        if (currentRating > 0) {
+            highlightStars(currentRating, true);
+        } else {
+            resetStars();
+        }
+    });
+    
+    function highlightStars(rating, permanent = false) {
+        stars.forEach((star, index) => {
+            if (index < rating) {
+                star.style.color = '#ffc107';
+                if (permanent) {
+                    star.style.transform = 'scale(1.2)';
+                } else {
+                    star.style.transform = 'scale(1.1)';
+                }
+            } else {
+                star.style.color = '#e9ecef';
+                star.style.transform = 'scale(1)';
+            }
+        });
+    }
+    
+    function resetStars() {
+        stars.forEach(star => {
+            star.style.color = '#e9ecef';
+            star.style.transform = 'scale(1)';
+        });
+    }
+    
+    // Form validation
+    document.querySelector('#addFeedbackModal form').addEventListener('submit', function(e) {
+        if (ratingInput.value === '0') {
+            e.preventDefault();
+            ratingError.classList.remove('d-none');
+            return false;
+        }
+    });
+    
+    // Reset modal on close
+    document.getElementById('addFeedbackModal').addEventListener('hidden.bs.modal', function() {
+        currentRating = 0;
+        ratingInput.value = '0';
+        resetStars();
+        document.getElementById('feedback-text').value = '';
+        ratingError.classList.add('d-none');
+    });
+});
+
+function confirmDelete(feedbackId) {
+    const modal = new bootstrap.Modal(document.getElementById('deleteModal'));
+    const form = document.getElementById('deleteForm');
+    form.action = `/feedback/${feedbackId}/delete/`;
+    modal.show();
+}
+
+// Show success message if present
+{% if messages %}
+    {% for message in messages %}
+        const toast = document.createElement('div');
+        toast.className = 'alert alert-{{ message.tags }} alert-dismissible fade show position-fixed top-0 start-50 translate-middle-x mt-3';
+        toast.style.zIndex = '9999';
+        toast.innerHTML = `
+            {{ message }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        `;
+        document.body.appendChild(toast);
+        
+        setTimeout(() => {
+            toast.remove();
+        }, 5000);
+    {% endfor %}
+{% endif %}
+</script>
+{% endblock %}
+

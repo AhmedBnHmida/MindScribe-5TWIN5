@@ -127,6 +127,14 @@
                     </a>
                 </li>
                 
+                <!-- Feedback / Retours -->
+                <li class="nav-item mb-2">
+                    <a class="nav-link {% if request.resolver_match.namespace == 'feedback' %}active bg-primary text-white{% else %}text-dark{% endif %} rounded-3" 
+                       href="{% url 'feedback:list' %}">
+                        <i class="fas fa-star me-2"></i>Mes Retours
+                    </a>
+                </li>
+                
                 <li class="nav-item mb-2">
                     <a class="nav-link {% if request.resolver_match.url_name == 'edit_profile' %}active bg-primary text-white{% else %}text-dark{% endif %} rounded-3" 
                        href="{% url 'users:edit_profile' %}">
