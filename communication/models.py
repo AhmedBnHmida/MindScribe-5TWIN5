@@ -172,11 +172,13 @@ class RapportPDF(models.Model):
     def delete(self, *args, **kwargs):
         """Override delete to remove the actual PDF file from storage"""
         try:
-            # Delete the PDF file from storage
             if self.contenu_pdf:
-                storage, path = self.contenu_pdf.storage, self.contenu_pdf.path
-                storage.delete(path)
-                logger.info(f"PDF file deleted: {path}")
+                storage = self.contenu_pdf.storage
+                name = self.contenu_pdf.name
+                # Guard against missing file or non-local storage
+                if name and storage.exists(name):
+                    storage.delete(name)
+                    logger.info(f"PDF file deleted: {name}")
         except Exception as e:
             logger.error(f"Error deleting PDF file: {str(e)}")
         
@@ -188,13 +190,27 @@ class RapportPDF(models.Model):
     
     @property
     def est_pret(self):
-        return self.statut == 'termine' and self.contenu_pdf
+        try:
+            if self.statut != 'termine' or not self.contenu_pdf:
+                return False
+            name = self.contenu_pdf.name
+            if not name:
+                return False
+            return self.contenu_pdf.storage.exists(name)
+        except Exception:
+            return False
     
     @property
     def taille_fichier(self):
-        if self.contenu_pdf and self.contenu_pdf.size:
-            return self.contenu_pdf.size
-        return 0
+        try:
+            if not self.contenu_pdf:
+                return 0
+            name = self.contenu_pdf.name
+            if not name or not self.contenu_pdf.storage.exists(name):
+                return 0
+            return self.contenu_pdf.size or 0
+        except Exception:
+            return 0
     
     class Meta:
         verbose_name = "Rapport PDF"

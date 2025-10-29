@@ -230,13 +230,22 @@ class TelechargerRapportView(LoginRequiredMixin, View):
             utilisateur=request.user
         )
         
-        if not rapport.contenu_pdf:
-            messages.error(request, "Rapport non disponible")
+        try:
+            if not rapport.contenu_pdf or not rapport.contenu_pdf.name:
+                messages.error(request, "Rapport non disponible")
+                return redirect('communication:liste_rapports')
+            storage = rapport.contenu_pdf.storage
+            if not storage.exists(rapport.contenu_pdf.name):
+                messages.error(request, "Fichier PDF introuvable (peut avoir été nettoyé). Veuillez regénérer le rapport.")
+                return redirect('communication:liste_rapports')
+            pdf_bytes = rapport.contenu_pdf.read()
+            response = HttpResponse(pdf_bytes, content_type='application/pdf')
+            response['Content-Disposition'] = f'attachment; filename="{rapport.generer_nom_fichier()}"'
+            return response
+        except Exception as e:
+            logger.error(f"Erreur téléchargement PDF {rapport_id}: {e}")
+            messages.error(request, "Impossible de télécharger le rapport. Veuillez regénérer le rapport.")
             return redirect('communication:liste_rapports')
-        
-        response = HttpResponse(rapport.contenu_pdf.read(), content_type='application/pdf')
-        response['Content-Disposition'] = f'attachment; filename="{rapport.generer_nom_fichier()}"'
-        return response
 
 class ApercuRapportView(LoginRequiredMixin, View):
     """View to preview PDF reports"""
@@ -248,14 +257,19 @@ class ApercuRapportView(LoginRequiredMixin, View):
             utilisateur=request.user
         )
         
-        if not rapport.contenu_pdf:
-            return JsonResponse({
-                'error': 'Rapport non disponible'
-            }, status=404)
-        
-        response = HttpResponse(rapport.contenu_pdf.read(), content_type='application/pdf')
-        response['Content-Disposition'] = f'inline; filename="{rapport.generer_nom_fichier()}"'
-        return response
+        try:
+            if not rapport.contenu_pdf or not rapport.contenu_pdf.name:
+                return JsonResponse({'error': 'Rapport non disponible'}, status=404)
+            storage = rapport.contenu_pdf.storage
+            if not storage.exists(rapport.contenu_pdf.name):
+                return JsonResponse({'error': 'Fichier PDF introuvable. Veuillez regénérer.'}, status=404)
+            pdf_bytes = rapport.contenu_pdf.read()
+            response = HttpResponse(pdf_bytes, content_type='application/pdf')
+            response['Content-Disposition'] = f'inline; filename="{rapport.generer_nom_fichier()}"'
+            return response
+        except Exception as e:
+            logger.error(f"Erreur aperçu PDF {rapport_id}: {e}")
+            return JsonResponse({'error': "Impossible d'afficher le rapport."}, status=500)
 
 # Duplicate report feature removed as requested
 
