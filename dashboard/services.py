@@ -1,7 +1,7 @@
 # dashboard/services.py
 from datetime import datetime, timedelta
 from collections import Counter
-from analysis.models import AnalyseIA
+from module2_analysis.models import JournalAnalysis
 from journal.models import Journal
 from .models import BilanMensuel, Statistique
 import json
@@ -69,28 +69,36 @@ class ServiceBilanIA:
         else:
             date_fin = datetime(annee, mois + 1, 1) - timedelta(days=1)
         
-        analyses = AnalyseIA.objects.filter(
-            journal__utilisateur=utilisateur,
-            journal__date_creation__range=[date_debut, date_fin]
-        ).select_related('journal')
+        # Utilise JournalAnalysis au lieu de AnalyseIA
+        analyses = JournalAnalysis.objects.filter(
+            user=utilisateur,
+            created_at__range=[date_debut, date_fin]
+        )
         
         journaux = Journal.objects.filter(
             utilisateur=utilisateur,
             date_creation__range=[date_debut, date_fin]
         )
         
-        # Calcule l'humeur moyenne
+        # Calcule l'humeur moyenne basée sur le sentiment
         scores = []
         for analyse in analyses:
-            score_map = {'positif': 1, 'neutre': 0, 'negatif': -1}
-            scores.append(score_map.get(analyse.ton_general, 0))
+            # Convertir le sentiment en score numérique
+            sentiment_map = {
+                'positif': 1, 'positive': 1, 'happy': 1, 'joyful': 1,
+                'neutre': 0, 'neutral': 0, 'mixed': 0,
+                'negatif': -1, 'negative': -1, 'sad': -1, 'angry': -1
+            }
+            score = sentiment_map.get(analyse.sentiment.lower(), 0)
+            scores.append(score)
         
         score_humeur = sum(scores) / len(scores) if scores else 0
         
         # Calcule les thèmes dominants
         tous_themes = []
         for analyse in analyses:
-            tous_themes.extend(analyse.themes_detectes)
+            if analyse.topics:
+                tous_themes.extend(analyse.topics)
         
         themes_dominants = [theme for theme, count in Counter(tous_themes).most_common(5)]
         

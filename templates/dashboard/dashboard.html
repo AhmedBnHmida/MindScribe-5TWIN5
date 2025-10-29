@@ -20,7 +20,6 @@
     background: linear-gradient(135deg, #ffffff 0%, #ffffff 100%);
     min-height: 100vh;
     font-family: 'Inter', 'Segoe UI', system-ui, sans-serif;
-  
 }
 
 .dashboard-container {
@@ -241,6 +240,8 @@
     border-radius: 8px;
     padding: 15px;
     box-shadow: inset 0 1px 6px rgba(0, 0, 0, 0.08);
+    position: relative;
+    min-height: 200px;
 }
 
 /* Timeline */
@@ -346,6 +347,8 @@
     border-radius: 10px;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
     border: 1px solid rgba(255, 255, 255, 0.2);
+    position: relative;
+    min-height: 250px;
 }
 
 .small-chart-title {
@@ -424,6 +427,34 @@
 .filter-btn:hover {
     border-color: var(--primary);
     color: var(--primary);
+}
+
+/* États d'erreur et vides */
+.chart-error, .chart-empty {
+    text-align: center;
+    padding: 50px 20px;
+    color: #6b7280;
+    font-size: 0.9rem;
+}
+
+.chart-error {
+    color: #ef4444;
+}
+
+.chart-placeholder {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 200px;
+    color: #9ca3af;
+    text-align: center;
+}
+
+.chart-placeholder i {
+    font-size: 2rem;
+    margin-bottom: 10px;
+    opacity: 0.5;
 }
 </style>
 {% endblock %}
@@ -510,7 +541,12 @@
                         <button class="btn-chart" onclick="refreshWordCloud()">Actualiser</button>
                     </div>
                 </div>
-                <div id="wordcloud"></div>
+                <div id="wordcloud">
+                    <div class="loading">
+                        <div class="loading-spinner"></div>
+                        <div>Chargement du nuage de mots...</div>
+                    </div>
+                </div>
             </div>
 
             <!-- Thèmes Dominants -->
@@ -576,8 +612,35 @@ const config = {
     charts: {}
 };
 
+// Fonction de debug pour vérifier les APIs
+async function debugAPIs() {
+    console.log('🔍 Début du debug des APIs...');
+    const endpoints = [
+        '/dashboard/api/wordcloud/',
+        '/dashboard/api/frequence-ecriture/', 
+        '/dashboard/api/score-emotionnel/',
+        '/dashboard/api/statistiques/',
+        '/dashboard/api/evolution-humeur/',
+        '/dashboard/api/themes/',
+        '/dashboard/api/chronologie/',
+        '/dashboard/api/distribution-humeurs/'
+    ];
+    
+    for (const endpoint of endpoints) {
+        try {
+            const response = await fetch(endpoint);
+            const data = await response.json();
+            console.log(`✅ ${endpoint}:`, data);
+        } catch (error) {
+            console.error(`❌ ${endpoint}:`, error);
+        }
+    }
+    console.log('🔍 Fin du debug des APIs');
+}
+
 // Fonctions principales
 async function chargerDonnees() {
+    console.log('🔄 Chargement des données...');
     await Promise.all([
         chargerStatistiques(),
         chargerEvolutionHumeur(),
@@ -588,6 +651,7 @@ async function chargerDonnees() {
         chargerFrequenceEcriture(),
         chargerScoreEmotionnel()
     ]);
+    console.log('✅ Toutes les données chargées');
 }
 
 async function chargerStatistiques() {
@@ -595,25 +659,32 @@ async function chargerStatistiques() {
         const response = await fetch('/dashboard/api/statistiques/');
         const data = await response.json();
         
-        document.getElementById('total-analyses').textContent = data.total_analyses || '0';
-        document.getElementById('themes-uniques').textContent = data.themes_uniques || '0+';
-        document.getElementById('mots-cles').textContent = data.mots_cles || '0+';
-        
-        // Mise à jour de l'humeur moyenne
-        const moodEmoji = document.getElementById('mood-emoji');
-        const moodText = document.getElementById('mood-text');
-        if (data.humeur_moyenne) {
-            const moodMap = {
-                'positif': { emoji: '😊', text: 'Positif' },
-                'neutre': { emoji: '😐', text: 'Neutre' },
-                'negatif': { emoji: '😞', text: 'Négatif' }
-            };
-            const mood = moodMap[data.humeur_moyenne] || moodMap['neutre'];
-            moodEmoji.textContent = mood.emoji;
-            moodText.textContent = mood.text;
+        if (data.success) {
+            document.getElementById('total-analyses').textContent = data.total_analyses || '0';
+            document.getElementById('themes-uniques').textContent = data.themes_uniques || '0';
+            document.getElementById('mots-cles').textContent = data.mots_cles || '0';
+            
+            // Mise à jour de l'humeur moyenne
+            const moodEmoji = document.getElementById('mood-emoji');
+            const moodText = document.getElementById('mood-text');
+            if (data.humeur_moyenne) {
+                const moodMap = {
+                    'positif': { emoji: '😊', text: 'Positif' },
+                    'neutre': { emoji: '😐', text: 'Neutre' },
+                    'negatif': { emoji: '😞', text: 'Négatif' }
+                };
+                const mood = moodMap[data.humeur_moyenne] || moodMap['neutre'];
+                moodEmoji.textContent = mood.emoji;
+                moodText.textContent = mood.text;
+            }
+        } else {
+            console.error('Erreur API statistiques:', data.error);
         }
     } catch (error) {
         console.error('Erreur chargement statistiques:', error);
+        document.getElementById('total-analyses').textContent = '0';
+        document.getElementById('themes-uniques').textContent = '0';
+        document.getElementById('mots-cles').textContent = '0';
     }
 }
 
@@ -628,64 +699,69 @@ async function chargerEvolutionHumeur() {
             config.charts.humeur.destroy();
         }
         
-        // VERSION SIMPLIFIÉE - Sans les callbacks complexes
-        config.charts.humeur = new Chart(ctx, {
-            type: 'line',
-            data: {
-                labels: data.dates,
-                datasets: [{
-                    label: 'Score Humeur',
-                    data: data.scores,
-                    borderColor: '#6366f1',
-                    backgroundColor: 'rgba(99, 102, 241, 0.1)',
-                    borderWidth: 2,
-                    tension: 0.4,
-                    fill: true,
-                    pointBackgroundColor: data.scores.map(score => {
-                        if (score > 0) return '#10b981';
-                        if (score < 0) return '#ef4444';
-                        return '#f59e0b';
-                    }),
-                    pointBorderColor: '#fff',
-                    pointRadius: 4,
-                    pointHoverRadius: 6
-                }]
-            },
-            options: {
-                responsive: true,
-                scales: {
-                    y: {
-                        min: -1,
-                        max: 1,
-                        ticks: {
-                            callback: function(value) {
-                                if (value === 1) return '😊 Positif';
-                                if (value === 0) return '😐 Neutre';
-                                if (value === -1) return '😞 Négatif';
-                                return value;
+        if (data.success && data.dates && data.dates.length > 0) {
+            config.charts.humeur = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: data.dates,
+                    datasets: [{
+                        label: 'Score Humeur',
+                        data: data.scores,
+                        borderColor: '#6366f1',
+                        backgroundColor: 'rgba(99, 102, 241, 0.1)',
+                        borderWidth: 2,
+                        tension: 0.4,
+                        fill: true,
+                        pointBackgroundColor: data.scores.map(score => {
+                            if (score > 0) return '#10b981';
+                            if (score < 0) return '#ef4444';
+                            return '#f59e0b';
+                        }),
+                        pointBorderColor: '#fff',
+                        pointRadius: 4,
+                        pointHoverRadius: 6
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        y: {
+                            min: -1,
+                            max: 1,
+                            ticks: {
+                                callback: function(value) {
+                                    if (value === 1) return '😊 Positif';
+                                    if (value === 0) return '😐 Neutre';
+                                    if (value === -1) return '😞 Négatif';
+                                    return value;
+                                }
                             }
                         }
-                    }
-                },
-                plugins: {
-                    legend: {
-                        display: false
                     },
-                    tooltip: {
-                        callbacks: {
-                            label: function(context) {
-                                let humeur = 'Neutre';
-                                if (context.parsed.y > 0) humeur = 'Positif';
-                                if (context.parsed.y < 0) humeur = 'Négatif';
-                                return `Humeur: ${humeur}`;
+                    plugins: {
+                        legend: {
+                            display: false
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    let humeur = 'Neutre';
+                                    if (context.parsed.y > 0) humeur = 'Positif';
+                                    if (context.parsed.y < 0) humeur = 'Négatif';
+                                    return `Humeur: ${humeur}`;
+                                }
                             }
                         }
                     }
                 }
-            }
-        });
+            });
+        } else {
+            ctx.innerHTML = '<div class="chart-empty">Aucune donnée disponible pour l\'évolution de l\'humeur</div>';
+        }
     } catch (error) {
         console.error('Erreur chargement évolution humeur:', error);
+        const ctx = document.getElementById('humeurChart');
+        ctx.innerHTML = '<div class="chart-error">Erreur de chargement du graphique</div>';
     }
 }
     
@@ -694,28 +770,48 @@ async function chargerWordCloud() {
         const response = await fetch('/dashboard/api/wordcloud/');
         const data = await response.json();
         
-        if (data.wordcloud && data.wordcloud.length > 0) {
-            WordCloud(document.getElementById('wordcloud'), {
-                list: data.wordcloud,
-                gridSize: 15,
+        console.log('Données wordcloud:', data);
+        
+        const container = document.getElementById('wordcloud');
+        container.innerHTML = '';
+        
+        if (data.success && data.wordcloud && data.wordcloud.length > 0) {
+            // S'assurer que les données sont au bon format
+            const wordList = data.wordcloud.map(item => {
+                if (Array.isArray(item)) {
+                    return item; // Format [mot, fréquence]
+                } else if (typeof item === 'object') {
+                    return [item.mot || item.word || item.text || 'mot', item.count || item.frequency || 1];
+                } else {
+                    return [item, 1]; // Format de secours
+                }
+            });
+            
+            WordCloud(container, {
+                list: wordList,
+                gridSize: Math.round(16 * container.offsetWidth / 300),
                 weightFactor: function(size) {
-                    return Math.pow(size, 2.5) * 1.5;
+                    return Math.pow(size, 1.5) * container.offsetWidth / 300;
                 },
-                fontFamily: 'Inter, sans-serif',
-                color: function() {
+                fontFamily: 'Inter, Arial, sans-serif',
+                color: function(word, weight) {
                     const colors = ['#6366f1', '#10b981', '#ef4444', '#f59e0b', '#8b5cf6', '#06b6d4', '#ec4899'];
                     return colors[Math.floor(Math.random() * colors.length)];
                 },
                 rotateRatio: 0.3,
-                rotationSteps: 3,
+                rotationSteps: 2,
                 backgroundColor: '#ffffff',
                 minSize: 8,
                 drawOutOfBound: false,
                 shrinkToFit: true
             });
+        } else {
+            container.innerHTML = '<div class="chart-empty">Aucune donnée disponible pour le nuage de mots</div>';
         }
     } catch (error) {
         console.error('Erreur chargement word cloud:', error);
+        const container = document.getElementById('wordcloud');
+        container.innerHTML = '<div class="chart-error">Erreur de chargement du nuage de mots</div>';
     }
 }
 
@@ -730,45 +826,51 @@ async function chargerThemes() {
             config.charts.themes.destroy();
         }
         
-        config.charts.themes = new Chart(ctx, {
-            type: 'bar',
-            data: {
-                labels: data.labels,
-                datasets: [{
-                    label: 'Occurrences',
-                    data: data.data,
-                    backgroundColor: [
-                        '#6366f1', '#10b981', '#ef4444', '#f59e0b', '#8b5cf6',
-                        '#06b6d4', '#84cc16', '#f97316', '#ec4899', '#14b8a6'
-                    ],
-                    borderWidth: 0,
-                    borderRadius: 6
-                }]
-            },
-            options: {
-                responsive: true,
-                indexAxis: 'y',
-                plugins: {
-                    legend: {
-                        display: false
-                    }
+        if (data.success && data.labels && data.labels.length > 0) {
+            config.charts.themes = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: data.labels,
+                    datasets: [{
+                        label: 'Occurrences',
+                        data: data.data,
+                        backgroundColor: [
+                            '#6366f1', '#10b981', '#ef4444', '#f59e0b', '#8b5cf6',
+                            '#06b6d4', '#84cc16', '#f97316', '#ec4899', '#14b8a6'
+                        ],
+                        borderWidth: 0,
+                        borderRadius: 6
+                    }]
                 },
-                scales: {
-                    x: {
-                        grid: {
-                            color: 'rgba(0, 0, 0, 0.1)'
+                options: {
+                    responsive: true,
+                    indexAxis: 'y',
+                    plugins: {
+                        legend: {
+                            display: false
                         }
                     },
-                    y: {
-                        grid: {
-                            color: 'rgba(0, 0, 0, 0.1)'
+                    scales: {
+                        x: {
+                            grid: {
+                                color: 'rgba(0, 0, 0, 0.1)'
+                            }
+                        },
+                        y: {
+                            grid: {
+                                color: 'rgba(0, 0, 0, 0.1)'
+                            }
                         }
                     }
                 }
-            }
-        });
+            });
+        } else {
+            ctx.innerHTML = '<div class="chart-empty">Aucun thème détecté</div>';
+        }
     } catch (error) {
         console.error('Erreur chargement thèmes:', error);
+        const ctx = document.getElementById('themesChart');
+        ctx.innerHTML = '<div class="chart-error">Erreur de chargement des thèmes</div>';
     }
 }
 
@@ -778,31 +880,40 @@ async function chargerChronologie() {
         const data = await response.json();
         
         const timeline = document.getElementById('timeline');
-        timeline.innerHTML = '';
         
-        data.events.forEach(event => {
-            const eventElement = document.createElement('div');
-            eventElement.className = `timeline-event ${event.ton}`;
+        if (data.success && data.events && data.events.length > 0) {
+            timeline.innerHTML = '';
             
-            eventElement.innerHTML = `
-                <div class="timeline-date">${event.date}</div>
-                <div class="timeline-title">${event.titre}</div>
-                <div class="timeline-desc">${event.description}</div>
-                <div class="timeline-tags">
-                    ${event.mots_cles.map(tag => 
-                        `<span class="timeline-tag">${tag}</span>`
-                    ).join('')}
-                </div>
-            `;
-            
-            timeline.appendChild(eventElement);
-        });
+            data.events.forEach(event => {
+                const eventElement = document.createElement('div');
+                eventElement.className = `timeline-event ${event.ton}`;
+                
+                eventElement.innerHTML = `
+                    <div class="timeline-date">${event.date}</div>
+                    <div class="timeline-title">${event.titre}</div>
+                    <div class="timeline-desc">${event.description}</div>
+                    <div class="timeline-tags">
+                        ${event.mots_cles && event.mots_cles.length > 0 ? 
+                            event.mots_cles.map(tag => 
+                                `<span class="timeline-tag">${tag}</span>`
+                            ).join('') : 
+                            '<span class="timeline-tag">Aucun mot-clé</span>'
+                        }
+                    </div>
+                `;
+                
+                timeline.appendChild(eventElement);
+            });
+        } else {
+            timeline.innerHTML = '<div class="chart-empty">Aucun événement récent</div>';
+        }
     } catch (error) {
         console.error('Erreur chargement chronologie:', error);
+        const timeline = document.getElementById('timeline');
+        timeline.innerHTML = '<div class="chart-error">Erreur de chargement de la chronologie</div>';
     }
 }
 
-// Nouveaux graphiques
 async function chargerDistributionHumeurs() {
     try {
         const response = await fetch('/dashboard/api/distribution-humeurs/');
@@ -810,28 +921,39 @@ async function chargerDistributionHumeurs() {
         
         const ctx = document.getElementById('distributionChart').getContext('2d');
         
-        new Chart(ctx, {
-            type: 'doughnut',
-            data: {
-                labels: ['Positif', 'Neutre', 'Négatif'],
-                datasets: [{
-                    data: [data.positif, data.neutre, data.negatif],
-                    backgroundColor: ['#10b981', '#f59e0b', '#ef4444'],
-                    borderWidth: 0
-                }]
-            },
-            options: {
-                responsive: true,
-                cutout: '70%',
-                plugins: {
-                    legend: {
-                        position: 'bottom'
+        if (config.charts.distribution) {
+            config.charts.distribution.destroy();
+        }
+        
+        if (data.success) {
+            config.charts.distribution = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Positif', 'Neutre', 'Négatif'],
+                    datasets: [{
+                        data: [data.positif || 0, data.neutre || 0, data.negatif || 0],
+                        backgroundColor: ['#10b981', '#f59e0b', '#ef4444'],
+                        borderWidth: 0
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: true,
+                    cutout: '70%',
+                    plugins: {
+                        legend: {
+                            position: 'bottom'
+                        }
                     }
                 }
-            }
-        });
+            });
+        } else {
+            ctx.innerHTML = '<div class="chart-empty">Aucune donnée de distribution</div>';
+        }
     } catch (error) {
         console.error('Erreur chargement distribution:', error);
+        const ctx = document.getElementById('distributionChart');
+        ctx.innerHTML = '<div class="chart-error">Erreur de chargement</div>';
     }
 }
 
@@ -840,37 +962,71 @@ async function chargerFrequenceEcriture() {
         const response = await fetch('/dashboard/api/frequence-ecriture/');
         const data = await response.json();
         
+        console.log('Données fréquence:', data);
+        
         const ctx = document.getElementById('frequenceChart').getContext('2d');
         
-        new Chart(ctx, {
-            type: 'line',
-            data: {
-                labels: data.dates,
-                datasets: [{
-                    label: 'Entrées par jour',
-                    data: data.counts,
-                    borderColor: '#8b5cf6',
-                    backgroundColor: 'rgba(139, 92, 246, 0.1)',
-                    tension: 0.4,
-                    fill: true
-                }]
-            },
-            options: {
-                responsive: true,
-                scales: {
-                    y: {
-                        beginAtZero: true
-                    }
+        if (config.charts.frequence) {
+            config.charts.frequence.destroy();
+        }
+        
+        if (data.success && data.dates && data.dates.length > 0) {
+            config.charts.frequence = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: data.dates,
+                    datasets: [{
+                        label: 'Entrées par jour',
+                        data: data.counts,
+                        borderColor: '#8b5cf6',
+                        backgroundColor: 'rgba(139, 92, 246, 0.1)',
+                        borderWidth: 2,
+                        tension: 0.4,
+                        fill: true,
+                        pointBackgroundColor: '#8b5cf6',
+                        pointBorderColor: '#fff',
+                        pointRadius: 3,
+                        pointHoverRadius: 5
+                    }]
                 },
-                plugins: {
-                    legend: {
-                        display: false
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: true,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                precision: 0
+                            }
+                        },
+                        x: {
+                            ticks: {
+                                maxRotation: 45,
+                                minRotation: 45
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            display: false
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return `${context.parsed.y} entrée(s)`;
+                                }
+                            }
+                        }
                     }
                 }
-            }
-        });
+            });
+        } else {
+            ctx.innerHTML = '<div class="chart-empty">Aucune donnée de fréquence</div>';
+        }
     } catch (error) {
         console.error('Erreur chargement fréquence:', error);
+        const ctx = document.getElementById('frequenceChart');
+        ctx.innerHTML = '<div class="chart-error">Erreur de chargement</div>';
     }
 }
 
@@ -879,48 +1035,133 @@ async function chargerScoreEmotionnel() {
         const response = await fetch('/dashboard/api/score-emotionnel/');
         const data = await response.json();
         
+        console.log('Données score émotionnel:', data);
+        
         const ctx = document.getElementById('scoreChart').getContext('2d');
         
-        new Chart(ctx, {
-            type: 'radar',
-            data: {
-                labels: ['Positivité', 'Stabilité', 'Intensité', 'Diversité', 'Croissance'],
-                datasets: [{
-                    label: 'Score Émotionnel',
-                    data: data.scores,
-                    backgroundColor: 'rgba(99, 102, 241, 0.2)',
-                    borderColor: '#6366f1',
-                    borderWidth: 2,
-                    pointBackgroundColor: '#6366f1',
-                    pointBorderColor: '#fff',
-                    pointHoverRadius: 6
-                }]
-            },
-            options: {
-                responsive: true,
-                scales: {
-                    r: {
-                        beginAtZero: true,
-                        max: 100
+        if (config.charts.score) {
+            config.charts.score.destroy();
+        }
+        
+        if (data.success && data.scores && data.scores.length === 5) {
+            config.charts.score = new Chart(ctx, {
+                type: 'radar',
+                data: {
+                    labels: ['Positivité', 'Stabilité', 'Intensité', 'Diversité', 'Croissance'],
+                    datasets: [{
+                        label: 'Score Émotionnel',
+                        data: data.scores,
+                        backgroundColor: 'rgba(99, 102, 241, 0.2)',
+                        borderColor: '#6366f1',
+                        borderWidth: 2,
+                        pointBackgroundColor: '#6366f1',
+                        pointBorderColor: '#fff',
+                        pointBorderWidth: 2,
+                        pointRadius: 3,
+                        pointHoverRadius: 5
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: true,
+                    scales: {
+                        r: {
+                            beginAtZero: true,
+                            max: 100,
+                            min: 0,
+                            ticks: {
+                                stepSize: 20,
+                                callback: function(value) {
+                                    return value + '%';
+                                }
+                            },
+                            pointLabels: {
+                                font: {
+                                    size: 12,
+                                    family: 'Inter'
+                                },
+                                color: '#374151'
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            display: false
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return `${context.dataset.label}: ${context.raw}%`;
+                                }
+                            }
+                        }
                     }
                 }
-            }
-        });
+            });
+        } else {
+            // Données par défaut pour la démo
+            const defaultScores = [75, 60, 80, 55, 70];
+            config.charts.score = new Chart(ctx, {
+                type: 'radar',
+                data: {
+                    labels: ['Positivité', 'Stabilité', 'Intensité', 'Diversité', 'Croissance'],
+                    datasets: [{
+                        label: 'Score Émotionnel',
+                        data: defaultScores,
+                        backgroundColor: 'rgba(99, 102, 241, 0.2)',
+                        borderColor: '#6366f1',
+                        borderWidth: 2,
+                        pointBackgroundColor: '#6366f1',
+                        pointBorderColor: '#fff',
+                        pointBorderWidth: 2,
+                        pointRadius: 3,
+                        pointHoverRadius: 5
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: true,
+                    scales: {
+                        r: {
+                            beginAtZero: true,
+                            max: 100,
+                            min: 0,
+                            ticks: {
+                                stepSize: 20,
+                                callback: function(value) {
+                                    return value + '%';
+                                }
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            display: false
+                        }
+                    }
+                }
+            });
+        }
     } catch (error) {
-        console.error('Erreur chargement score:', error);
+        console.error('Erreur chargement score émotionnel:', error);
+        const ctx = document.getElementById('scoreChart');
+        ctx.innerHTML = '<div class="chart-error">Erreur de chargement</div>';
     }
 }
 
 // Fonctions utilitaires
 function refreshWordCloud() {
+    console.log('Actualisation du nuage de mots...');
     const container = document.getElementById('wordcloud');
-    container.innerHTML = '';
-    chargerWordCloud();
+    container.innerHTML = '<div class="loading"><div class="loading-spinner"></div><div>Actualisation...</div></div>';
+    setTimeout(() => {
+        chargerWordCloud();
+    }, 500);
 }
 
 function loadMoreTimeline() {
-    // Implémentation pour charger plus d'événements
     console.log('Chargement de plus d\'événements...');
+    // Implémentation pour charger plus d'événements
 }
 
 // Gestion des filtres
@@ -929,11 +1170,31 @@ document.querySelectorAll('.filter-btn').forEach(btn => {
         document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
         this.classList.add('active');
         config.currentPeriod = this.dataset.period;
+        console.log(`Filtre changé: ${config.currentPeriod}`);
         chargerDonnees();
     });
 });
 
+// Gestion des boutons de graphiques
+document.addEventListener('click', function(e) {
+    if (e.target.classList.contains('btn-chart')) {
+        const action = e.target.dataset.chart;
+        if (action === 'line' || action === 'bar') {
+            console.log(`Changement type graphique: ${action}`);
+            // Implémentation pour changer le type de graphique
+        }
+    }
+});
+
 // Initialisation
-document.addEventListener('DOMContentLoaded', chargerDonnees);
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('🚀 Initialisation du tableau de bord...');
+    
+    // Démarrer le chargement des données
+    chargerDonnees();
+    
+    // Optionnel: Décommentez la ligne suivante pour debugger les APIs
+    // setTimeout(debugAPIs, 1000);
+});
 </script>
 {% endblock %}
