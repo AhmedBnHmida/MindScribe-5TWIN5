@@ -5,10 +5,24 @@
 
 {% block content %}
 <div class="container mt-4">
+    <style>
+    /* Scoped styles for generator page */
+    .form-card .card-header {
+        background: linear-gradient(135deg, #0d6efd 0%, #6ea8fe 100%);
+    }
+    .form-card .card-title { color: #fff; }
+    .form-card .card { border: none; border-radius: 1rem; overflow: hidden; }
+    .form-card .card-body { background: #ffffff; }
+    .section-options { background: #f8fafc; border: 1px solid #e9ecef; border-radius: .75rem; padding: 1rem; }
+    #generate-btn { transition: transform .15s ease, box-shadow .15s ease; }
+    #generate-btn:hover { transform: translateY(-1px); box-shadow: 0 .5rem 1rem rgba(13,110,253,.15); }
+    #color-preview { background: #fff; border-width: 2px !important; }
+    .form-text { color: #6c757d; }
+    </style>
     <div class="row">
         <div class="col-md-8 mx-auto">
-            <div class="card shadow">
-                <div class="card-header bg-primary text-white">
+            <div class="card shadow form-card">
+                <div class="card-header text-white">
                     <h3 class="card-title mb-0">
                         🚀 Générer un Nouveau Rapport PDF
                     </h3>
@@ -23,8 +37,8 @@
                         {% endfor %}
                     {% endif %}
 
-                    <!-- ✅ CORRECTION: Ensure form has correct method and action -->
-                    <form method="POST" action="{% url 'communication:generer_rapport' %}">
+                    <!-- ✅ Bootstrap validation-ready form -->
+                    <form method="POST" action="{% url 'communication:generer_rapport' %}" class="needs-validation" novalidate>
                         {% csrf_token %}
                         
                         <!-- Sélection des statistiques -->
@@ -41,13 +55,16 @@
                             <div class="form-text">
                                 Choisissez les statistiques mensuelles pour votre rapport
                             </div>
+                            <div class="invalid-feedback">Veuillez sélectionner des statistiques.</div>
+                            <div class="small text-muted mt-1" id="periode-preview" style="display:none;"></div>
                         </div>
 
                         <!-- Titre du rapport -->
                         <div class="mb-3">
                             <label for="titre" class="form-label">📝 Titre du rapport *</label>
                             <input type="text" class="form-control" id="titre" name="titre" 
-                                   value="Rapport Mensuel" required>
+                                   value="Rapport Mensuel" minlength="3" maxlength="200" required>
+                            <div class="invalid-feedback">Veuillez fournir un titre (3 à 200 caractères).</div>
                         </div>
 
                         <!-- Template selection -->
@@ -60,6 +77,7 @@
                                     </option>
                                 {% endfor %}
                             </select>
+                            <div class="form-text">Choisissez le style visuel du rapport.</div>
                         </div>
 
                         <!-- Format du rapport -->
@@ -72,10 +90,11 @@
                                     </option>
                                 {% endfor %}
                             </select>
+                            <div class="form-text">Sélectionnez la densité d'information.</div>
                         </div>
 
                         <!-- Options de contenu -->
-                        <div class="mb-4">
+                        <div class="mb-4 section-options">
                             <label class="form-label">📋 Sections à inclure</label>
                             <div class="form-check">
                                 <input class="form-check-input" type="checkbox" name="inclure_statistiques" id="inclure_statistiques" checked>
@@ -114,19 +133,32 @@
                                     💡 Recommandations
                                 </label>
                             </div>
+                            <div class="mt-2 small text-muted">
+                                Sections sélectionnées: <span id="sections-count">5</span>
+                                <span id="sections-list" class="d-block mt-1"></span>
+                            </div>
                         </div>
 
                         <!-- Couleur principale -->
                         <div class="mb-3">
                             <label for="couleur_principale" class="form-label">🎨 Couleur principale</label>
-                            <input type="color" class="form-control form-control-color" id="couleur_principale" 
-                                   name="couleur_principale" value="#3498db" title="Choisissez la couleur principale">
+                            <div class="d-flex align-items-center gap-3">
+                                <input type="color" class="form-control form-control-color" id="couleur_principale" 
+                                       name="couleur_principale" value="#3498db" title="Choisissez la couleur principale">
+                                <div>
+                                    <div class="border rounded px-3 py-2" id="color-preview" style="border-color: #3498db !important;">
+                                        Aperçu couleur: <span id="color-value">#3498db</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="form-text">La couleur sera appliquée aux en-têtes et tableaux.</div>
                         </div>
 
                         <div class="d-grid gap-2">
                             <button type="submit" class="btn btn-primary btn-lg" id="generate-btn">
                                 🚀 Générer le Rapport PDF
                             </button>
+                            <button type="reset" class="btn btn-light">↩️ Réinitialiser</button>
                             <a href="{% url 'communication:liste_rapports' %}" class="btn btn-outline-secondary">
                                 📋 Voir mes rapports
                             </a>
@@ -139,11 +171,67 @@
 </div>
 
 <script>
-// Optional: Add loading state
-document.querySelector('form').addEventListener('submit', function() {
-    const btn = document.getElementById('generate-btn');
-    btn.innerHTML = '⏳ Génération en cours...';
-    btn.disabled = true;
-});
+// Bootstrap-like client-side validation + loading state
+(function() {
+  const form = document.querySelector('form.needs-validation');
+  const btn = document.getElementById('generate-btn');
+  const colorInput = document.getElementById('couleur_principale');
+  const colorPreview = document.getElementById('color-preview');
+  const colorValue = document.getElementById('color-value');
+  const sectionCheckboxes = Array.from(document.querySelectorAll('.form-check-input'));
+  const sectionsCountEl = document.getElementById('sections-count');
+  const sectionsListEl = document.getElementById('sections-list');
+  const statsSelect = document.getElementById('statistique_id');
+  const periodePreview = document.getElementById('periode-preview');
+  if (!form) return;
+  form.addEventListener('submit', function(e) {
+    if (!form.checkValidity()) {
+      e.preventDefault();
+      e.stopPropagation();
+    } else {
+      if (btn) {
+        btn.innerHTML = '⏳ Génération en cours...';
+        btn.disabled = true;
+      }
+    }
+    form.classList.add('was-validated');
+  }, false);
+
+  // Live color preview
+  function updateColorPreview() {
+    if (!colorInput || !colorPreview || !colorValue) return;
+    const val = colorInput.value || '#3498db';
+    colorPreview.style.borderColor = val;
+    colorValue.textContent = val;
+  }
+  if (colorInput) colorInput.addEventListener('input', updateColorPreview);
+  updateColorPreview();
+
+  // Sections summary
+  function updateSectionsSummary() {
+    if (!sectionsCountEl || !sectionsListEl) return;
+    const checked = sectionCheckboxes.filter(cb => cb.name.startsWith('inclure_') && cb.checked);
+    sectionsCountEl.textContent = checked.length.toString();
+    const names = checked.map(cb => cb.nextElementSibling?.innerText?.trim()).filter(Boolean);
+    sectionsListEl.textContent = names.join(', ');
+  }
+  sectionCheckboxes.forEach(cb => cb.addEventListener('change', updateSectionsSummary));
+  updateSectionsSummary();
+
+  // Stats selection preview
+  function updatePeriodePreview() {
+    if (!statsSelect || !periodePreview) return;
+    const option = statsSelect.options[statsSelect.selectedIndex];
+    if (option && option.value) {
+      periodePreview.style.display = '';
+      periodePreview.textContent = 'Période sélectionnée: ' + option.textContent;
+    } else {
+      periodePreview.style.display = 'none';
+      periodePreview.textContent = '';
+    }
+  }
+  if (statsSelect) statsSelect.addEventListener('change', updatePeriodePreview);
+  updatePeriodePreview();
+})();
 </script>
 {% endblock %}
