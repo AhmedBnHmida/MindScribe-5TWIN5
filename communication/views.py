@@ -129,7 +129,7 @@ class GenererRapportPDFView(LoginRequiredMixin, View):
             # Check if rapport already exists using filter
             existing_rapport = RapportPDF.objects.filter(statistique=statistique).first()
             if existing_rapport:
-                messages.warning(request, f"Un rapport existe déjà pour {statistique.periode}. Vous pouvez le dupliquer ou le regénérer.")
+                messages.warning(request, f"Un rapport existe déjà pour {statistique.periode}. Vous pouvez le supprimer puis le regénérer.")
                 return redirect('communication:liste_rapports')
             
             # ✅ FIX: Proper boolean handling for checkboxes
@@ -137,16 +137,34 @@ class GenererRapportPDFView(LoginRequiredMixin, View):
                 value = data.get(field_name)
                 # Checkboxes return 'on' when checked, None when unchecked
                 return value == 'on' if value is not None else default
-            
+
+            # Sanitize and validate inputs
+            titre = (data.get('titre') or 'Rapport Mensuel').strip()
+            if len(titre) > 200:
+                titre = titre[:200]
+
+            valid_formats = {choice[0] for choice in RapportPDF.FORMAT_RAPPORT_CHOICES}
+            valid_templates = {choice[0] for choice in RapportPDF.TEMPLATE_CHOICES}
+            format_rapport = data.get('format_rapport') or 'complet'
+            template_rapport = data.get('template_rapport') or 'moderne'
+            if format_rapport not in valid_formats:
+                format_rapport = 'complet'
+            if template_rapport not in valid_templates:
+                template_rapport = 'moderne'
+
+            couleur_principale = data.get('couleur_principale') or '#3498db'
+            if not (isinstance(couleur_principale, str) and len(couleur_principale) == 7 and couleur_principale.startswith('#')):
+                couleur_principale = '#3498db'
+
             # Create rapport record with proper boolean values
             rapport = RapportPDF.objects.create(
                 utilisateur=request.user,
                 statistique=statistique,
-                titre=data.get('titre', 'Rapport Mensuel'),
+                titre=titre,
                 mois=data.get('mois', statistique.periode),
-                format_rapport=data.get('format_rapport', 'complet'),
-                template_rapport=data.get('template_rapport', 'moderne'),
-                couleur_principale=data.get('couleur_principale', '#3498db'),
+                format_rapport=format_rapport,
+                template_rapport=template_rapport,
+                couleur_principale=couleur_principale,
                 # ✅ FIX: Use the helper function for boolean fields
                 inclure_statistiques=get_boolean_value('inclure_statistiques', True),
                 inclure_graphiques=get_boolean_value('inclure_graphiques', True),
@@ -239,34 +257,7 @@ class ApercuRapportView(LoginRequiredMixin, View):
         response['Content-Disposition'] = f'inline; filename="{rapport.generer_nom_fichier()}"'
         return response
 
-class DupliquerRapportView(LoginRequiredMixin, View):
-    """View to duplicate existing reports"""
-    
-    def post(self, request, rapport_id):
-        original = get_object_or_404(
-            RapportPDF, 
-            id=rapport_id, 
-            utilisateur=request.user
-        )
-        
-        # Create duplicate without PDF file
-        duplicate = RapportPDF.objects.create(
-            utilisateur=request.user,
-            statistique=original.statistique,
-            titre=f"Copie de {original.titre}",
-            mois=original.mois,
-            format_rapport=original.format_rapport,
-            template_rapport=original.template_rapport,
-            couleur_principale=original.couleur_principale,
-            inclure_statistiques=original.inclure_statistiques,
-            inclure_graphiques=original.inclure_graphiques,
-            inclure_analyse_ia=original.inclure_analyse_ia,
-            inclure_journaux=original.inclure_journaux,
-            statut='brouillon'
-        )
-        
-        messages.success(request, "Rapport dupliqué avec succès")
-        return redirect('communication:liste_rapports')
+# Duplicate report feature removed as requested
 
     
 class SupprimerRapportView(LoginRequiredMixin, View):

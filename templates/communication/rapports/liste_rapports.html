@@ -5,14 +5,59 @@
 
 {% block content %}
 <div class="container mt-4">
+    <style>
+    /* Scoped styles for report list */
+    .toolbar-card { border: none; border-radius: 1rem; overflow: hidden; }
+    .toolbar-card .card-body { background: linear-gradient(135deg, #f8f9fa 0%, #eef5ff 100%); }
+    .report-card .card { border: none; border-radius: 1rem; transition: transform .15s ease, box-shadow .15s ease; }
+    .report-card .card:hover { transform: translateY(-3px); box-shadow: 0 .75rem 1.5rem rgba(0,0,0,.08); }
+    .card-header.bg-light { background-color: #f6f9ff !important; }
+    .filters .form-select, .filters .input-group .form-control { min-width: 200px; }
+    .badge { font-weight: 600; }
+    #bulk-delete-btn:disabled { opacity: .5; cursor: not-allowed; }
+    </style>
     <div class="row">
         <div class="col-12">
-            <div class="d-flex justify-content-between align-items-center mb-4">
-                <h1>📋 Mes Rapports PDF</h1>
-                <a href="{% url 'communication:generer_rapport' %}" class="btn btn-primary">
-                    🚀 Générer un Nouveau Rapport
-                </a>
+            <!-- Hidden form to expose CSRF token for JS-driven POST deletes -->
+            <form id="csrf-holder" style="display:none;">
+                {% csrf_token %}
+            </form>
+            <div class="d-flex flex-wrap justify-content-between align-items-center mb-3 gap-2">
+                <div class="d-flex align-items-center gap-3">
+                    <h1 class="mb-0">📋 Mes Rapports PDF</h1>
+                    <span class="badge bg-secondary">{{ rapports|length }} total</span>
+                </div>
+                <div class="d-flex flex-wrap gap-2 filters">
+                    <div class="input-group">
+                        <span class="input-group-text">🔎</span>
+                        <input id="search-input" type="text" class="form-control" placeholder="Rechercher par titre...">
+                    </div>
+                    <select id="status-filter" class="form-select">
+                        <option value="">Tous les statuts</option>
+                        <option value="termine">Terminé</option>
+                        <option value="en_cours">En cours</option>
+                        <option value="erreur">Erreur</option>
+                        <option value="brouillon">Brouillon</option>
+                    </select>
+                    <a href="{% url 'communication:generer_rapport' %}" class="btn btn-primary">
+                        🚀 Générer un Nouveau Rapport
+                    </a>
+                </div>
             </div>
+
+            <!-- Bulk actions -->
+            <form id="bulk-delete-form" method="POST" action="{% url 'communication:liste_rapports' %}" class="mb-3">
+                {% csrf_token %}
+                <div class="d-flex justify-content-between align-items-center">
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" id="select-all">
+                        <label class="form-check-label" for="select-all">Tout sélectionner</label>
+                    </div>
+                    <button type="submit" name="delete_selected" value="1" id="bulk-delete-btn" class="btn btn-outline-danger btn-sm" disabled>
+                        🗑️ Supprimer la sélection
+                    </button>
+                </div>
+            </form>
 
             {% if messages %}
                 {% for message in messages %}
@@ -24,12 +69,15 @@
             {% endif %}
 
             {% if rapports %}
-                <div class="row">
+                <div class="row" id="reports-grid">
                     {% for rapport in rapports %}
-                    <div class="col-md-6 col-lg-4 mb-4">
+                    <div class="col-md-6 col-lg-4 mb-4 report-card" data-title="{{ rapport.titre|lower }}" data-status="{{ rapport.statut }}">
                         <div class="card h-100 shadow-sm">
-                            <div class="card-header bg-light">
-                                <h5 class="card-title mb-0">{{ rapport.titre }}</h5>
+                            <div class="card-header bg-light d-flex justify-content-between align-items-center">
+                                <h5 class="card-title mb-0 text-truncate" title="{{ rapport.titre }}">{{ rapport.titre }}</h5>
+                                <div class="form-check ms-2">
+                                    <input class="form-check-input select-report" type="checkbox" form="bulk-delete-form" name="selected_reports" value="{{ rapport.id }}">
+                                </div>
                             </div>
                             <div class="card-body">
                                 <div class="mb-2">
@@ -72,16 +120,12 @@
                                         </a>
                                     {% endif %}
                                     
-                                    <a href="{% url 'communication:dupliquer_rapport' rapport.id %}" 
-                                       class="btn btn-warning btn-sm" title="Dupliquer">
-                                        📋
-                                    </a>
-                                    
-                                    <!-- SIMPLE DELETE BUTTON WITH JAVASCRIPT CONFIRMATION -->
+                                    <!-- Delete button with JS confirmation -->
                                     <button type="button" 
                                             class="btn btn-danger btn-sm delete-btn" 
                                             title="Supprimer"
                                             data-rapport-id="{{ rapport.id }}"
+                                            data-delete-url="{% url 'communication:supprimer_rapport' rapport.id %}"
                                             data-rapport-titre="{{ rapport.titre }}">
                                         🗑️
                                     </button>
@@ -113,13 +157,20 @@
 document.addEventListener('DOMContentLoaded', function() {
     console.log('✅ JavaScript loaded - Simple delete confirmation active');
     
-    // Simple delete confirmation with JavaScript alert
+    // Simple delete confirmation with JavaScript alert and CSRF token
     const deleteButtons = document.querySelectorAll('.delete-btn');
+    const searchInput = document.getElementById('search-input');
+    const statusFilter = document.getElementById('status-filter');
+    const reportsGrid = document.getElementById('reports-grid');
+    const selectAll = document.getElementById('select-all');
+    const bulkDeleteBtn = document.getElementById('bulk-delete-btn');
+    const reportCheckboxes = () => Array.from(document.querySelectorAll('.select-report'));
     
     deleteButtons.forEach(button => {
         button.addEventListener('click', function() {
             const rapportId = this.getAttribute('data-rapport-id');
             const rapportTitre = this.getAttribute('data-rapport-titre');
+            const deleteUrl = this.getAttribute('data-delete-url');
             
             // Simple JavaScript confirmation
             const confirmed = confirm(`🗑️ Êtes-vous sûr de vouloir supprimer le rapport "${rapportTitre}" ?\n\n⚠️ Cette action est irréversible.`);
@@ -134,9 +185,9 @@ document.addEventListener('DOMContentLoaded', function() {
                 // Create and submit form
                 const form = document.createElement('form');
                 form.method = 'POST';
-                form.action = `/communication/rapports/${rapportId}/supprimer/`;
+                form.action = deleteUrl || `/communication/rapports/${rapportId}/supprimer/`;
                 
-                const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]');
+                const csrfToken = document.querySelector('#csrf-holder [name=csrfmiddlewaretoken]');
                 if (csrfToken) {
                     const csrfInput = document.createElement('input');
                     csrfInput.type = 'hidden';
@@ -152,6 +203,38 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
     });
+
+    // Client-side filter
+    function applyFilters() {
+        const q = (searchInput?.value || '').toLowerCase();
+        const status = statusFilter?.value || '';
+        const cards = reportsGrid ? reportsGrid.querySelectorAll('.report-card') : [];
+        cards.forEach(card => {
+            const title = card.getAttribute('data-title') || '';
+            const st = card.getAttribute('data-status') || '';
+            const matchesSearch = !q || title.includes(q);
+            const matchesStatus = !status || st === status;
+            card.style.display = (matchesSearch && matchesStatus) ? '' : 'none';
+        });
+    }
+    if (searchInput) searchInput.addEventListener('input', applyFilters);
+    if (statusFilter) statusFilter.addEventListener('change', applyFilters);
+
+    // Bulk select handlers
+    function updateBulkDeleteState() {
+        const anyChecked = reportCheckboxes().some(cb => cb.checked && cb.offsetParent !== null);
+        if (bulkDeleteBtn) bulkDeleteBtn.disabled = !anyChecked;
+    }
+    if (selectAll) {
+        selectAll.addEventListener('change', function() {
+            reportCheckboxes().forEach(cb => {
+                if (cb.offsetParent !== null) cb.checked = selectAll.checked; // only visible
+            });
+            updateBulkDeleteState();
+        });
+    }
+    reportCheckboxes().forEach(cb => cb.addEventListener('change', updateBulkDeleteState));
+    applyFilters();
 });
 </script>
 {% endblock %}

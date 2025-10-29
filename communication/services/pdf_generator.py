@@ -373,6 +373,12 @@ class PDFGenerationService:
         try:
             buffer = BytesIO()
             config = self._get_template_config(rapport.template_rapport)
+            # Apply user-selected primary color if provided
+            if getattr(rapport, 'couleur_principale', None):
+                try:
+                    config['primary_color'] = rapport.couleur_principale
+                except Exception:
+                    pass
             
             doc = SimpleDocTemplate(
                 buffer,
@@ -443,7 +449,7 @@ class PDFGenerationService:
             story.append(Spacer(1, 30))
 
             # === PIED DE PAGE ===
-            footer_text = f"Rapport généré par MindScribe • {datetime.now().strftime('%d/%m/%Y à %H:%M')} • Confidential"
+            footer_text = f"Rapport généré par MindScribe • {datetime.now().strftime('%d/%m/%Y à %H:%M')} • Confidentiel"
             story.append(Paragraph(footer_text, ParagraphStyle(
                 name='Footer',
                 fontSize=8,
