@@ -68,7 +68,11 @@ python setup_nltk.py
 
 4. **Configuration de la base de données**
 ```bash
-# Appliquer les migrations
+# Or delete them one app at a time:
+Get-ChildItem -Path . -Filter "0*.py" -Recurse | Where-Object { $_.DirectoryName -like "*migrations*" } | Remove-Item -Force
+```
+```bash
+# Appliquer les migrations  
 python manage.py makemigrations
 python manage.py migrate
 ```
