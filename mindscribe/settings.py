@@ -30,7 +30,7 @@ SECRET_KEY = config('SECRET_KEY', default='django-insecure-3b$ez+(&-^t&^%xtji9ax
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = config('DEBUG', default=True, cast=bool)
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['*']
 
 
 # Application definition
@@ -56,6 +56,7 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -89,32 +90,36 @@ WSGI_APPLICATION = 'mindscribe.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
 
-# MongoDB Atlas config with Djongo
-DATABASES = {
-    'default': {
-        'ENGINE': 'djongo',
-        'NAME': 'mindscribe_db',
-        'CLIENT': {
-            'host': 'mongodb+srv://amelmediouni81_db_user:xv77McO1hyHFYsdI@cluster0.nzva8nl.mongodb.net/mindscribe_db?retryWrites=true&w=majority&appName=Cluster0',
-            'username': 'amelmediouni81_db_user',
-            'password': 'xv77McO1hyHFYsdI',
+# MongoDB Atlas config with Djongo (use environment variables)
+MONGODB_URI = os.environ.get('MONGODB_URI', '')
+MONGODB_DB = os.environ.get('MONGODB_DB', default='mindscribe_db')
+
+if MONGODB_URI:
+    DATABASES = {
+        'default': {
+            'ENGINE': 'djongo',
+            'NAME': MONGODB_DB,
+            'CLIENT': {
+                'host': MONGODB_URI,
+            }
         }
     }
-}
+else:
+    # Fallback local dev (no secrets in repo). You can set MONGODB_URI instead.
+    DATABASES = {
+        'default': {
+            'ENGINE': 'djongo',
+            'NAME': MONGODB_DB,
+            'CLIENT': {
+                'host': config('MONGODB_HOST', default=''),
+                'username': config('MONGODB_USERNAME', default=''),
+                'password': config('MONGODB_PASSWORD', default=''),
+            }
+        }
+    }
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 AUTH_USER_MODEL = 'users.CustomUser'
-
-# Alternative simplified MongoDB config (if the above doesn't work):
-# DATABASES = {
-#     'default': {
-#         'ENGINE': 'djongo',
-#         'NAME': 'mindscribe_db',
-#         'CLIENT': {
-#             'host': config('MONGODB_URI', default='mongodb+srv://amelmediouni81_db_user:xv77McO1hyHFYsdI@cluster0.nzva8nl.mongodb.net/mindscribe_db?retryWrites=true&w=majority&appName=Cluster0'),
-#         }
-#     }
-# }
 
 # SQLite backup (for development if MongoDB has issues)
 # DATABASES = {
@@ -163,6 +168,8 @@ STATIC_URL = 'static/'
 STATICFILES_DIRS = [
     BASE_DIR / "static",
 ]
+STATIC_ROOT = BASE_DIR / 'staticfiles'
+STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
 # Media files (User uploads)
 MEDIA_URL = '/media/'
@@ -204,3 +211,5 @@ AI_CONFIG = {
     'temperature': 0.7,
     'timeout': 60,          # Augmenté pour les modèles lents
 }
+
+DEBUG = True

@@ -66,7 +66,7 @@ def logout_view(request):
 def home(request):
     # Vous pouvez accéder à tous les nouveaux champs via request.user
     # Par exemple : request.user.humeur_generale, request.user.qualite_sommeil, etc.
-    return render(request, 'views/users/home.html')
+    return render(request, 'views/d')
 
 
 
@@ -207,7 +207,7 @@ def register(request):
                 
                 login(request, user)
                 messages.success(request, f'Bienvenue {username} ! Votre compte a été créé avec succès.')
-                return redirect('users:home')
+                return redirect('dashboard:tableau_bord')
         else:
             messages.error(request, 'Les mots de passe ne correspondent pas')
     
