@@ -221,8 +221,8 @@
                     </div>
                     
                     <div class="d-grid gap-2 mt-4">
-                        <button type="button" id="analyzeButton" class="btn-ultra-modern btn-ultra-secondary">
-                            <i class="fas fa-brain me-2"></i>Analyser avec IA
+                        <button type="button" id="saveJournalButton" class="btn-ultra-modern btn-ultra-secondary">
+                            <i class="fas fa-save me-2"></i>Enregistrer
                         </button>
                     </div>
                 </div>
@@ -429,7 +429,6 @@
         const imageFileInput = document.getElementById('imageFile');
         const audioPreview = document.getElementById('audioPreview');
         const imagePreview = document.getElementById('imagePreview');
-        const analyzeButton = document.getElementById('analyzeButton');
         const loadingSpinner = document.getElementById('loadingSpinner');
         const analysisResults = document.getElementById('analysisResults');
         const saveJournalButton = document.getElementById('saveJournalButton');
@@ -585,8 +584,8 @@
             });
         }
         
-        // Modern analysis functionality
-        analyzeButton.addEventListener('click', async () => {
+        // Function to analyze journal content
+        async function analyzeJournalContent() {
             const journalText = document.getElementById('journalText').value.trim();
             
             // Check if at least one input is provided
@@ -609,12 +608,10 @@
                     setTimeout(() => notification.remove(), 500);
                 }, 3000);
                 
-                return;
+                return false;
             }
             
-            // Disable analyze button and show loading spinner
-            analyzeButton.disabled = true;
-            analyzeButton.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>Analyse en cours...';
+            // Show loading spinner
             loadingSpinner.style.display = 'flex';
             analysisResults.style.display = 'none';
             
@@ -675,6 +672,7 @@
                 
                 const analysisData = await response.json();
                 displayAnalysisResults(analysisData);
+                return true;
                 
             } catch (error) {
                 console.error('Error during analysis:', error);
@@ -697,13 +695,13 @@
                     setTimeout(() => errorNotification.remove(), 500);
                 }, 5000);
                 
+                return false;
+                
             } finally {
-                // Hide loading spinner and reset button
+                // Hide loading spinner
                 loadingSpinner.style.display = 'none';
-                analyzeButton.disabled = false;
-                analyzeButton.innerHTML = '<i class="fas fa-brain me-2"></i>Analyser';
             }
-        });
+        }
         
         // Display analysis results with ultra-modern styling
         function displayAnalysisResults(data) {
@@ -1013,23 +1011,36 @@
             }
         }
         
-        // Save journal button (data is already saved after analysis)
-        saveJournalButton.addEventListener('click', () => {
-            // Show success notification
-            const notification = document.createElement('div');
-            notification.className = 'alert alert-success animate-fade-in';
-            notification.innerHTML = '<i class="fas fa-check-circle me-2"></i>Votre journal a déjà été enregistré lors de l\'analyse ! Redirection vers la liste...';
-            notification.style.position = 'fixed';
-            notification.style.top = '20px';
-            notification.style.right = '20px';
-            notification.style.maxWidth = '400px';
-            notification.style.zIndex = '1050';
-            document.body.appendChild(notification);
+        // Save journal button with automatic analysis
+        saveJournalButton.addEventListener('click', async () => {
+            // Disable the button and show loading state
+            saveJournalButton.disabled = true;
+            saveJournalButton.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>Analyse et enregistrement...';
             
-            // Redirect to journal list after 2 seconds
-            setTimeout(() => {
-                window.location.href = '/journal/';
-            }, 2000);
+            // First analyze the journal content
+            const analysisSuccess = await analyzeJournalContent();
+            
+            if (analysisSuccess) {
+                // Show success notification
+                const notification = document.createElement('div');
+                notification.className = 'alert alert-success animate-fade-in';
+                notification.innerHTML = '<i class="fas fa-check-circle me-2"></i>Votre journal a été analysé et enregistré avec succès ! Redirection vers la liste...';
+                notification.style.position = 'fixed';
+                notification.style.top = '20px';
+                notification.style.right = '20px';
+                notification.style.maxWidth = '400px';
+                notification.style.zIndex = '1050';
+                document.body.appendChild(notification);
+                
+                // Redirect to journal list after 2 seconds
+                setTimeout(() => {
+                    window.location.href = '/journal/';
+                }, 2000);
+            } else {
+                // Reset button state if analysis failed
+                saveJournalButton.disabled = false;
+                saveJournalButton.innerHTML = '<i class="fas fa-save me-2"></i>Enregistrer';
+            }
         });
         
         // New analysis button
