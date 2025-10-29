@@ -22,9 +22,9 @@ class Statistique(models.Model):
     themes_dominants = models.JSONField(default=list, blank=True, verbose_name="Thèmes dominants")
     bilan_mensuel = models.TextField(blank=True, verbose_name="Bilan mensuel")
     
-    # Relation avec les analyses
+    # Relation avec les analyses (updated to use module2_analysis)
     analyses_liees = models.ManyToManyField(
-        'analysis.AnalyseIA',
+        'module2_analysis.JournalAnalysis',
         related_name='statistiques',
         blank=True,
         verbose_name="Analyses liées"
