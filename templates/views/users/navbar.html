@@ -44,12 +44,14 @@
                         <i class="fas fa-chevron-down ms-auto {% if request.resolver_match.namespace == 'communication' and request.resolver_match.url_name in 'dashboard,generer_rapport,liste_rapports' %}rotated{% endif %}" id="rapports-chevron"></i>
                     </a>
                     <ul class="nav flex-column ms-3 mt-2" id="rapports-submenu" {% if request.resolver_match.namespace == 'communication' and request.resolver_match.url_name in 'dashboard,generer_rapport,liste_rapports' %}style="display: block;"{% else %}style="display: none;"{% endif %}>
+                    <!--
                         <li class="nav-item mb-1">
                             <a class="nav-link {% if request.resolver_match.namespace == 'communication' and request.resolver_match.url_name == 'dashboard' %}active bg-primary text-white{% else %}text-dark{% endif %} rounded-3 py-2 px-3" 
                                href="{% url 'communication:dashboard' %}">
                                 <i class="fas fa-tachometer-alt me-2 text-info"></i>Dashboard
                             </a>
                         </li>
+                    -->
                         <li class="nav-item mb-1">
                             <a class="nav-link {% if request.resolver_match.namespace == 'communication' and request.resolver_match.url_name == 'generer_rapport' %}active bg-primary text-white{% else %}text-dark{% endif %} rounded-3 py-2 px-3" 
                                href="{% url 'communication:generer_rapport' %}">
