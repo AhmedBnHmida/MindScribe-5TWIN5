@@ -22,6 +22,20 @@
                     </a>
                 </li>
 
+                <li class="nav-item mb-2">
+                    <a class="nav-link {% if request.resolver_match.url_name == 'create' and request.resolver_match.namespace == 'journal' %}active bg-primary text-white{% else %}text-dark{% endif %} rounded-3" 
+                       href="{% url 'journal:create' %}">
+                        <i class="fas fa-plus-circle me-2"></i>Nouvelle Entrée
+                    </a>
+                </li>
+
+                <li class="nav-item mb-2">
+                    <a class="nav-link {% if request.resolver_match.url_name == 'list' and request.resolver_match.namespace == 'journal' %}active bg-primary text-white{% else %}text-dark{% endif %} rounded-3" 
+                       href="{% url 'journal:list' %}">
+                        <i class="fas fa-book-open me-2"></i>Mon Journal
+                    </a>
+                </li>
+
                 <!-- Rapports -->
                 <li class="nav-item mb-2">
                     <a class="nav-link {% if request.resolver_match.namespace == 'communication' and request.resolver_match.url_name in 'dashboard,generer_rapport,liste_rapports' %}active bg-primary text-white{% else %}text-dark{% endif %} rounded-3" 
@@ -103,33 +117,6 @@
                     </ul>
                 </li>
 
-                <!-- Recommandations -->
-                <li class="nav-item dropdown">
-                    <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
-                        <i class="fas fa-magic me-2"></i>Recommandations
-                    </a>
-                    <ul class="dropdown-menu">
-                        <li>
-                            <a class="dropdown-item {% if request.resolver_match.url_name == 'dashboard' and request.resolver_match.namespace == 'recommendations' %}active{% endif %}" 
-                               href="{% url 'recommendations:dashboard' %}">
-                                ✨ Dashboard
-                            </a>
-                        </li>
-                        <li>
-                            <a class="dropdown-item {% if request.resolver_match.url_name == 'list' and request.resolver_match.namespace == 'recommendations' %}active{% endif %}" 
-                               href="{% url 'recommendations:list' %}">
-                                📋 Mes recommandations
-                            </a>
-                        </li>
-                        <li>
-                            <a class="dropdown-item {% if request.resolver_match.url_name == 'goals' %}active{% endif %}" 
-                               href="{% url 'recommendations:goals' %}">
-                                🎯 Mes objectifs
-                            </a>
-                        </li>
-                    </ul>
-                </li>
-
                 <!-- Suggestions connexions -->
                 <li class="nav-item mb-2">
                     <a class="nav-link {% if request.resolver_match.url_name == 'suggestions' %}active bg-primary text-white{% else %}text-dark{% endif %} rounded-3" 
@@ -144,28 +131,8 @@
                         <i class="fas fa-user-edit me-2"></i>Modifier le profil
                     </a>
                 </li>
-                <li class="nav-item mb-2">
-                    <a class="nav-link {% if request.resolver_match.url_name == 'list' and request.resolver_match.namespace == 'journal' %}active bg-primary text-white{% else %}text-dark{% endif %} rounded-3" 
-                       href="{% url 'journal:list' %}">
-                        <i class="fas fa-book-open me-2"></i>Mon Journal
-                    </a>
-                </li>
-                <li class="nav-item mb-2">
-                    <a class="nav-link {% if request.resolver_match.url_name == 'create' and request.resolver_match.namespace == 'journal' %}active bg-primary text-white{% else %}text-dark{% endif %} rounded-3" 
-                       href="{% url 'journal:create' %}">
-                        <i class="fas fa-plus-circle me-2"></i>Nouvelle Entrée
-                    </a>
-                </li>
-                <li class="nav-item mb-2">
-                    <a class="nav-link text-dark rounded-3" href="#">
-                        <i class="fas fa-chart-bar me-2"></i>Statistiques
-                    </a>
-                </li>
-                <li class="nav-item mb-2">
-                    <a class="nav-link text-dark rounded-3" href="#">
-                        <i class="fas fa-cog me-2"></i>Paramètres
-                    </a>
-                </li>
+                
+                
                 {% if user.is_superuser or user.is_admin_user %}
                 <li class="nav-item mb-2">
                     <a class="nav-link text-warning rounded-3" href="/admin/">
