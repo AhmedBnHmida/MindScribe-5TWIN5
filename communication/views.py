@@ -29,7 +29,7 @@ logger = logging.getLogger(__name__)
 
 from django.core import serializers
 
-# ✅ AJOUTER : Vue dashboard pour communication
+#Vue dashboard pour communication
 class DashboardCommunicationView(LoginRequiredMixin, View):
     """Vue principale du tableau de bord communication"""
     
@@ -132,7 +132,7 @@ class GenererRapportPDFView(LoginRequiredMixin, View):
                 messages.warning(request, f"Un rapport existe déjà pour {statistique.periode}. Vous pouvez le supprimer puis le regénérer.")
                 return redirect('communication:liste_rapports')
             
-            # ✅ FIX: Proper boolean handling for checkboxes
+            # FIX: Proper boolean handling for checkboxes
             def get_boolean_value(field_name, default=False):
                 value = data.get(field_name)
                 # Checkboxes return 'on' when checked, None when unchecked
@@ -270,10 +270,7 @@ class ApercuRapportView(LoginRequiredMixin, View):
         except Exception as e:
             logger.error(f"Erreur aperçu PDF {rapport_id}: {e}")
             return JsonResponse({'error': "Impossible d'afficher le rapport."}, status=500)
-
-# Duplicate report feature removed as requested
-
-    
+ 
 class SupprimerRapportView(LoginRequiredMixin, View):
     """View to delete PDF reports"""
     

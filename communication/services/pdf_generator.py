@@ -233,7 +233,7 @@ class PDFGenerationService:
             elements.append(Paragraph("📖 Extraits de Journal", self.styles[config['subtitle_style']]))
             elements.append(Spacer(1, 12))
             
-            # Sample journal entries (in a real app, you would fetch actual entries)
+            # Sample journal entries
             journal_entries = [
                 "🌅 **Matinée productive** : Aujourd'hui j'ai commencé par une séance de méditation suivie d'une planification claire de ma journée. Je me sens concentré et motivé.",
                 "💼 **Réflexion professionnelle** : J'ai réalisé l'importance de l'équilibre travail-vie personnelle. Prendre du temps pour soi n'est pas du temps perdu.",
